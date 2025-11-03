@@ -1,14 +1,15 @@
 # app/models/user.py
 import uuid
-from typing import Optional
-from sqlmodel import Field, Relationship, Column, Enum
+
+from sqlmodel import Field, Relationship
+
 from .base import BaseModel
-from pydantic import EmailStr
-from .role import UserRole
+from .item import Item
+
 
 # Shared properties
 class UserBase(BaseModel):
-    email: Optional[str] = Field(default=None, index=True, nullable=True, unique=True)
+    email: str | None = Field(default=None, index=True, nullable=True, unique=True)
     # phone_number: Optional[str] = Field(default=None, index=True, nullable=True, unique=True)
     is_active: bool = True
     is_superuser: bool = False

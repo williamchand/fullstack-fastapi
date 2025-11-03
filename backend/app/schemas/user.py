@@ -1,9 +1,12 @@
 # app/schemas/user.py
 import uuid
-from sqlmodel import Field
+
 from pydantic import EmailStr
-from app.models.user import UserBase
+from sqlmodel import Field
+
 from app.models.base import BaseModel
+from app.models.user import UserBase
+
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):

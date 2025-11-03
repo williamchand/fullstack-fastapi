@@ -1,9 +1,12 @@
 # app/models/pending_user.py
 import uuid
 from datetime import datetime
+
 from sqlmodel import Field
-from .role import UserRole
+
 from .base import BaseModel
+from .role import UserRole
+
 
 class PendingUser(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)

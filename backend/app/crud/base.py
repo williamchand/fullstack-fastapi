@@ -1,19 +1,19 @@
 # app/crud/crud_user.py
-from typing import Optional, TypeVar, Generic, Type
+from typing import Generic, TypeVar
 
-from sqlmodel import SQLModel, Session, select
+from sqlmodel import Session, SQLModel, select
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 
 class CRUDBase(Generic[ModelType]):
-    def __init__(self, model: Type[ModelType]):
+    def __init__(self, model: type[ModelType]):
         """
         CRUD object with default methods to Create, Read, Update, Delete (CRUD).
         **model**: a SQLModel class
         """
         self.model = model
 
-    def get(self, session: Session, id: str) -> Optional[ModelType]:
+    def get(self, session: Session, id: str) -> ModelType | None:
         return session.get(self.model, id)
 
     def get_multi(self, session: Session, skip: int = 0, limit: int = 100):

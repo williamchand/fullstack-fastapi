@@ -4,7 +4,6 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, delete, func, select
 
-from app.crud.user import user_crud
 from app.api.deps import (
     CurrentUser,
     SessionDep,
@@ -12,6 +11,7 @@ from app.api.deps import (
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
+from app.crud.user import user_crud
 from app.models.base import (
     Message,
 )

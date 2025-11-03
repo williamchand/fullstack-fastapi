@@ -1,8 +1,11 @@
 # app/models/oauth_account.py
 import uuid
+
 from sqlmodel import Field, Relationship
-from .user import User
+
 from .base import BaseModel
+from .user import User
+
 
 class OAuthAccount(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)

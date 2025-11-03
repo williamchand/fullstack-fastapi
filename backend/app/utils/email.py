@@ -6,7 +6,9 @@ import emails  # type: ignore
 from jinja2 import Template
 
 from app.core.config import settings
-from .base import logger 
+
+from .base import logger
+
 
 @dataclass
 class EmailData:

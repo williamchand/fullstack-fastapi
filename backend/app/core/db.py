@@ -1,7 +1,7 @@
 from sqlmodel import Session, create_engine, select
 
-from app.crud.user import user_crud
 from app.core.config import settings
+from app.crud.user import user_crud
 from app.models.user import User
 from app.schemas.user import UserCreate
 

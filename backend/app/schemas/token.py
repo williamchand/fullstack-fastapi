@@ -1,6 +1,8 @@
 # app/schemas/token.py
 from sqlmodel import Field
+
 from app.models.base import BaseModel
+
 
 # JSON payload containing access token
 class Token(BaseModel):

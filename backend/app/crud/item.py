@@ -1,8 +1,12 @@
 import uuid
+
 from sqlmodel import Session
+
 from app.models.item import Item
 from app.schemas.item import ItemCreate
+
 from .base import CRUDBase
+
 
 class CRUDItem(CRUDBase[Item]):
     def create_item(self, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -> Item:

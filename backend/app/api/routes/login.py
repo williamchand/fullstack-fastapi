@@ -13,10 +13,12 @@ from app.core.security import get_password_hash
 from app.schemas.user import UserPublic
 from app.schemas.token import NewPassword, Token
 from app.models.base import Message
-from app.utils import (
-    generate_password_reset_token,
+from app.utils.email import (
     generate_reset_password_email,
     send_email,
+)
+from app.utils.token import (
+    generate_password_reset_token,
     verify_password_reset_token,
 )
 

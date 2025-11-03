@@ -4,7 +4,6 @@ import uuid
 from sqlmodel import Field, Relationship
 
 from .base import BaseModel
-from .item import Item
 
 
 # Shared properties
@@ -24,5 +23,4 @@ class UserBase(BaseModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
 

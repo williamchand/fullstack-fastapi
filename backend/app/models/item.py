@@ -1,10 +1,9 @@
-
+# app/models/item.py
 import uuid
 
 from sqlmodel import Field, Relationship
 
 from .base import BaseModel
-from .user import User
 
 
 # Shared properties
@@ -20,5 +19,4 @@ class Item(ItemBase, table=True):
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
-    owner: User | None = Relationship(back_populates="items")
 

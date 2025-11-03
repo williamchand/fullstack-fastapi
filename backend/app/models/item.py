@@ -1,7 +1,7 @@
 # app/models/item.py
 import uuid
 
-from sqlmodel import Field, Relationship
+from sqlmodel import Field
 
 from .base import BaseModel
 

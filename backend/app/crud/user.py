@@ -34,7 +34,7 @@ class CRUDUser(CRUDBase[User]):
         return db_user
 
 
-    def get_user_by_email(self, session: Session, email: str) -> User | None:
+    def get_user_by_email(self, session: Session, email: str | None) -> User | None:
         statement = select(User).where(User.email == email)
         session_user = session.exec(statement).first()
         return session_user

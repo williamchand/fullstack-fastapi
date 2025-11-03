@@ -1,4 +1,5 @@
 # app/crud/crud_user.py
+from collections.abc import Sequence
 from typing import Generic, TypeVar
 
 from sqlmodel import Session, SQLModel, select
@@ -16,7 +17,7 @@ class CRUDBase(Generic[ModelType]):
     def get(self, session: Session, id: str) -> ModelType | None:
         return session.get(self.model, id)
 
-    def get_multi(self, session: Session, skip: int = 0, limit: int = 100):
+    def get_multi(self, session: Session, skip: int = 0, limit: int = 100) -> Sequence[ModelType]:
         statement = select(self.model).offset(skip).limit(limit)
         return session.exec(statement).all()
 
@@ -36,7 +37,7 @@ class CRUDBase(Generic[ModelType]):
         session.refresh(db_obj)
         return db_obj
 
-    def remove(self, session: Session, id: str) -> ModelType:
+    def remove(self, session: Session, id: str) -> ModelType | None:
         obj = session.get(self.model, id)
         if obj:
             session.delete(obj)

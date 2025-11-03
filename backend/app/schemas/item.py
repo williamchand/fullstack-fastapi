@@ -1,8 +1,11 @@
 
 import uuid
+
 from sqlmodel import Field
-from app.models.item import ItemBase
+
 from app.models.base import BaseModel
+from app.models.item import ItemBase
+
 
 # Properties to receive on item creation
 class ItemCreate(ItemBase):

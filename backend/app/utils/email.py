@@ -46,8 +46,6 @@ def send_email(
     if settings.SMTP_PASSWORD:
         smtp_options["password"] = settings.SMTP_PASSWORD
     response = message.send(to=email_to, smtp=smtp_options)
-    logger.info(f"send email result: {settings.SMTP_TLS}, {settings.SMTP_SSL}, {settings.SMTP_USER}, {settings.SMTP_PASSWORD}")
-    logger.info(f"send email result: {settings.EMAILS_FROM_NAME}, {settings.EMAILS_FROM_EMAIL}, {settings.SMTP_HOST}, {settings.SMTP_PORT}")
     logger.info(f"send email result: {response}")
 
 

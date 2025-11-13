@@ -133,6 +133,7 @@ def read_user_me(current_user: CurrentUser) -> Any:
     """
     Get current user.
     """
+    print(current_user.roles)
     return current_user
 
 

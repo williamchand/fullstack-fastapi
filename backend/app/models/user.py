@@ -1,9 +1,18 @@
 # app/models/user.py
-import uuid
+from __future__ import annotations
 
-from sqlmodel import Field
+import uuid
+from typing import TYPE_CHECKING, List
+
+from sqlalchemy.orm import Mapped, relationship
+from sqlmodel import Field, Relationship
 
 from .base import BaseModel
+from .user_role import UserRole
+
+if TYPE_CHECKING:  # 👈 avoids circular import at runtime
+    from .oauth_account import OAuthAccount
+    from .role import Role
 
 
 # Shared properties
@@ -15,12 +24,17 @@ class UserBase(BaseModel):
     is_email_verified: bool = Field(default=False)
     is_phone_verified: bool = Field(default=False)
     full_name: str | None = Field(default=None, max_length=255)
-    # role: UserRole = Field(sa_column=Column(Enum(UserRole)), default=UserRole.CUSTOMER)
-    # oauth_accounts: list["OAuthAccount"] = Relationship(back_populates="user")
 
 
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID | None = Field(default=None, primary_key=True)
     hashed_password: str
-
+    roles: Mapped[list[Role]] = Relationship(
+        sa_relationship=relationship(
+            "Role",
+            secondary=UserRole.__table__,
+            back_populates="users"
+        )
+    )
+    oauth_accounts: Mapped[list[OAuthAccount]] = Relationship(sa_relationship=relationship(back_populates="user"))

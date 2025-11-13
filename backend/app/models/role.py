@@ -1,5 +1,4 @@
 # app/models/role.py
-from __future__ import annotations
 
 from enum import Enum
 from typing import TYPE_CHECKING, List
@@ -21,12 +20,9 @@ class RoleBase(BaseModel):
 
 class Role(RoleBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    users: Mapped[list[User]] = Relationship(
-        sa_relationship=relationship(
-            "User",
-            secondary=UserRole.__table__,
-            back_populates="roles"
-        )
+    users: list["User"] = Relationship(
+        back_populates="roles",
+        link_model=UserRole,
     )
 
 

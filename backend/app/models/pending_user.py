@@ -1,5 +1,4 @@
 # app/models/pending_user.py
-from __future__ import annotations
 
 import uuid
 from datetime import datetime

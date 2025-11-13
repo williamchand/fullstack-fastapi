@@ -1,5 +1,4 @@
 # app/models/oauth_account.py
-from __future__ import annotations
 
 import uuid
 from typing import TYPE_CHECKING
@@ -19,5 +18,5 @@ class OAuthAccount(BaseModel, table=True):
     user_id: uuid.UUID = Field(foreign_key="user.id")
     provider: str = Field(index=True, max_length=50)  # e.g., "google"
     provider_user_id: str = Field(max_length=255, index=True)  # Google sub ID
-    user: Mapped[User] = Relationship(sa_relationship=relationship(back_populates="oauth_accounts"))
+    user: "User" = Relationship(back_populates="oauth_accounts")
     access_token: str | None = None

@@ -1,5 +1,4 @@
 # app/models/user.py
-from __future__ import annotations
 
 import uuid
 from typing import TYPE_CHECKING, List
@@ -30,11 +29,8 @@ class UserBase(BaseModel):
 class User(UserBase, table=True):
     id: uuid.UUID | None = Field(default=None, primary_key=True)
     hashed_password: str
-    roles: Mapped[list[Role]] = Relationship(
-        sa_relationship=relationship(
-            "Role",
-            secondary=UserRole.__table__,
-            back_populates="users"
-        )
+    roles: list["Role"] = Relationship(
+        back_populates="users",
+        link_model=UserRole,
     )
-    oauth_accounts: Mapped[list[OAuthAccount]] = Relationship(sa_relationship=relationship(back_populates="user"))
+    oauth_accounts: list["OAuthAccount"]  = Relationship(back_populates="user")

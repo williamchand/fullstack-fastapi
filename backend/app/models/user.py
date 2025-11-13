@@ -9,11 +9,11 @@ from .base import BaseModel
 # Shared properties
 class UserBase(BaseModel):
     email: str | None = Field(default=None, index=True, nullable=True, unique=True)
-    # phone_number: Optional[str] = Field(default=None, index=True, nullable=True, unique=True)
+    phone_number: str | None = Field(default=None, index=True, nullable=True, unique=True)
     is_active: bool = True
     is_superuser: bool = False
-    # is_email_verified: bool = Field(default=False)  # True if email OR phone is verified
-    # is_phone_verified: bool = Field(default=False)  # True if email OR phone is verified
+    is_email_verified: bool = Field(default=False)
+    is_phone_verified: bool = Field(default=False)
     full_name: str | None = Field(default=None, max_length=255)
     # role: UserRole = Field(sa_column=Column(Enum(UserRole)), default=UserRole.CUSTOMER)
     # oauth_accounts: list["OAuthAccount"] = Relationship(back_populates="user")

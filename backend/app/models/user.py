@@ -1,9 +1,8 @@
 # app/models/user.py
 
 import uuid
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import Mapped, relationship
 from sqlmodel import Field, Relationship
 
 from .base import BaseModel

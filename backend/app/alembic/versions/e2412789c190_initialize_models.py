@@ -90,6 +90,7 @@ def upgrade():
         sa.Column("id", pg.UUID(as_uuid=True), nullable=False, server_default=sa.text('gen_random_uuid()')),
         sa.Column("title", sa.String(length=255), nullable=False),
         sa.Column("owner_id", pg.UUID(as_uuid=True), nullable=False),
+        sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),  
         sa.ForeignKeyConstraint(
             ["owner_id"],
             ["user.id"],

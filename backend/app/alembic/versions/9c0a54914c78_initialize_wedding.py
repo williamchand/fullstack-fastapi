@@ -67,8 +67,15 @@ def upgrade():
         sa.Column('slug', sa.String(length=150), nullable=True),
         sa.Column('config_data', pg.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
+        sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True), # soft delete
     )
-    op.create_index('ix_wedding_slug', 'wedding', ['slug'], unique=True)
+    op.create_index(
+        'ix_wedding_slug_active',
+        'wedding',
+        ['slug'],
+        unique=True,
+        postgresql_where=sa.text('deleted_at IS NULL')
+    )
 
     # --- guest table ---
     op.create_table(
@@ -80,7 +87,15 @@ def upgrade():
         sa.Column('rsvp_status', sa.Enum('yes', 'no', 'maybe', name='rsvp_status'), nullable=False, server_default='maybe'),
         sa.Column('message', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
-        sa.UniqueConstraint('wedding_id', 'contact', name='uix_wedding_contact')
+        sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),   # soft delete
+    )
+    # Replace unique constraint with partial unique index
+    op.create_index(
+        "uix_guest_wedding_contact_active",
+        "guest",
+        ["wedding_id", "contact"],
+        unique=True,
+        postgresql_where=sa.text("deleted_at IS NULL")
     )
 
     # --- optional seed ---

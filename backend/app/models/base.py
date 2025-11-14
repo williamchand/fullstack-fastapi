@@ -1,5 +1,9 @@
 # app/models/base.py
-from sqlmodel import SQLModel
+import uuid
+
+from sqlalchemy import text
+from sqlmodel import Field, SQLModel
+
 
 class BaseModel(SQLModel):
     """
@@ -7,6 +11,14 @@ class BaseModel(SQLModel):
     (can be extended later for timestamps or common methods).
     """
     pass
+
+class BaseModelUUID(SQLModel, table=False):
+    id: uuid.UUID | None = Field(
+        default=None,
+        primary_key=True,
+        nullable=False,
+        sa_column_kwargs={"server_default": text("gen_random_uuid()")},
+    )
 
 # Generic message
 class Message(BaseModel):

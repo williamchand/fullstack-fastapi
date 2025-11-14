@@ -1,11 +1,9 @@
 # app/models/user.py
-
-import uuid
 from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship
 
-from .base import BaseModel
+from .base import BaseModel, BaseModelUUID
 from .user_role import UserRole
 
 if TYPE_CHECKING:  # 👈 avoids circular import at runtime
@@ -25,8 +23,7 @@ class UserBase(BaseModel):
 
 
 # Database model, database table inferred from class name
-class User(UserBase, table=True):
-    id: uuid.UUID | None = Field(default=None, primary_key=True)
+class User(UserBase, BaseModelUUID, table=True):
     hashed_password: str
     roles: list["Role"] = Relationship(
         back_populates="users",

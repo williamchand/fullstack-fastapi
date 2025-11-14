@@ -1,15 +1,12 @@
 # app/models/pending_user.py
-
-import uuid
 from datetime import datetime
 
 from sqlmodel import Field
 
-from .base import BaseModel
+from .base import BaseModel, BaseModelUUID
 
 
-class PendingUser(BaseModel, table=True):
-    id: uuid.UUID | None = Field(default=None, primary_key=True)
+class PendingUser(BaseModelUUID, BaseModel, table=True):
     email: str | None = Field(default=None, index=True, nullable=True, max_length=255)
     phone_number: str | None = Field(default=None, unique=True, nullable=True, max_length=32)
     full_name: str | None = Field(default=None, max_length=255)

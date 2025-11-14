@@ -3,7 +3,7 @@ import uuid
 
 from sqlmodel import Field
 
-from .base import BaseModel
+from .base import BaseModel, BaseModelUUID
 
 
 # Shared properties
@@ -13,8 +13,7 @@ class ItemBase(BaseModel):
 
 
 # Database model, database table inferred from class name
-class Item(ItemBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+class Item(ItemBase, BaseModelUUID, table=True):
     title: str = Field(max_length=255)
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"

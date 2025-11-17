@@ -33,10 +33,10 @@ class BaseModelSoftDelete(SQLModel):
     def __declare_last__(cls):
         from sqlalchemy import event
         from sqlalchemy.orm import Session
-
         # Apply global query criteria automatically
         @event.listens_for(Session, "do_orm_execute")
         def _add_filter(execute_state):
+            print("Exec options:", execute_state.execution_options)
             if (
                 execute_state.is_select
                 and not execute_state.execution_options.get("include_deleted", False)
@@ -44,6 +44,7 @@ class BaseModelSoftDelete(SQLModel):
                 execute_state.statement = execute_state.statement.options(
                     with_loader_criteria(cls, cls._active_filter())
                 )
+        _ = _add_filter  # <-- satisfies Pylance
 
 # Generic message
 class Message(BaseModel):

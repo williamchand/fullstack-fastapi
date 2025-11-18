@@ -39,7 +39,7 @@ def upgrade():
         sa.Column('currency', sa.String(length=10), nullable=False, server_default='USD'),
         sa.Column('status', sa.Enum('pending', 'paid', 'failed', name='payment_status'), nullable=False, server_default='pending'),
         sa.Column('transaction_id', sa.String(length=255), nullable=False, unique=True),
-        sa.Column('metadata', pg.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column('extra_metadata', pg.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
     )
 

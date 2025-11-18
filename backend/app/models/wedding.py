@@ -1,7 +1,8 @@
 # app/models/wedding.py
+import uuid
 from typing import TYPE_CHECKING
 
-from sqlmodel import Field, Relationship
+from sqlmodel import JSON, Field, Relationship
 
 from .base import BaseModel, BaseModelSoftDelete, BaseModelUUID
 
@@ -16,14 +17,13 @@ class WeddingBase(BaseModel):
     status: str = Field(default="draft")
     custom_domain: str | None = Field(default=None, max_length=255)
     slug: str | None = Field(default=None, max_length=150)
-    config_data: dict = Field(default_factory=dict)
-    deleted_at: str | None = None  # datetime, nullable
+    config_data: dict = Field(default_factory=dict, sa_type=JSON)
 
 
 class Wedding(WeddingBase, BaseModelUUID, BaseModelSoftDelete, table=True):
-    user_id: str = Field(foreign_key="user.id")
-    template_id: str | None = Field(default=None, foreign_key="template.id")
-    payment_id: str | None = Field(default=None, foreign_key="payment.id")
+    user_id: uuid.UUID = Field(foreign_key="user.id")
+    template_id: uuid.UUID | None = Field(default=None, foreign_key="template.id")
+    payment_id: uuid.UUID | None = Field(default=None, foreign_key="payment.id")
 
     user: "User" = Relationship()
     template: "Template" = Relationship()

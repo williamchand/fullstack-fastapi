@@ -36,7 +36,6 @@ class BaseModelSoftDelete(SQLModel):
         # Apply global query criteria automatically
         @event.listens_for(Session, "do_orm_execute")
         def _add_filter(execute_state):
-            print("Exec options:", execute_state.execution_options)
             if (
                 execute_state.is_select
                 and not execute_state.execution_options.get("include_deleted", False)

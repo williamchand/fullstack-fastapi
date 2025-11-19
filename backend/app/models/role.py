@@ -29,3 +29,4 @@ class RoleEnum(str, Enum):
     CUSTOMER = "customer"
     SALON_OWNER = "salon_owner"
     EMPLOYEE = "employee"
+    SUPERUSER = "superuser"

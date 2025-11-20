@@ -11,12 +11,16 @@ import {
   Text,
   VStack,
   Listbox,
+  Popover,
+  Portal,
+  Checkmark,
   createListCollection,
 } from "@chakra-ui/react"
-import { useState } from "react"
+import { LuChevronDown } from "react-icons/lu"
+import { useState, useRef } from "react"
 import { FaExchangeAlt } from "react-icons/fa"
 
-import { type RolesPublic, type RoleEnum, type UserPublic, type UserUpdate, UsersService, RolesService } from "@/client"
+import { type RolesPublic, type UserPublic, type UserUpdate, UsersService, RolesService } from "@/client"
 import type { ApiError } from "@/client/core/ApiError"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
@@ -189,13 +193,25 @@ const EditUser = ({ user }: EditUserProps) => {
                   const queryClient = useQueryClient()
                   const rolesData = queryClient.getQueryData<RolesPublic>(["roles"])
 
-                  const selectedRoles: RoleEnum[] = field.value || []
+                  const [open, setOpen] = useState(false)
+                  const selectedRoles = field.value || []
+                  const triggerRef = useRef<HTMLButtonElement | null>(null)
 
                   const collection = createListCollection({
                     items:
                       rolesData?.data.map((r) => ({ value: r.name, label: r.name })) || [],
                   })
+                  const isAllSelected = field.value?.length === collection.items.length
+                  const isSomeSelected =
+                    field.value && field.value.length > 0 && field.value.length < collection.items.length
 
+                  const handleSelectAll = () => {
+                    if (isAllSelected) {
+                      field.onChange([])
+                    } else {
+                      field.onChange(collection.items.map((item) => item.value))
+                    }
+                  }
                   return (
                     <Field disabled={field.disabled} label="Roles" colorPalette="teal">
                       <Listbox.Root
@@ -205,15 +221,37 @@ const EditUser = ({ user }: EditUserProps) => {
                         onValueChange={(details) => field.onChange(details.value)}
                         maxW="320px"
                       >
-                        <Listbox.Label>Select Roles</Listbox.Label>
-                        <Listbox.Content>
-                          {collection.items.map((item) => (
-                            <Listbox.Item key={item.value} item={item}>
-                              <Listbox.ItemText>{item.label}</Listbox.ItemText>
-                              <Listbox.ItemIndicator />
-                            </Listbox.Item>
-                          ))}
-                        </Listbox.Content>
+                        <Popover.Root open={open} onOpenChange={(e) => setOpen(e.open)}>
+                          <Popover.Trigger asChild>
+                            <Button size="sm" ref={triggerRef} variant="outline" alignItems="center" justifyContent="flex-start">
+                              <Checkmark
+                                onClick={handleSelectAll}
+                                filled
+                                size="sm"
+                                checked={isAllSelected}
+                                indeterminate={isSomeSelected}
+                              />
+                              <Listbox.Label>Select Role</Listbox.Label> 
+                              <LuChevronDown style={{ marginLeft: "auto" }} />
+                            </Button>
+                          </Popover.Trigger>
+                          <Portal>
+                            <Popover.Positioner>
+                              <Popover.Content _closed={{ animation: "none" }}>
+                                <Popover.Body p="0">
+                                  <Listbox.Content maxH="300px" roundedTop="0">
+                                    {collection.items.map((item) => (
+                                      <Listbox.Item key={item.value} item={item}>
+                                        <Listbox.ItemText>{item.label}</Listbox.ItemText>
+                                        <Listbox.ItemIndicator />
+                                      </Listbox.Item>
+                                    ))}
+                                  </Listbox.Content>
+                                </Popover.Body>
+                              </Popover.Content>
+                            </Popover.Positioner>
+                          </Portal>
+                        </Popover.Root>
                       </Listbox.Root>
                     </Field>
                   )

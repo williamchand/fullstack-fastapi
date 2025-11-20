@@ -18,6 +18,9 @@ from app.models.base import (
 from app.models.item import (
     Item,
 )
+from app.models.role import (
+    RoleEnum,
+)
 from app.models.user import (
     User,
 )
@@ -55,8 +58,12 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     statement = select(User).offset(skip).limit(limit)
     users = session.exec(statement).all()
-
-    return UsersPublic(data=users, count=count)
+    return UsersPublic.from_model(
+        users,
+        total = count,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @router.post(
@@ -83,7 +90,7 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
-    return user
+    return UserPublic.from_model(user)
 
 
 @router.patch("/me", response_model=UserPublic)
@@ -105,7 +112,7 @@ def update_user_me(
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
-    return current_user
+    return UserPublic.from_model(current_user)
 
 
 @router.patch("/me/password", response_model=Message)
@@ -133,7 +140,7 @@ def read_user_me(current_user: CurrentUser) -> Any:
     """
     Get current user.
     """
-    return current_user
+    return UserPublic.from_model(current_user)
 
 
 @router.delete("/me", response_model=Message)
@@ -141,7 +148,7 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Delete own user.
     """
-    if current_user.is_superuser:
+    if current_user.validate_role({RoleEnum.SUPERUSER}):
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
@@ -162,8 +169,9 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
             detail="The user with this email already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
+    user_create.roles = [RoleEnum.CUSTOMER]
     user = user_crud.create_user(session=session, user_create=user_create)
-    return user
+    return UserPublic.from_model(user)
 
 
 @router.get("/{user_id}", response_model=UserPublic)
@@ -175,13 +183,13 @@ def read_user_by_id(
     """
     user = session.get(User, user_id)
     if user == current_user:
-        return user
-    if not current_user.is_superuser:
+        return UserPublic.from_model(user)
+    if not current_user.validate_role({RoleEnum.SUPERUSER}):
         raise HTTPException(
             status_code=403,
             detail="The user doesn't have enough privileges",
         )
-    return user
+    return UserPublic.from_model(user)
 
 
 @router.patch(
@@ -213,7 +221,7 @@ def update_user(
             )
 
     db_user = user_crud.update_user(session=session, db_user=db_user, user_in=user_in)
-    return db_user
+    return UserPublic.from_model(db_user)
 
 
 @router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])

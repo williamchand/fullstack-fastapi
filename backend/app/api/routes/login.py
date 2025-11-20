@@ -52,7 +52,7 @@ def test_token(current_user: CurrentUser) -> Any:
     """
     Test access token
     """
-    return current_user
+    return UserPublic.from_model(current_user)
 
 
 @router.post("/password-recovery/{email}")

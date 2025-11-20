@@ -6,6 +6,7 @@ from sqlmodel import Session
 from app.core.config import settings
 from app.core.security import verify_password
 from app.crud.user import user_crud
+from app.models.role import RoleEnum
 from app.schemas.user import UserCreate
 from app.tests.utils.user import user_authentication_headers
 from app.tests.utils.utils import random_email, random_lower_string
@@ -84,7 +85,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
         full_name="Test User",
         password=password,
         is_active=True,
-        is_superuser=False,
+        roles=[RoleEnum.CUSTOMER],
     )
     user = user_crud.create_user(session=db, user_create=user_create)
     token = generate_password_reset_token(email=email)

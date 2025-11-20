@@ -7,6 +7,7 @@ from sqlmodel import func, select
 from app.api.deps import CurrentUser, SessionDep
 from app.models.base import Message
 from app.models.item import Item
+from app.models.role import RoleEnum
 from app.schemas.item import ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -20,7 +21,7 @@ def read_items(
     Retrieve items.
     """
 
-    if current_user.is_superuser:
+    if current_user.validate_role({RoleEnum.SUPERUSER}):
         count_statement = select(func.count()).select_from(Item)
         count = session.exec(count_statement).one()
         statement = select(Item).offset(skip).limit(limit)
@@ -40,7 +41,7 @@ def read_items(
         )
         items = session.exec(statement).all()
 
-    return ItemsPublic(data=items, count=count)
+    return ItemsPublic.from_model(items, skip=skip, limit=limit, total=count)
 
 
 @router.get("/{id}", response_model=ItemPublic)
@@ -51,9 +52,9 @@ def read_item(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> 
     item = session.get(Item, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
+    if not current_user.validate_role({RoleEnum.SUPERUSER}) and (item.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    return item
+    return ItemPublic.from_model(item)
 
 
 @router.post("/", response_model=ItemPublic)
@@ -67,7 +68,7 @@ def create_item(
     session.add(item)
     session.commit()
     session.refresh(item)
-    return item
+    return ItemPublic.from_model(item)
 
 
 @router.put("/{id}", response_model=ItemPublic)
@@ -84,14 +85,14 @@ def update_item(
     item = session.get(Item, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
+    if not current_user.validate_role({RoleEnum.SUPERUSER}) and (item.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
     update_dict = item_in.model_dump(exclude_unset=True)
     item.sqlmodel_update(update_dict)
     session.add(item)
     session.commit()
     session.refresh(item)
-    return item
+    return ItemPublic.from_model(item)
 
 
 @router.delete("/{id}")
@@ -104,7 +105,7 @@ def delete_item(
     item = session.get(Item, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not current_user.is_superuser and (item.owner_id != current_user.id):
+    if not current_user.validate_role({RoleEnum.SUPERUSER}) and (item.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
     session.delete(item)
     session.commit()

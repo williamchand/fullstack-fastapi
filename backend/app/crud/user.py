@@ -11,17 +11,21 @@ from .base import CRUDBase
 
 class CRUDUser(CRUDBase[User]):
     def create_user(self, session: Session, user_create: UserCreate) -> User:
+        user_data = user_create.model_dump(exclude={"roles"})
         db_obj = User.model_validate(
-            user_create, update={"hashed_password": get_password_hash(user_create.password)}
+            user_data, update={"hashed_password": get_password_hash(user_create.password)}
         )
         session.add(db_obj)
         session.commit()
         session.refresh(db_obj)
+        if user_create.roles:
+            db_obj.set_roles(roles=user_create.roles, session=session)
+
         return db_obj
 
 
     def update_user(self, session: Session, db_user: User, user_in: UserUpdate) -> Any:
-        user_data = user_in.model_dump(exclude_unset=True)
+        user_data = user_in.model_dump(exclude_unset=True, exclude={"roles"})
         extra_data = {}
         if "password" in user_data:
             password = user_data["password"]
@@ -31,6 +35,8 @@ class CRUDUser(CRUDBase[User]):
         session.add(db_user)
         session.commit()
         session.refresh(db_user)
+        if user_in.roles:
+            db_user.set_roles(roles=user_in.roles, session=session)
         return db_user
 
 

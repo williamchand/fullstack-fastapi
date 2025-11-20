@@ -40,7 +40,6 @@ def upgrade():
         sa.Column('full_name', sa.String(length=255), nullable=True),
         sa.Column('hashed_password', sa.String(), nullable=True),
         sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.text('true')),
-        sa.Column('is_superuser', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.Column('is_email_verified', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.Column('is_phone_verified', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.Column('is_totp_enabled', sa.Boolean(), nullable=False, server_default=sa.text('false')),

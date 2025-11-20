@@ -11,6 +11,7 @@ from sqlmodel import Session
 from app.core import security
 from app.core.config import settings
 from app.core.db import engine
+from app.models.role import RoleEnum
 from app.models.user import User
 from app.schemas.token import TokenPayload
 
@@ -51,7 +52,7 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 def get_current_active_superuser(current_user: CurrentUser) -> User:
-    if not current_user.is_superuser:
+    if not current_user.validate_role({RoleEnum.SUPERUSER}):
         raise HTTPException(
             status_code=403, detail="The user doesn't have enough privileges"
         )

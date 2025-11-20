@@ -5,6 +5,7 @@ from sqlmodel import Field
 
 from app.models.base import BaseModel
 from app.models.item import ItemBase
+from app.schemas.base import FromModelMixin, PaginatedListResponseMixin
 
 
 # Properties to receive on item creation
@@ -18,12 +19,11 @@ class ItemUpdate(ItemBase):
 
 
 # Properties to return via API, id is always required
-class ItemPublic(ItemBase):
+class ItemPublic(FromModelMixin, ItemBase):
     id: uuid.UUID
     owner_id: uuid.UUID
 
 
-class ItemsPublic(BaseModel):
-    data: list[ItemPublic]
-    count: int
+class ItemsPublic(PaginatedListResponseMixin[ItemPublic], BaseModel):
+    pass
 

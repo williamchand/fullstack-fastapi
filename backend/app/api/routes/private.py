@@ -37,4 +37,4 @@ def create_user(user_in: PrivateUserCreate, session: SessionDep) -> Any:
     session.add(user)
     session.commit()
 
-    return user
+    return UserPublic.from_model(user)

@@ -50,8 +50,7 @@ function UsersTable() {
     })
 
   const users = data?.data.slice(0, PER_PAGE) ?? []
-  const count = data?.count ?? 0
-
+  const count = data?.meta.total ?? 0
   if (isLoading) {
     return <PendingUsers />
   }
@@ -81,7 +80,7 @@ function UsersTable() {
               </Table.Cell>
               <Table.Cell w="25%">{user.email}</Table.Cell>
               <Table.Cell w="15%">
-                {user.is_superuser ? "Superuser" : "User"}
+                {user.roles?.includes("superuser") ? "Superuser" : "User"}
               </Table.Cell>
               <Table.Cell w="20%">
                 {user.is_active ? "Active" : "Inactive"}

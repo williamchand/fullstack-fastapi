@@ -26,7 +26,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const queryClient = useQueryClient()
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
 
-  const finalItems: Item[] = currentUser?.is_superuser
+  const finalItems: Item[] = currentUser?.roles?.includes("superuser")
     ? [...items, { icon: FiUsers, title: "Admin", path: "/admin" }]
     : items
 

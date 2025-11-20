@@ -56,7 +56,7 @@ function ItemsTable() {
     })
 
   const items = data?.data.slice(0, PER_PAGE) ?? []
-  const count = data?.count ?? 0
+  const count = data?.meta.total ?? 0
 
   if (isLoading) {
     return <PendingItems />

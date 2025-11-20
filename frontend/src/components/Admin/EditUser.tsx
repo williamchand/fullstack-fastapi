@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 
 import {
@@ -10,11 +10,13 @@ import {
   Input,
   Text,
   VStack,
+  Listbox,
+  createListCollection,
 } from "@chakra-ui/react"
 import { useState } from "react"
 import { FaExchangeAlt } from "react-icons/fa"
 
-import { type UserPublic, type UserUpdate, UsersService } from "@/client"
+import { type RolesPublic, type RoleEnum, type UserPublic, type UserUpdate, UsersService, RolesService } from "@/client"
 import type { ApiError } from "@/client/core/ApiError"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
@@ -37,9 +39,22 @@ interface UserUpdateForm extends UserUpdate {
   confirm_password?: string
 }
 
+function getRolesQueryOptions() {
+  return {
+    queryFn: () =>
+      RolesService.listRoles(),
+    queryKey: ["roles"],
+    staleTime: 1000 * 60 * 5, // optional: cache for 5 min
+  }
+}
+
 const EditUser = ({ user }: EditUserProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
+  useQuery({
+    ...getRolesQueryOptions(),
+    placeholderData: (prevData) => prevData,
+  })
   const { showSuccessToast } = useCustomToast()
   const {
     control,
@@ -169,17 +184,40 @@ const EditUser = ({ user }: EditUserProps) => {
             <Flex mt={4} direction="column" gap={4}>
               <Controller
                 control={control}
-                name="is_superuser"
-                render={({ field }) => (
-                  <Field disabled={field.disabled} colorPalette="teal">
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={({ checked }) => field.onChange(checked)}
-                    >
-                      Is superuser?
-                    </Checkbox>
-                  </Field>
-                )}
+                name="roles"
+                render={({ field }) => {
+                  const queryClient = useQueryClient()
+                  const rolesData = queryClient.getQueryData<RolesPublic>(["roles"])
+
+                  const selectedRoles: RoleEnum[] = field.value || []
+
+                  const collection = createListCollection({
+                    items:
+                      rolesData?.data.map((r) => ({ value: r.name, label: r.name })) || [],
+                  })
+
+                  return (
+                    <Field disabled={field.disabled} label="Roles" colorPalette="teal">
+                      <Listbox.Root
+                        collection={collection}
+                        selectionMode="multiple"
+                        value={selectedRoles}
+                        onValueChange={(details) => field.onChange(details.value)}
+                        maxW="320px"
+                      >
+                        <Listbox.Label>Select Roles</Listbox.Label>
+                        <Listbox.Content>
+                          {collection.items.map((item) => (
+                            <Listbox.Item key={item.value} item={item}>
+                              <Listbox.ItemText>{item.label}</Listbox.ItemText>
+                              <Listbox.ItemIndicator />
+                            </Listbox.Item>
+                          ))}
+                        </Listbox.Content>
+                      </Listbox.Root>
+                    </Field>
+                  )
+                }}
               />
               <Controller
                 control={control}

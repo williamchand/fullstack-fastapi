@@ -27,12 +27,20 @@ export type ItemPublic = {
 
 export type ItemsPublic = {
   data: Array<ItemPublic>
-  count: number
+  meta: ListMeta
 }
 
 export type ItemUpdate = {
   title?: string | null
   description?: string | null
+}
+
+export type ListMeta = {
+  count: number
+  page?: number | null
+  page_size?: number | null
+  total?: number | null
+  has_next?: boolean | null
 }
 
 export type Message = {
@@ -42,6 +50,42 @@ export type Message = {
 export type NewPassword = {
   token: string
   new_password: string
+}
+
+export type PrivateUserCreate = {
+  email: string
+  password: string
+  full_name: string
+  is_verified?: boolean
+}
+
+/**
+ * Payload used when creating a new role.
+ */
+export type RoleCreate = {
+  /**
+   * System role name
+   */
+  name: RoleEnum
+}
+
+export type RoleEnum = "customer" | "salon_owner" | "employee" | "superuser"
+
+export type RolePublic = {
+  /**
+   * System role name
+   */
+  name: RoleEnum
+  id: number
+}
+
+export type RolesPublic = {
+  data: Array<RolePublic>
+  meta: ListMeta
+}
+
+export type RoleUpdate = {
+  name: RoleEnum
 }
 
 export type Token = {
@@ -55,18 +99,28 @@ export type UpdatePassword = {
 }
 
 export type UserCreate = {
-  email: string
+  email?: string | null
+  phone_number?: string | null
   is_active?: boolean
-  is_superuser?: boolean
+  is_email_verified?: boolean
+  is_phone_verified?: boolean
+  is_totp_enabled?: boolean
+  totp_secret?: string | null
   full_name?: string | null
+  roles?: Array<RoleEnum>
   password: string
 }
 
 export type UserPublic = {
-  email: string
+  email?: string | null
+  phone_number?: string | null
   is_active?: boolean
-  is_superuser?: boolean
+  is_email_verified?: boolean
+  is_phone_verified?: boolean
+  is_totp_enabled?: boolean
+  totp_secret?: string | null
   full_name?: string | null
+  roles?: Array<RoleEnum>
   id: string
 }
 
@@ -78,14 +132,19 @@ export type UserRegister = {
 
 export type UsersPublic = {
   data: Array<UserPublic>
-  count: number
+  meta: ListMeta
 }
 
 export type UserUpdate = {
   email?: string | null
+  phone_number?: string | null
   is_active?: boolean
-  is_superuser?: boolean
+  is_email_verified?: boolean
+  is_phone_verified?: boolean
+  is_totp_enabled?: boolean
+  totp_secret?: string | null
   full_name?: string | null
+  roles?: Array<RoleEnum>
   password?: string | null
 }
 
@@ -157,6 +216,44 @@ export type LoginRecoverPasswordHtmlContentData = {
 }
 
 export type LoginRecoverPasswordHtmlContentResponse = string
+
+export type PrivateCreateUserData = {
+  requestBody: PrivateUserCreate
+}
+
+export type PrivateCreateUserResponse = UserPublic
+
+export type RolesListRolesData = {
+  limit?: number
+  skip?: number
+}
+
+export type RolesListRolesResponse = RolesPublic
+
+export type RolesCreateRoleData = {
+  requestBody: RoleCreate
+}
+
+export type RolesCreateRoleResponse = RolePublic
+
+export type RolesGetRoleData = {
+  roleId: string
+}
+
+export type RolesGetRoleResponse = RolePublic
+
+export type RolesUpdateRoleData = {
+  requestBody: RoleUpdate
+  roleId: string
+}
+
+export type RolesUpdateRoleResponse = RolePublic
+
+export type RolesDeleteRoleData = {
+  roleId: string
+}
+
+export type RolesDeleteRoleResponse = Message
 
 export type UsersReadUsersData = {
   limit?: number

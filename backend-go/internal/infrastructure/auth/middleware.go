@@ -27,6 +27,11 @@ func NewAuthMiddleware(jwtService *JWTService, roleValidator *RoleValidator, use
 // HTTP middleware
 func (m *AuthMiddleware) HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isPublicHTTPPath(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		token := extractTokenFromHeader(r)
 		if token == "" {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -116,15 +121,25 @@ func extractTokenFromGRPCContext(ctx context.Context) string {
 }
 
 func isPublicMethod(method string) bool {
-	publicMethods := []string{
-		"/user.v1.UserService/CreateUser",
-		"/auth.v1.AuthService/Login",
+	publicMethods := map[string]bool{
+		"/user.v1.UserService/CreateUser": true,
+		"/auth.v1.AuthService/Login":      true,
 	}
 
-	for _, public := range publicMethods {
-		if method == public {
-			return true
-		}
+	if _, ok := publicMethods[method]; ok {
+		return ok
+	}
+	return false
+}
+
+func isPublicHTTPPath(path string) bool {
+	publicPaths := map[string]bool{
+		"/user.v1.UserService/CreateUser": true,
+		"/auth.v1.AuthService/Login":      true,
+	}
+
+	if _, ok := publicPaths[path]; ok {
+		return ok
 	}
 	return false
 }

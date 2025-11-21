@@ -18,7 +18,7 @@ import (
 
 type App struct {
 	cfg        *config.Config
-	dbPool     database.Pool
+	dbPool     *database.Pool
 	repos      *Repositories
 	services   *AppServices
 	middleware *Middleware
@@ -28,7 +28,10 @@ type App struct {
 func NewApp(cfg *config.Config) (*App, error) {
 	ctx := context.Background()
 
-	repos, dbPool := initRepositories(ctx, cfg.DatabaseURL)
+	repos, dbPool, err := initRepositories(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
 	services := initServices(repos)
 	middleware := initMiddleware(cfg, repos)
 

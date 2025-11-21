@@ -2,10 +2,40 @@ package app
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/delivery/grpc"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	userv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func (a *App) runHTTP(ctx context.Context) error {
-	return grpc.RunHTTPServer(ctx, a.cfg.HTTPPort, a.cfg.GRPCPort, a.middleware.Auth)
+	mux := runtime.NewServeMux()
+
+	// Register handlers for gRPC services
+	err := userv1.RegisterUserServiceHandlerFromEndpoint(
+		ctx,
+		mux,
+		fmt.Sprintf(":%d", a.cfg.GRPCPort),
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+	)
+	if err != nil {
+		return err
+	}
+
+	handler := a.middleware.Auth.HTTPMiddleware(mux)
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%d", a.cfg.HTTPPort),
+		Handler: handler,
+	}
+
+	// Serve
+	go func() {
+		<-ctx.Done()
+		srv.Shutdown(context.Background())
+	}()
+
+	return srv.ListenAndServe()
 }

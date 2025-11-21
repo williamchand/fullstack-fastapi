@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -18,11 +19,11 @@ type GoogleOAuthConfig struct {
 
 type GoogleOAuthService struct {
 	config    *oauth2.Config
-	oauthRepo OAuthRepository
-	userRepo  UserRepository
+	oauthRepo repositories.OAuthRepository
+	userRepo  repositories.UserRepository
 }
 
-func NewGoogleOAuthService(cfg *GoogleOAuthConfig, oauthRepo OAuthRepository, userRepo UserRepository) *GoogleOAuthService {
+func NewGoogleOAuthService(cfg *GoogleOAuthConfig, oauthRepo repositories.OAuthRepository, userRepo repositories.UserRepository) *GoogleOAuthService {
 	config := &oauth2.Config{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,

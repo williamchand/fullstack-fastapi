@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/database/dbgen"
@@ -16,6 +17,13 @@ type oauthRepository struct {
 
 func NewOAuthRepository(queries *dbgen.Queries) repositories.OAuthRepository {
 	return &oauthRepository{queries: queries}
+}
+
+// WithTx sets the transaction for the repository
+func (r *oauthRepository) WithTx(tx pgx.Tx) repositories.OAuthRepository {
+	return &oauthRepository{
+		queries: r.queries.WithTx(tx),
+	}
 }
 
 func (r *oauthRepository) CreateOAuthAccount(ctx context.Context, oauth *entities.OAuthAccount) error {

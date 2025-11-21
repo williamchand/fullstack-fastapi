@@ -7,17 +7,21 @@ import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/database/dbgen"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type userRepository struct {
-    WithTx(tx pgx.Tx) UserRepository
 	queries *dbgen.Queries
 }
 
 func NewUserRepository(queries *dbgen.Queries) repositories.UserRepository {
 	return &userRepository{queries: queries}
+}
+
+// WithTx sets the transaction for the repository
+func (r *userRepository) WithTx(tx pgx.Tx) {
+	r.queries = r.queries.WithTx(tx)
 }
 
 func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*entities.User, error) {

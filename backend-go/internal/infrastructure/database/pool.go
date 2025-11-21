@@ -5,27 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 )
 
-// DBTX is an interface that both *pgxpool.Pool and *pgx.Conn implement
-type DBTX interface {
-	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
-	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
-}
+// Ensure Pool implements repositories.ConnectionPool
+var _ repositories.ConnectionPool = (*Pool)(nil)
 
-// Pool is our wrapper around pgxpool.Pool that implements DBTX
 type Pool struct {
 	*pgxpool.Pool
 }
 
-// Ensure Pool implements DBTX
-var _ DBTX = (*Pool)(nil)
-
-func NewPool(ctx context.Context, connString string) (*Pool, error) {
+func NewPool(ctx context.Context, connString string) (repositories.ConnectionPool, error) {
 	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse connection string: %w", err)

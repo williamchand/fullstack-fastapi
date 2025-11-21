@@ -70,7 +70,7 @@ proto:
 		echo "Error: buf is not installed. Run 'make install-tools' first"; \
 		exit 1; \
 	fi
-	cd $(PROTO_DIR) && buf dep update
+	cd $(PROTO_DIR) && buf mod update
 	cd $(PROTO_DIR) && buf generate
 
 ## Generate SQLC code

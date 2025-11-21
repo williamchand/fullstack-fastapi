@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"myapp/internal/domain/services"
+	userv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

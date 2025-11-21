@@ -5,8 +5,6 @@
 package dbgen
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -61,6 +59,6 @@ type VerificationCode struct {
 	VerificationType string             `json:"verification_type"`
 	ExtraMetadata    pgtype.JSONBCodec  `json:"extra_metadata"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	ExpiresAt        time.Time          `json:"expires_at"`
+	ExpiresAt        pgtype.Timestamptz `json:"expires_at"`
 	UsedAt           pgtype.Timestamptz `json:"used_at"`
 }

@@ -1,66 +1,34 @@
 package config
 
 import (
-	"os"
-	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	// Server
-	HTTPPort string
-	GRPCPort string
+	HTTPPort string `envconfig:"HTTP_PORT" default:"8080"`
+	GRPCPort string `envconfig:"GRPC_PORT" default:"9090"`
 
-	// Database
-	DatabaseURL string
+	DatabaseURL string `envconfig:"DB_URL" default:"postgres://myapp:myapp@localhost:5432/myapp?sslmode=disable"`
 
-	// JWT
-	JWTSecret string
-	JWTExpiry time.Duration
+	JWTSecret string        `envconfig:"JWT_SECRET" default:"your-default-secret-change-in-production"`
+	JWTExpiry time.Duration `envconfig:"JWT_EXPIRY" default:"24h"`
 
-	// OAuth
-	GoogleClientID     string
-	GoogleClientSecret string
-	GoogleRedirectURL  string
+	GoogleClientID     string `envconfig:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret string `envconfig:"GOOGLE_CLIENT_SECRET"`
+	GoogleRedirectURL  string `envconfig:"GOOGLE_REDIRECT_URL" default:"http://localhost:8080/auth/google/callback"`
 }
 
-func Load() *Config {
-	return &Config{
-		HTTPPort: getEnv("HTTP_PORT", "8080"),
-		GRPCPort: getEnv("GRPC_PORT", "9090"),
+func Load() (*Config, error) {
+	// Load .env file automatically (if found)
+	_ = godotenv.Load()
 
-		DatabaseURL: getEnv("DB_URL", "postgres://myapp:myapp@localhost:5432/myapp?sslmode=disable"),
-
-		JWTSecret: getEnv("JWT_SECRET", "your-default-secret-change-in-production"),
-		JWTExpiry: getEnvAsDuration("JWT_EXPIRY", 24*time.Hour),
-
-		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
-		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
-		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/auth/google/callback"),
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
+		return nil, err
 	}
-}
 
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
-	if value := os.Getenv(key); value != "" {
-		if dur, err := time.ParseDuration(value); err == nil {
-			return dur
-		}
-	}
-	return defaultValue
-}
-
-func getEnvAsBool(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		if boolValue, err := strconv.ParseBool(value); err == nil {
-			return boolValue
-		}
-	}
-	return defaultValue
+	return &cfg, nil
 }

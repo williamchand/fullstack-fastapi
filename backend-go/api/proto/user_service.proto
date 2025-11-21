@@ -8,14 +8,37 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/user/v1;userv1";
 
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "User API";
+    version: "1.0";
+  }
+
+  security_definitions: {
+    security: {
+      key: "BearerAuth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Bearer token authentication"
+      }
+    }
+  }
+};
+
 service UserService {
   rpc GetUser(GetUserRequest) returns (GetUserResponse) {
     option (google.api.http) = {
       get: "/v1/users/{id}"
     };
+    // Require BearerAuth for this route
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       security: {
-        bearer_token: "Bearer"
+        security_requirement: {
+          key: "BearerAuth"
+          value: {}
+        }
       }
     };
   }
@@ -32,9 +55,13 @@ service UserService {
       put: "/v1/users/{id}"
       body: "*"
     };
+    // Require BearerAuth for this route
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       security: {
-        bearer_token: "Bearer"
+        security_requirement: {
+          key: "BearerAuth"
+          value: {}
+        }
       }
     };
   }

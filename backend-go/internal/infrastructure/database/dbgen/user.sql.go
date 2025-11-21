@@ -28,47 +28,6 @@ func (q *Queries) AssignRoleToUser(ctx context.Context, arg AssignRoleToUserPara
 	return err
 }
 
-const createOAuthAccount = `-- name: CreateOAuthAccount :one
-INSERT INTO oauth_account (
-    user_id, provider, provider_user_id, access_token, refresh_token, token_expires_at
-) VALUES (
-    $1, $2, $3, $4, $5, $6
-) RETURNING id, user_id, provider, provider_user_id, access_token, refresh_token, token_expires_at, created_at, updated_at
-`
-
-type CreateOAuthAccountParams struct {
-	UserID         uuid.UUID          `json:"user_id"`
-	Provider       string             `json:"provider"`
-	ProviderUserID string             `json:"provider_user_id"`
-	AccessToken    pgtype.Text        `json:"access_token"`
-	RefreshToken   pgtype.Text        `json:"refresh_token"`
-	TokenExpiresAt pgtype.Timestamptz `json:"token_expires_at"`
-}
-
-func (q *Queries) CreateOAuthAccount(ctx context.Context, arg CreateOAuthAccountParams) (OauthAccount, error) {
-	row := q.db.QueryRow(ctx, createOAuthAccount,
-		arg.UserID,
-		arg.Provider,
-		arg.ProviderUserID,
-		arg.AccessToken,
-		arg.RefreshToken,
-		arg.TokenExpiresAt,
-	)
-	var i OauthAccount
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Provider,
-		&i.ProviderUserID,
-		&i.AccessToken,
-		&i.RefreshToken,
-		&i.TokenExpiresAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const createUser = `-- name: CreateUser :one
 INSERT INTO "user" (
     email, phone_number, full_name, hashed_password
@@ -107,33 +66,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastLoginAt,
-	)
-	return i, err
-}
-
-const getOAuthAccount = `-- name: GetOAuthAccount :one
-SELECT id, user_id, provider, provider_user_id, access_token, refresh_token, token_expires_at, created_at, updated_at FROM oauth_account
-WHERE provider = $1 AND provider_user_id = $2 LIMIT 1
-`
-
-type GetOAuthAccountParams struct {
-	Provider       string `json:"provider"`
-	ProviderUserID string `json:"provider_user_id"`
-}
-
-func (q *Queries) GetOAuthAccount(ctx context.Context, arg GetOAuthAccountParams) (OauthAccount, error) {
-	row := q.db.QueryRow(ctx, getOAuthAccount, arg.Provider, arg.ProviderUserID)
-	var i OauthAccount
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Provider,
-		&i.ProviderUserID,
-		&i.AccessToken,
-		&i.RefreshToken,
-		&i.TokenExpiresAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
 	)
 	return i, err
 }

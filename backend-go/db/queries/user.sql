@@ -34,14 +34,3 @@ WHERE ur.user_id = $1;
 INSERT INTO user_role (user_id, role_id)
 VALUES ($1, $2)
 ON CONFLICT (user_id, role_id) DO NOTHING;
-
--- name: CreateOAuthAccount :one
-INSERT INTO oauth_account (
-    user_id, provider, provider_user_id, access_token, refresh_token, token_expires_at
-) VALUES (
-    $1, $2, $3, $4, $5, $6
-) RETURNING *;
-
--- name: GetOAuthAccount :one
-SELECT * FROM oauth_account
-WHERE provider = $1 AND provider_user_id = $2 LIMIT 1;

@@ -9,7 +9,7 @@ vendor/
 
 # Generated code
 gen/
-internal/infrastructure/database/*.go
+internal/infrastructure/database/dbgen/*.go
 
 # Test files
 coverage.out

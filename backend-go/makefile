@@ -8,7 +8,16 @@ GOGENERATE=$(GOCMD) generate
 GOMOD=$(GOCMD) mod
 BINARY_NAME=myapp
 DOCKER_IMAGE=myapp:latest
-
+TOOLS = \
+	github.com/bufbuild/buf/cmd/buf \
+	google.golang.org/protobuf/cmd/protoc-gen-go \
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc \
+	github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway \
+	github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 \
+	github.com/sqlc-dev/sqlc/cmd/sqlc \
+	github.com/golang-migrate/migrate/v4/cmd/migrate \
+	github.com/golangci/golangci-lint/cmd/golangci-lint \
+	mvdan.cc/gofumpt
 # Project structure
 PROTO_DIR=api/proto
 GEN_PROTO_DIR=gen/proto
@@ -61,6 +70,7 @@ proto:
 		echo "Error: buf is not installed. Run 'make install-tools' first"; \
 		exit 1; \
 	fi
+	cd $(PROTO_DIR) && buf dep update
 	cd $(PROTO_DIR) && buf generate
 
 ## Generate SQLC code
@@ -127,20 +137,12 @@ migrate-status:
 	fi
 	$(MIGRATE) -path $(DB_MIGRATIONS_DIR) -database "$(DB_URL)" version
 
-## Install tools
 install-tools:
 	@echo "Installing tools..."
-	$(GOGET) -u github.com/bufbuild/buf/cmd/buf
-	$(GOGET) -u github.com/bufbuild/buf/cmd/protoc-gen-buf-breaking
-	$(GOGET) -u github.com/bufbuild/buf/cmd/protoc-gen-buf-lint
-	$(GOGET) -u google.golang.org/protobuf/cmd/protoc-gen-go
-	$(GOGET) -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
-	$(GOGET) -u github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
-	$(GOGET) -u github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2
-	$(GOGET) -u github.com/sqlc-dev/sqlc/cmd/sqlc
-	$(GOGET) -u github.com/golang-migrate/migrate/v4/cmd/migrate
-	$(GOGET) -u github.com/golangci/golangci-lint/cmd/golangci-lint
-	$(GOGET) -u mvdan.cc/gofumpt
+	@for tool in $(TOOLS); do \
+		echo "Installing $$tool..."; \
+		go install $$tool@latest; \
+	done
 
 ## Docker build
 docker-build:

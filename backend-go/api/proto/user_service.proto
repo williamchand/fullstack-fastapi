@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package user.v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/user/v1;userv1";
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/v1/users/{id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: {
+        bearer_token: "Bearer"
+      }
+    };
+  }
+  
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option (google.api.http) = {
+      post: "/v1/users"
+      body: "*"
+    };
+  }
+  
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+    option (google.api.http) = {
+      put: "/v1/users/{id}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: {
+        bearer_token: "Bearer"
+      }
+    };
+  }
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string phone_number = 3;
+  string full_name = 4;
+  bool is_active = 5;
+  bool is_email_verified = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  repeated string roles = 9;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message CreateUserRequest {
+  string email = 1;
+  string phone_number = 2;
+  string full_name = 3;
+  string password = 4;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string email = 2;
+  optional string phone_number = 3;
+  optional string full_name = 4;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+}

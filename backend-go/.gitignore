@@ -1,0 +1,37 @@
+# Binaries
+bin/
+releases/
+*.exe
+*.exe~
+
+# Dependency directories
+vendor/
+
+# Generated code
+gen/
+internal/infrastructure/database/*.go
+
+# Test files
+coverage.out
+coverage.html
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+dist/

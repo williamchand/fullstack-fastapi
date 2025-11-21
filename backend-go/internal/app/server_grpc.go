@@ -21,7 +21,7 @@ func (a *App) runGRPC(ctx context.Context) error {
 		),
 	)
 
-	genproto.RegisterUserServiceServer(server, a.userServer)
+	genproto.RegisterUserServiceServer(server, a.serviceServer.userServer)
 
 	log.Printf("gRPC server running on :%s", a.cfg.GRPCPort)
 	return server.Serve(lis)

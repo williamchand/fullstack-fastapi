@@ -13,7 +13,7 @@ type Repositories struct {
 	OAuthRepo repositories.OAuthRepository
 }
 
-func initRepositories(ctx context.Context, dbURL string) (*Repositories, *database.Pool, error) {
+func initRepositories(ctx context.Context, dbURL string) (*Repositories, repositories.ConnectionPool, error) {
 	dbPool, err := database.NewPool(ctx, dbURL)
 	queries := dbgen.New(dbPool)
 

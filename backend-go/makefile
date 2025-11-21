@@ -191,4 +191,25 @@ help:
 	@echo "  tidy          - Tidy dependencies"
 	@echo "  help          - Show this help"
 
+# Environment targets
+env-example:
+	@echo "Copying .env.example to .env..."
+	@cp .env.example .env
+	@echo "Please edit .env with your configuration values"
+
+generate-jwt-keys:
+	@echo "Generating JWT RSA key pair..."
+	@mkdir -p config/jwt
+	@go run scripts/generate-jwt-keys/main.go
+
+setup-dev: env-example generate-jwt-keys
+	@echo "✅ Development environment setup complete!"
+	@echo "📝 Please edit .env with your actual configuration values"
+
+# Run with specific environment
+run-dev:
+	@ENV=development go run cmd/server/main.go
+
+run-prod:
+	@ENV=production go run cmd/server/main.go
 .DEFAULT_GOAL := help

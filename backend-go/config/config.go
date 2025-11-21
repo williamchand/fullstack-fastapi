@@ -8,21 +8,69 @@ import (
 )
 
 type Config struct {
+	// Server Configuration
 	HTTPPort string `envconfig:"HTTP_PORT" default:"8080"`
 	GRPCPort string `envconfig:"GRPC_PORT" default:"9090"`
+	Env      string `envconfig:"ENV" default:"development"`
 
+	// Database Configuration
 	DatabaseURL string `envconfig:"DB_URL" default:"postgres://myapp:myapp@localhost:5432/myapp?sslmode=disable"`
+	DBMaxConns  int    `envconfig:"DB_MAX_CONNS" default:"25"`
+	DBMinConns  int    `envconfig:"DB_MIN_CONNS" default:"5"`
 
-	JWTSecret string        `envconfig:"JWT_SECRET" default:"your-default-secret-change-in-production"`
-	JWTExpiry time.Duration `envconfig:"JWT_EXPIRY" default:"24h"`
+	// JWT Configuration - Multiple Options
+	JWT struct {
+		// RSA Key Files (Recommended for Production)
+		PrivateKeyPath string `envconfig:"JWT_PRIVATE_KEY_PATH" default:"config/jwt/private.pem"`
+		PublicKeyPath  string `envconfig:"JWT_PUBLIC_KEY_PATH" default:"config/jwt/public.pem"`
 
-	GoogleClientID     string `envconfig:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret string `envconfig:"GOOGLE_CLIENT_SECRET"`
-	GoogleRedirectURL  string `envconfig:"GOOGLE_REDIRECT_URL" default:"http://localhost:8080/auth/google/callback"`
+		// RSA Key Strings (Alternative for Docker/Cloud)
+		PrivateKeyPEM string `envconfig:"JWT_PRIVATE_KEY"`
+		PublicKeyPEM  string `envconfig:"JWT_PUBLIC_KEY"`
+
+		// HMAC Fallback (Less Secure)
+		HMACSecret string `envconfig:"JWT_HMAC_SECRET"`
+
+		// Token Settings
+		AccessTokenExpiration  time.Duration `envconfig:"JWT_ACCESS_EXPIRATION" default:"15m"`
+		RefreshTokenExpiration time.Duration `envconfig:"JWT_REFRESH_EXPIRATION" default:"168h"` // 7 days
+		Issuer                 string        `envconfig:"JWT_ISSUER" default:"myapp"`
+
+		// Auto-generation (Development Only)
+		AutoGenerateKeys bool `envconfig:"JWT_AUTO_GENERATE_KEYS" default:"true"`
+	}
+
+	// OAuth Configuration
+	OAuth struct {
+		GoogleClientID     string `envconfig:"GOOGLE_CLIENT_ID"`
+		GoogleClientSecret string `envconfig:"GOOGLE_CLIENT_SECRET"`
+		GoogleRedirectURL  string `envconfig:"GOOGLE_REDIRECT_URL" default:"http://localhost:8080/auth/google/callback"`
+	}
+
+	// Security Configuration
+	Security struct {
+		BCryptCost         int    `envconfig:"BCRYPT_COST" default:"12"`
+		CORSAllowedOrigins string `envconfig:"CORS_ALLOWED_ORIGINS" default:"*"`
+		RateLimitRPS       int    `envconfig:"RATE_LIMIT_RPS" default:"100"`
+	}
+
+	// Logging Configuration
+	Logging struct {
+		Level    string `envconfig:"LOG_LEVEL" default:"info"`
+		Format   string `envconfig:"LOG_FORMAT" default:"json"`
+		FilePath string `envconfig:"LOG_FILE_PATH" default:""`
+	}
+
+	// Monitoring Configuration
+	Monitoring struct {
+		Enabled        bool   `envconfig:"MONITORING_ENABLED" default:"false"`
+		PrometheusPort string `envconfig:"PROMETHEUS_PORT" default:"9091"`
+	}
 }
 
+// Load loads configuration from environment variables and .env file
 func Load() (*Config, error) {
-	// Load .env file automatically (if found)
+	// Load .env file if it exists (development)
 	_ = godotenv.Load()
 
 	var cfg Config
@@ -31,4 +79,53 @@ func Load() (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// IsDevelopment returns true if running in development environment
+func (c *Config) IsDevelopment() bool {
+	return c.Env == "development"
+}
+
+// IsProduction returns true if running in production environment
+func (c *Config) IsProduction() bool {
+	return c.Env == "production"
+}
+
+// UseRSAKeys returns true if RSA keys should be used for JWT
+func (c *Config) UseRSAKeys() bool {
+	return (c.JWT.PrivateKeyPath != "" && c.JWT.PublicKeyPath != "") ||
+		(c.JWT.PrivateKeyPEM != "" && c.JWT.PublicKeyPEM != "")
+}
+
+// UseHMAC returns true if HMAC should be used for JWT
+func (c *Config) UseHMAC() bool {
+	return c.JWT.HMACSecret != "" && !c.UseRSAKeys()
+}
+
+// GetJWTConfig returns JWT-specific configuration
+func (c *Config) GetJWTConfig() *JWTConfig {
+	return &JWTConfig{
+		PrivateKeyPath:         c.JWT.PrivateKeyPath,
+		PublicKeyPath:          c.JWT.PublicKeyPath,
+		PrivateKeyPEM:          c.JWT.PrivateKeyPEM,
+		PublicKeyPEM:           c.JWT.PublicKeyPEM,
+		HMACSecret:             c.JWT.HMACSecret,
+		AccessTokenExpiration:  c.JWT.AccessTokenExpiration,
+		RefreshTokenExpiration: c.JWT.RefreshTokenExpiration,
+		Issuer:                 c.JWT.Issuer,
+		AutoGenerateKeys:       c.JWT.AutoGenerateKeys,
+	}
+}
+
+// JWTConfig is a subset of Config for JWT-specific settings
+type JWTConfig struct {
+	PrivateKeyPath         string
+	PublicKeyPath          string
+	PrivateKeyPEM          string
+	PublicKeyPEM           string
+	HMACSecret             string
+	AccessTokenExpiration  time.Duration
+	RefreshTokenExpiration time.Duration
+	Issuer                 string
+	AutoGenerateKeys       bool
 }

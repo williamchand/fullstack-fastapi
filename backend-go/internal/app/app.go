@@ -11,18 +11,16 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/williamchand/fullstack-fastapi/backend-go/config"
-	userv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/delivery/grpc"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/database"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 )
 
 type App struct {
-	cfg        *config.Config
-	dbPool     *database.Pool
-	repos      *Repositories
-	services   *AppServices
-	middleware *Middleware
-	userServer userv1.UserServiceServer
+	cfg           *config.Config
+	dbPool        repositories.ConnectionPool
+	repos         *Repositories
+	services      *AppServices
+	middleware    *Middleware
+	serviceServer *ServiceServer
 }
 
 func NewApp(cfg *config.Config) (*App, error) {
@@ -33,17 +31,19 @@ func NewApp(cfg *config.Config) (*App, error) {
 		return nil, err
 	}
 	services := initServices(repos)
-	middleware := initMiddleware(cfg, repos)
-
-	userServer := grpc.NewUserServer(services.UserService)
+	middleware, err := initMiddleware(cfg, repos)
+	if err != nil {
+		return nil, err
+	}
+	serviceServer := initServiceServer(services)
 
 	return &App{
-		cfg:        cfg,
-		dbPool:     dbPool,
-		repos:      repos,
-		services:   services,
-		middleware: middleware,
-		userServer: userServer,
+		cfg:           cfg,
+		dbPool:        dbPool,
+		repos:         repos,
+		services:      services,
+		middleware:    middleware,
+		serviceServer: serviceServer,
 	}, nil
 }
 

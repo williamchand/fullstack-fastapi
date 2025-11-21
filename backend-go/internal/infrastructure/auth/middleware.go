@@ -5,18 +5,20 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type AuthMiddleware struct {
-	jwtService    *JWTService
+	jwtService    jwt.JWTService
 	roleValidator *RoleValidator
-	userRepo      UserRepository // interface to get user by ID
+	userRepo      repositories.UserRepository // interface to get user by ID
 }
 
-func NewAuthMiddleware(jwtService *JWTService, roleValidator *RoleValidator, userRepo UserRepository) *AuthMiddleware {
+func NewAuthMiddleware(jwtService jwt.JWTService, roleValidator *RoleValidator, userRepo repositories.UserRepository) *AuthMiddleware {
 	return &AuthMiddleware{
 		jwtService:    jwtService,
 		roleValidator: roleValidator,

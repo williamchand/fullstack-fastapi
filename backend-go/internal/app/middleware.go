@@ -3,17 +3,21 @@ package app
 import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/config"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/auth"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
 )
 
 type Middleware struct {
 	Auth *auth.AuthMiddleware
 }
 
-func initMiddleware(cfg *config.Config, repo *Repositories) *Middleware {
-	jwtService := auth.NewJWTService(cfg.JWTSecret)
+func initMiddleware(cfg *config.Config, repo *Repositories) (*Middleware, error) {
+	jwtService, err := jwt.NewService(cfg)
+	if err != nil {
+		return nil, err
+	}
 	roleValidator := auth.NewRoleValidator()
 
 	return &Middleware{
 		Auth: auth.NewAuthMiddleware(jwtService, roleValidator, repo.UserRepo),
-	}
+	}, nil
 }

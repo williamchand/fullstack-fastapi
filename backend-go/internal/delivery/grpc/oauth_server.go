@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
 
@@ -30,8 +31,7 @@ func NewOAuthServer(oauth *services.OAuthService) salonappv1.OAuthServiceServer 
 //
 
 func (s *oAuthServer) GetOAuthURL(ctx context.Context, req *salonappv1.GetOAuthURLRequest) (*salonappv1.GetOAuthURLResponse, error) {
-
-	url, state, err := s.oauth.GetAuthURL(ctx, req.Provider, req.RedirectUri)
+	url, state, err := s.oauth.GetAuthURL(req.Provider)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to generate OAuth URL")
 	}
@@ -49,8 +49,7 @@ func (s *oAuthServer) GetOAuthURL(ctx context.Context, req *salonappv1.GetOAuthU
 //
 
 func (s *oAuthServer) HandleOAuthCallback(ctx context.Context, req *salonappv1.HandleOAuthCallbackRequest) (*salonappv1.HandleOAuthCallbackResponse, error) {
-
-	user, tokenInfo, err := s.oauth.HandleCallback(ctx, req.Provider, req.Code, req.State)
+	user, err := s.oauth.HandleCallback(ctx, req.Provider, req.Code)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidOAuthCode) {
 			return nil, status.Error(codes.InvalidArgument, "invalid authorization code")
@@ -69,75 +68,6 @@ func (s *oAuthServer) HandleOAuthCallback(ctx context.Context, req *salonappv1.H
 		IsNewUser:    tokenInfo.IsNewUser,
 	}, nil
 }
-
-//
-// ────────────────────────────────────────────────────────────────
-//   3. Link OAuth Account
-// ────────────────────────────────────────────────────────────────
-//
-
-func (s *oAuthServer) LinkOAuthAccount(ctx context.Context, req *salonappv1.LinkOAuthAccountRequest) (*salonappv1.LinkOAuthAccountResponse, error) {
-
-	account, err := s.oauth.LinkAccount(ctx, req.Provider, req.UserId, req.Code, req.State)
-	if err != nil {
-		if errors.Is(err, services.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, "user not found")
-		}
-		return nil, status.Error(codes.Internal, "failed to link OAuth account")
-	}
-
-	return &salonappv1.LinkOAuthAccountResponse{
-		Account: s.oauthAccountToProto(account),
-	}, nil
-}
-
-//
-// ────────────────────────────────────────────────────────────────
-//   4. Unlink OAuth Account
-// ────────────────────────────────────────────────────────────────
-//
-
-func (s *oAuthServer) UnlinkOAuthAccount(ctx context.Context, req *salonappv1.UnlinkOAuthAccountRequest) (*salonappv1.UnlinkOAuthAccountResponse, error) {
-
-	err := s.oauth.UnlinkAccount(ctx, req.Provider, req.UserId)
-	if err != nil {
-		if errors.Is(err, services.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, "user not found")
-		}
-		return nil, status.Error(codes.Internal, "failed to unlink OAuth account")
-	}
-
-	return &salonappv1.UnlinkOAuthAccountResponse{
-		Success: true,
-	}, nil
-}
-
-//
-// ────────────────────────────────────────────────────────────────
-//   5. Get User OAuth Accounts
-// ────────────────────────────────────────────────────────────────
-//
-
-func (s *oAuthServer) GetUserOAuthAccounts(ctx context.Context, req *salonappv1.GetUserOAuthAccountsRequest) (*salonappv1.GetUserOAuthAccountsResponse, error) {
-
-	accounts, err := s.oauth.GetUserAccounts(ctx, req.UserId)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to fetch user OAuth accounts")
-	}
-
-	resp := &salonappv1.GetUserOAuthAccountsResponse{}
-	for _, acc := range accounts {
-		resp.Accounts = append(resp.Accounts, s.oauthAccountToProto(acc))
-	}
-
-	return resp, nil
-}
-
-//
-// ────────────────────────────────────────────────────────────────
-//   Mapping: Domain → Proto
-// ────────────────────────────────────────────────────────────────
-//
 
 func (s *oAuthServer) userToProto(u *entities.User) *salonappv1.User {
 	p := &salonappv1.User{

@@ -13,12 +13,13 @@ import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/config"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
 
-// GoogleUserInfo represents the user information returned by Google OAuth
-type GoogleUserInfo struct {
+// ProviderUserInfo represents the user information returned by Google OAuth
+type ProviderUserInfo struct {
 	ID            string `json:"id"`
 	Email         string `json:"email"`
 	VerifiedEmail bool   `json:"verified_email"`
@@ -29,11 +30,19 @@ type GoogleUserInfo struct {
 	Locale        string `json:"locale"`
 }
 
+type OAuthLoginResult struct {
+	User         *entities.User
+	AccessToken  string
+	RefreshToken string
+	IsNewUser    bool
+}
+
 type OAuthService struct {
-	config    *oauth2.Config
-	oauthRepo repositories.OAuthRepository
-	userRepo  repositories.UserRepository
-	txManager repositories.TransactionManager
+	config     map[string]*oauth2.Config
+	oauthRepo  repositories.OAuthRepository
+	userRepo   repositories.UserRepository
+	txManager  repositories.TransactionManager
+	jwtService jwt.JWTService
 }
 
 func NewOAuthService(
@@ -41,8 +50,10 @@ func NewOAuthService(
 	oauthRepo repositories.OAuthRepository,
 	userRepo repositories.UserRepository,
 	txManager repositories.TransactionManager,
+	jwtService jwt.JWTService,
 ) *OAuthService {
-	config := &oauth2.Config{
+	config := map[string]*oauth2.Config{}
+	config["google"] = &oauth2.Config{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
 		RedirectURL:  cfg.RedirectURL,
@@ -52,38 +63,38 @@ func NewOAuthService(
 		},
 		Endpoint: google.Endpoint,
 	}
-
 	return &OAuthService{
-		config:    config,
-		oauthRepo: oauthRepo,
-		userRepo:  userRepo,
-		txManager: txManager,
+		config:     config,
+		oauthRepo:  oauthRepo,
+		userRepo:   userRepo,
+		txManager:  txManager,
+		jwtService: jwtService,
 	}
 }
 
-func (s *OAuthService) GetAuthURL() (string, string, error) {
+func (s *OAuthService) GetAuthURL(provider string) (string, string, error) {
 	state, err := generateRandomState()
 	if err != nil {
 		return "", "", err
 	}
 
-	return s.config.AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
+	return s.config[provider].AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
 }
 
-func (s *OAuthService) HandleCallback(ctx context.Context, code string) (*entities.User, error) {
-	token, err := s.config.Exchange(ctx, code)
+func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code string) (*OAuthLoginResult, error) {
+	token, err := s.config[provider].Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code for token: %w", err)
 	}
 
 	// Get user info from Google
-	userInfo, err := s.getUserInfo(ctx, token)
+	userInfo, err := s.getUserInfo(ctx, provider, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 
 	var user *entities.User
-
+	var isNewUser bool
 	// Execute in transaction to ensure data consistency
 	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
 		// Use repository with transaction
@@ -91,7 +102,7 @@ func (s *OAuthService) HandleCallback(ctx context.Context, code string) (*entiti
 		userRepoTx := s.userRepo.WithTx(tx)
 
 		// Check if OAuth account exists
-		oauthAccount, err := oauthRepoTx.GetOAuthAccount(ctx, "google", userInfo.ID)
+		oauthAccount, err := oauthRepoTx.GetOAuthAccount(ctx, provider, userInfo.ID)
 		if err == nil && oauthAccount != nil {
 			// Update OAuth tokens
 			err = oauthRepoTx.UpdateOAuthAccountTokens(ctx, oauthAccount.ID, oauthAccount.UserID, &token.AccessToken, &token.RefreshToken, &token.Expiry)
@@ -105,24 +116,43 @@ func (s *OAuthService) HandleCallback(ctx context.Context, code string) (*entiti
 		}
 
 		// New user - create account
-		user, err = s.createUserFromOAuth(ctx, userRepoTx, oauthRepoTx, userInfo, token)
+		user, err = s.createUserFromOAuth(ctx, userRepoTx, oauthRepoTx, provider, userInfo, token)
+		isNewUser = true
 		return err
 	})
 
 	if err != nil {
 		return nil, err
 	}
+	// After user is fetched or created:
+	roles := []string{}
+	for _, role := range user.Roles {
+		roles = append(roles, role.Name)
+	}
+	accessToken, err := s.jwtService.GenerateToken(user.ID, user.Email, roles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
 
-	return user, nil
+	refreshToken, err := s.jwtService.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+	return &OAuthLoginResult{
+		User:         user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		IsNewUser:    isNewUser,
+	}, nil
 }
 
 // getUserInfo retrieves user information from Google API
-func (s *OAuthService) getUserInfo(ctx context.Context, token *oauth2.Token) (*GoogleUserInfo, error) {
-	client := s.config.Client(ctx, token)
+func (s *OAuthService) getUserInfo(ctx context.Context, provider string, token *oauth2.Token) (*ProviderUserInfo, error) {
+	client := s.config[provider].Client(ctx, token)
 
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user info from Google: %w", err)
+		return nil, fmt.Errorf("failed to get user info from Provider: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -135,7 +165,7 @@ func (s *OAuthService) getUserInfo(ctx context.Context, token *oauth2.Token) (*G
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var userInfo GoogleUserInfo
+	var userInfo ProviderUserInfo
 	err = json.Unmarshal(body, &userInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal user info: %w", err)
@@ -149,7 +179,8 @@ func (s *OAuthService) createUserFromOAuth(
 	ctx context.Context,
 	userRepo repositories.UserRepository,
 	oauthRepo repositories.OAuthRepository,
-	userInfo *GoogleUserInfo,
+	provider string,
+	userInfo *ProviderUserInfo,
 	token *oauth2.Token,
 ) (*entities.User, error) {
 	// Check if a user with this email already exists
@@ -157,13 +188,13 @@ func (s *OAuthService) createUserFromOAuth(
 	if err == nil && existingUser != nil {
 		// User exists with this email, link OAuth account to existing user
 		oauthAccount := &entities.OAuthAccount{
-			Provider:     "google",
-			ProviderID:   userInfo.ID,
-			UserID:       existingUser.ID,
-			AccessToken:  token.AccessToken,
-			RefreshToken: token.RefreshToken,
-			TokenExpiry:  token.Expiry,
-			ProviderData: s.buildProviderData(userInfo),
+			Provider:       provider,
+			ProviderUserID: userInfo.ID,
+			UserID:         existingUser.ID,
+			AccessToken:    &token.AccessToken,
+			RefreshToken:   &token.RefreshToken,
+			TokenExpiresAt: &token.Expiry,
+			ProviderData:   s.buildProviderData(userInfo),
 		}
 
 		err = oauthRepo.CreateOAuthAccount(ctx, oauthAccount)
@@ -190,13 +221,13 @@ func (s *OAuthService) createUserFromOAuth(
 
 	// Create OAuth account
 	oauthAccount := &entities.OAuthAccount{
-		Provider:     "google",
-		ProviderID:   userInfo.ID,
-		UserID:       user.ID,
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		TokenExpiry:  token.Expiry,
-		ProviderData: s.buildProviderData(userInfo),
+		Provider:       provider,
+		ProviderUserID: userInfo.ID,
+		UserID:         user.ID,
+		AccessToken:    &token.AccessToken,
+		RefreshToken:   &token.RefreshToken,
+		TokenExpiresAt: &token.Expiry,
+		ProviderData:   s.buildProviderData(userInfo),
 	}
 
 	err = oauthRepo.CreateOAuthAccount(ctx, oauthAccount)
@@ -208,7 +239,7 @@ func (s *OAuthService) createUserFromOAuth(
 }
 
 // buildProviderData builds the provider data JSON from user info
-func (s *OAuthService) buildProviderData(userInfo *GoogleUserInfo) map[string]interface{} {
+func (s *OAuthService) buildProviderData(userInfo *ProviderUserInfo) map[string]interface{} {
 	return map[string]interface{}{
 		"name":        userInfo.Name,
 		"given_name":  userInfo.GivenName,
@@ -219,42 +250,34 @@ func (s *OAuthService) buildProviderData(userInfo *GoogleUserInfo) map[string]in
 }
 
 // RefreshToken refreshes the OAuth token if it's expired
-func (s *OAuthService) RefreshToken(ctx context.Context, userID string) error {
+func (s *OAuthService) RefreshToken(ctx context.Context, provider string, userID string) error {
 	return s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
 		oauthRepo := s.oauthRepo.WithTx(tx)
 
 		// Get the OAuth account for this user
-		oauthAccounts, err := oauthRepo.GetOAuthAccountsByUserID(ctx, userID)
+		oauthAccounts, err := oauthRepo.GetOAuthAccount(ctx, provider, userID)
 		if err != nil {
 			return fmt.Errorf("failed to get OAuth accounts: %w", err)
 		}
 
-		var googleAccount *entities.OAuthAccount
-		for _, account := range oauthAccounts {
-			if account.Provider == "google" {
-				googleAccount = &account
-				break
-			}
-		}
-
-		if googleAccount == nil {
+		if oauthAccounts == nil {
 			return fmt.Errorf("no Google OAuth account found for user")
 		}
 
 		// Create token source with refresh token
 		token := &oauth2.Token{
-			AccessToken:  googleAccount.AccessToken,
-			RefreshToken: googleAccount.RefreshToken,
-			Expiry:       googleAccount.TokenExpiry,
+			AccessToken:  *oauthAccounts.AccessToken,
+			RefreshToken: *oauthAccounts.RefreshToken,
+			Expiry:       *oauthAccounts.TokenExpiresAt,
 		}
 
-		newToken, err := s.config.TokenSource(ctx, token).Token()
+		newToken, err := s.config[provider].TokenSource(ctx, token).Token()
 		if err != nil {
 			return fmt.Errorf("failed to refresh token: %w", err)
 		}
 
 		// Update the tokens in database
-		return oauthRepo.UpdateOAuthTokens(ctx, googleAccount.ID, newToken.AccessToken, newToken.RefreshToken, newToken.Expiry)
+		return oauthRepo.UpdateOAuthAccountTokens(ctx, oauthAccounts.ID, oauthAccounts.UserID, &newToken.AccessToken, &newToken.RefreshToken, &newToken.Expiry)
 	})
 }
 

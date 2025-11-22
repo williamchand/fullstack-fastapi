@@ -30,7 +30,10 @@ func NewApp(cfg *config.Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	services := initServices(cfg, repos)
+	services, err := initServices(cfg, repos)
+	if err != nil {
+		return nil, err
+	}
 	middleware, err := initMiddleware(cfg, repos)
 	if err != nil {
 		return nil, err

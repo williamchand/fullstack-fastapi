@@ -74,9 +74,10 @@ message User {
   string full_name = 4;
   bool is_active = 5;
   bool is_email_verified = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
-  repeated string roles = 9;
+  bool is_phone_verified = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  repeated string roles = 10;
 }
 
 message GetUserRequest {

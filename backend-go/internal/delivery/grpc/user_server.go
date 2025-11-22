@@ -38,6 +38,34 @@ func (s *userServer) GetUser(ctx context.Context, req *genprotov1.GetUserRequest
 	}, nil
 }
 
+func (s *userServer) CreateUser(ctx context.Context, req *genprotov1.CreateUserRequest) (*genprotov1.CreateUserResponse, error) {
+	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, req.PhoneNumber)
+	if err != nil {
+		if errors.Is(err, services.ErrUserExists) {
+			return nil, status.Error(codes.AlreadyExists, "user already exist")
+		}
+		return nil, status.Error(codes.Internal, "failed to get user")
+	}
+
+	return &genprotov1.CreateUserResponse{
+		User: s.userToProto(user),
+	}, nil
+}
+
+func (s *userServer) UpdateUser(ctx context.Context, req *genprotov1.UpdateUserRequest) (*genprotov1.UpdateUserResponse, error) {
+	user, err := s.userService.GetUserByID(ctx, req.Id)
+	if err != nil {
+		if errors.Is(err, services.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to get user")
+	}
+
+	return &genprotov1.GetUserResponse{
+		User: s.userToProto(user),
+	}, nil
+}
+
 func (s *userServer) userToProto(user *entities.User) *genprotov1.User {
 	protoUser := &genprotov1.User{
 		Id:        user.ID.String(),

@@ -15,16 +15,6 @@ SELECT * FROM oauth_account
 WHERE provider = $1 AND provider_user_id = $2 
 LIMIT 1;
 
--- name: GetOAuthAccountByID :one
-SELECT * FROM oauth_account 
-WHERE id = $1 
-LIMIT 1;
-
--- name: GetOAuthAccountsByUserID :many
-SELECT * FROM oauth_account 
-WHERE user_id = $1 
-ORDER BY provider;
-
 -- name: UpdateOAuthAccountTokens :one
 UPDATE oauth_account 
 SET 
@@ -34,11 +24,3 @@ SET
     updated_at = now()
 WHERE id = $1 AND user_id = $2
 RETURNING *;
-
--- name: DeleteOAuthAccount :exec
-DELETE FROM oauth_account 
-WHERE id = $1 AND user_id = $2;
-
--- name: DeleteOAuthAccountsByUserID :exec
-DELETE FROM oauth_account 
-WHERE user_id = $1;

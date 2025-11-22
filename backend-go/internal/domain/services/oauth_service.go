@@ -37,7 +37,7 @@ type OAuthService struct {
 }
 
 func NewOAuthService(
-	cfg config.OAuthConfig,
+	cfg *config.OAuthConfig,
 	oauthRepo repositories.OAuthRepository,
 	userRepo repositories.UserRepository,
 	txManager repositories.TransactionManager,
@@ -94,7 +94,7 @@ func (s *OAuthService) HandleCallback(ctx context.Context, code string) (*entiti
 		oauthAccount, err := oauthRepoTx.GetOAuthAccount(ctx, "google", userInfo.ID)
 		if err == nil && oauthAccount != nil {
 			// Update OAuth tokens
-			err = oauthRepoTx.UpdateOAuthTokens(ctx, oauthAccount.ID, token.AccessToken, token.RefreshToken, token.Expiry)
+			err = oauthRepoTx.UpdateOAuthAccountTokens(ctx, oauthAccount.ID, oauthAccount.UserID, &token.AccessToken, &token.RefreshToken, &token.Expiry)
 			if err != nil {
 				return fmt.Errorf("failed to update OAuth tokens: %w", err)
 			}

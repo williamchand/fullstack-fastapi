@@ -14,7 +14,7 @@ type Config struct {
 	Env      string `envconfig:"ENV" default:"development"`
 
 	// Database Configuration
-	DatabaseURL string `envconfig:"DB_URL" default:"postgres://myapp:myapp@localhost:5432/myapp?sslmode=disable"`
+	DatabaseURL string `envconfig:"DB_URL" default:""`
 	DBMaxConns  int    `envconfig:"DB_MAX_CONNS" default:"25"`
 	DBMinConns  int    `envconfig:"DB_MIN_CONNS" default:"5"`
 
@@ -34,7 +34,7 @@ type Config struct {
 		// Token Settings
 		AccessTokenExpiration  time.Duration `envconfig:"JWT_ACCESS_EXPIRATION" default:"15m"`
 		RefreshTokenExpiration time.Duration `envconfig:"JWT_REFRESH_EXPIRATION" default:"168h"` // 7 days
-		Issuer                 string        `envconfig:"JWT_ISSUER" default:"myapp"`
+		Issuer                 string        `envconfig:"JWT_ISSUER" default:"salonapp"`
 
 		// Auto-generation (Development Only)
 		AutoGenerateKeys bool `envconfig:"JWT_AUTO_GENERATE_KEYS" default:"true"`

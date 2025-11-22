@@ -63,31 +63,6 @@ func (r *oauthRepository) GetOAuthAccount(ctx context.Context, provider, provide
 	return r.toEntity(&dbOAuth), nil
 }
 
-// Additional methods that might be useful
-
-func (r *oauthRepository) GetOAuthAccountByID(ctx context.Context, id uuid.UUID) (*entities.OAuthAccount, error) {
-	dbOAuth, err := r.queries.GetOAuthAccountByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.toEntity(&dbOAuth), nil
-}
-
-func (r *oauthRepository) GetOAuthAccountsByUserID(ctx context.Context, userID uuid.UUID) ([]*entities.OAuthAccount, error) {
-	dbOAuths, err := r.queries.GetOAuthAccountsByUserID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	oauthAccounts := make([]*entities.OAuthAccount, len(dbOAuths))
-	for i, dbOAuth := range dbOAuths {
-		oauthAccounts[i] = r.toEntity(&dbOAuth)
-	}
-
-	return oauthAccounts, nil
-}
-
 func (r *oauthRepository) UpdateOAuthAccountTokens(ctx context.Context, id, userID uuid.UUID, accessToken, refreshToken *string, tokenExpiresAt *time.Time) error {
 	params := dbgen.UpdateOAuthAccountTokensParams{
 		ID:             id,
@@ -99,13 +74,6 @@ func (r *oauthRepository) UpdateOAuthAccountTokens(ctx context.Context, id, user
 
 	_, err := r.queries.UpdateOAuthAccountTokens(ctx, params)
 	return err
-}
-
-func (r *oauthRepository) DeleteOAuthAccount(ctx context.Context, id, userID uuid.UUID) error {
-	return r.queries.DeleteOAuthAccount(ctx, dbgen.DeleteOAuthAccountParams{
-		ID:     id,
-		UserID: userID,
-	})
 }
 
 func (r *oauthRepository) toEntity(dbOAuth *dbgen.OauthAccount) *entities.OAuthAccount {

@@ -13,6 +13,6 @@ type AppServices struct {
 func initServices(cfg *config.Config, repo *Repositories) *AppServices {
 	return &AppServices{
 		UserService:  services.NewUserService(repo.UserRepo, repo.OAuthRepo),
-		OauthService: services.NewOAuthService(cfg.OAuth, repo.OAuthRepo, repo.UserRepo, repo.TransactionManager),
+		OauthService: services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager),
 	}
 }

@@ -5,23 +5,22 @@ import (
 
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
-	userRepo   repositories.UserRepository
-	oauthRepo  repositories.OAuthRepository
-	jwtService jwt.JWTService
+	userRepo  repositories.UserRepository
+	oauthRepo repositories.OAuthRepository
+	jwtRepo   repositories.JWTRepository
 }
 
-func NewUserService(userRepo repositories.UserRepository, oauthRepo repositories.OAuthRepository, jwtService jwt.JWTService) *UserService {
+func NewUserService(userRepo repositories.UserRepository, oauthRepo repositories.OAuthRepository, jwtRepo repositories.JWTRepository) *UserService {
 	return &UserService{
-		userRepo:   userRepo,
-		oauthRepo:  oauthRepo,
-		jwtService: jwtService,
+		userRepo:  userRepo,
+		oauthRepo: oauthRepo,
+		jwtRepo:   jwtRepo,
 	}
 }
 

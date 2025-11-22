@@ -14,7 +14,6 @@ import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/config"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -40,11 +39,11 @@ type OAuthLoginResult struct {
 }
 
 type OAuthService struct {
-	config     map[string]*oauth2.Config
-	oauthRepo  repositories.OAuthRepository
-	userRepo   repositories.UserRepository
-	txManager  repositories.TransactionManager
-	jwtService jwt.JWTService
+	config    map[string]*oauth2.Config
+	oauthRepo repositories.OAuthRepository
+	userRepo  repositories.UserRepository
+	txManager repositories.TransactionManager
+	JwtRepo   repositories.JWTRepository
 }
 
 func NewOAuthService(
@@ -52,7 +51,7 @@ func NewOAuthService(
 	oauthRepo repositories.OAuthRepository,
 	userRepo repositories.UserRepository,
 	txManager repositories.TransactionManager,
-	jwtService jwt.JWTService,
+	JwtRepo repositories.JWTRepository,
 ) *OAuthService {
 	config := map[string]*oauth2.Config{}
 	config["google"] = &oauth2.Config{
@@ -66,11 +65,11 @@ func NewOAuthService(
 		Endpoint: google.Endpoint,
 	}
 	return &OAuthService{
-		config:     config,
-		oauthRepo:  oauthRepo,
-		userRepo:   userRepo,
-		txManager:  txManager,
-		jwtService: jwtService,
+		config:    config,
+		oauthRepo: oauthRepo,
+		userRepo:  userRepo,
+		txManager: txManager,
+		JwtRepo:   JwtRepo,
 	}
 }
 
@@ -131,12 +130,12 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code
 	for _, role := range user.Roles {
 		roles = append(roles, role.Name)
 	}
-	accessToken, err := s.jwtService.GenerateToken(user.ID, user.Email, roles)
+	accessToken, err := s.JwtRepo.GenerateToken(user.ID, user.Email, roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
-	refreshToken, err := s.jwtService.GenerateRefreshToken(user.ID)
+	refreshToken, err := s.JwtRepo.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}

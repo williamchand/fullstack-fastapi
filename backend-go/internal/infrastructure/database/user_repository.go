@@ -45,7 +45,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entitie
 	return r.toEntity(&dbUser), nil
 }
 
-func (r *userRepository) Create(ctx context.Context, user *entities.User) error {
+func (r *userRepository) Create(ctx context.Context, user *entities.User) (*entities.User, error) {
 	params := dbgen.CreateUserParams{
 		Email:          user.Email,
 		PhoneNumber:    toPgText(user.PhoneNumber),
@@ -55,14 +55,14 @@ func (r *userRepository) Create(ctx context.Context, user *entities.User) error 
 
 	dbUser, err := r.queries.CreateUser(ctx, params)
 	if err != nil {
-		return err
+		return dbUser, err
 	}
 
 	user.ID = dbUser.ID
 	user.CreatedAt = dbUser.CreatedAt.Time
 	user.UpdatedAt = dbUser.UpdatedAt.Time
 
-	return nil
+	return dbUser, err
 }
 
 func (r *userRepository) Update(ctx context.Context, user *entities.User) repositories.UserRepository {

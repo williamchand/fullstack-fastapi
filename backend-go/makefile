@@ -22,7 +22,7 @@ TOOLS = \
 PROTO_DIR=api/proto
 GEN_PROTO_DIR=gen/proto
 DB_QUERIES_DIR=db/queries
-DB_MIGRATIONS_DIR=db/migrations
+DB_MIGRATIONS_DIR=db/migrations/
 SQLC_OUT_DIR=internal/infrastructure/database/dbgen
 
 # Tools

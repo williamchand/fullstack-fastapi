@@ -1,6 +1,7 @@
 ## Initialize the project:
 ```
 make install-tools
+make generate-jwt-keys
 make generate
 make tidy
 ```

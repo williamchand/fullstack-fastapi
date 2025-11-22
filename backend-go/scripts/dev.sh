@@ -15,22 +15,22 @@ fi
 # Start PostgreSQL container
 echo "Starting PostgreSQL container..."
 docker run -d \
-    --name myapp-postgres \
-    -e POSTGRES_USER=myapp \
-    -e POSTGRES_PASSWORD=myapp \
-    -e POSTGRES_DB=myapp \
-    -p 5432:5432 \
-    postgres:15-alpine
+    --name db \
+    -e POSTGRES_USER=postgres \
+    -e POSTGRES_PASSWORD=9Rdl_tmcO298f97J0FKzf1O1QFePclhGwLJwH-0A390 \
+    -e POSTGRES_DB=app \
+    -p 5433:5432 \
+    postgres:18
 
 # Wait for PostgreSQL to be ready
 echo "Waiting for PostgreSQL to be ready..."
-until docker exec myapp-postgres pg_isready -U myapp; do
+until docker exec db pg_isready -U app; do
     sleep 1
 done
 
 # Run migrations
 echo "Running migrations..."
-export DB_URL="postgres://myapp:myapp@localhost:5432/myapp?sslmode=disable"
+export DB_URL="postgres://postgres:9Rdl_tmcO298f97J0FKzf1O1QFePclhGwLJwH-0A390@localhost:5433/app?sslmode=disable"
 make migrate-up
 
 echo "Development environment is ready!"

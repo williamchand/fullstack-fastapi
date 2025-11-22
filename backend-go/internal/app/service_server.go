@@ -1,12 +1,12 @@
 package app
 
 import (
-	userv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto"
+	genprotov1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/delivery/grpc"
 )
 
 type ServiceServer struct {
-	userServer userv1.UserServiceServer
+	userServer genprotov1.UserServiceServer
 }
 
 func initServiceServer(appServices *AppServices) *ServiceServer {

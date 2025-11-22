@@ -9,8 +9,9 @@ import (
 )
 
 type Repositories struct {
-	UserRepo  repositories.UserRepository
-	OAuthRepo repositories.OAuthRepository
+	TransactionManager repositories.TransactionManager
+	UserRepo           repositories.UserRepository
+	OAuthRepo          repositories.OAuthRepository
 }
 
 func initRepositories(ctx context.Context, dbURL string) (*Repositories, repositories.ConnectionPool, error) {
@@ -18,7 +19,8 @@ func initRepositories(ctx context.Context, dbURL string) (*Repositories, reposit
 	queries := dbgen.New(dbPool)
 
 	return &Repositories{
-		UserRepo:  database.NewUserRepository(queries),
-		OAuthRepo: database.NewOAuthRepository(queries),
+		TransactionManager: database.NewTransactionManager(dbPool),
+		UserRepo:           database.NewUserRepository(queries, dbPool),
+		OAuthRepo:          database.NewOAuthRepository(queries, dbPool),
 	}, dbPool, err
 }

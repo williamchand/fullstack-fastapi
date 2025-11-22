@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"golang.org/x/oauth2"
@@ -37,9 +38,15 @@ type GoogleOAuthService struct {
 	config    *oauth2.Config
 	oauthRepo repositories.OAuthRepository
 	userRepo  repositories.UserRepository
+	txManager repositories.TransactionManager
 }
 
-func NewGoogleOAuthService(cfg *GoogleOAuthConfig, oauthRepo repositories.OAuthRepository, userRepo repositories.UserRepository) *GoogleOAuthService {
+func NewGoogleOAuthService(
+	cfg *GoogleOAuthConfig,
+	oauthRepo repositories.OAuthRepository,
+	userRepo repositories.UserRepository,
+	txManager repositories.TransactionManager,
+) *GoogleOAuthService {
 	config := &oauth2.Config{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
@@ -55,6 +62,7 @@ func NewGoogleOAuthService(cfg *GoogleOAuthConfig, oauthRepo repositories.OAuthR
 		config:    config,
 		oauthRepo: oauthRepo,
 		userRepo:  userRepo,
+		txManager: txManager,
 	}
 }
 
@@ -79,21 +87,38 @@ func (s *GoogleOAuthService) HandleCallback(ctx context.Context, code string) (*
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 
-	// Check if OAuth account exists
-	oauthAccount, err := s.oauthRepo.GetOAuthAccount(ctx, "google", userInfo.ID)
-	if err == nil && oauthAccount != nil {
-		// Update OAuth tokens
-		err = s.oauthRepo.UpdateOAuthTokens(ctx, oauthAccount.ID, token.AccessToken, token.RefreshToken, token.Expiry)
-		if err != nil {
-			return nil, fmt.Errorf("failed to update OAuth tokens: %w", err)
+	var user *entities.User
+
+	// Execute in transaction to ensure data consistency
+	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
+		// Use repository with transaction
+		oauthRepoTx := s.oauthRepo.WithTx(tx)
+		userRepoTx := s.userRepo.WithTx(tx)
+
+		// Check if OAuth account exists
+		oauthAccount, err := oauthRepoTx.GetOAuthAccount(ctx, "google", userInfo.ID)
+		if err == nil && oauthAccount != nil {
+			// Update OAuth tokens
+			err = oauthRepoTx.UpdateOAuthTokens(ctx, oauthAccount.ID, token.AccessToken, token.RefreshToken, token.Expiry)
+			if err != nil {
+				return fmt.Errorf("failed to update OAuth tokens: %w", err)
+			}
+
+			// Get the user
+			user, err = userRepoTx.GetByID(ctx, oauthAccount.UserID)
+			return err
 		}
 
-		// Return the user
-		return s.userRepo.GetByID(ctx, oauthAccount.UserID)
+		// New user - create account
+		user, err = s.createUserFromOAuth(ctx, userRepoTx, oauthRepoTx, userInfo, token)
+		return err
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	// New user - create account
-	return s.createUserFromOAuth(ctx, userInfo, token)
+	return user, nil
 }
 
 // getUserInfo retrieves user information from Google API
@@ -125,9 +150,15 @@ func (s *GoogleOAuthService) getUserInfo(ctx context.Context, token *oauth2.Toke
 }
 
 // createUserFromOAuth creates a new user from OAuth information
-func (s *GoogleOAuthService) createUserFromOAuth(ctx context.Context, userInfo *GoogleUserInfo, token *oauth2.Token) (*entities.User, error) {
+func (s *GoogleOAuthService) createUserFromOAuth(
+	ctx context.Context,
+	userRepo repositories.UserRepository,
+	oauthRepo repositories.OAuthRepository,
+	userInfo *GoogleUserInfo,
+	token *oauth2.Token,
+) (*entities.User, error) {
 	// Check if a user with this email already exists
-	existingUser, err := s.userRepo.GetByEmail(ctx, userInfo.Email)
+	existingUser, err := userRepo.GetByEmail(ctx, userInfo.Email)
 	if err == nil && existingUser != nil {
 		// User exists with this email, link OAuth account to existing user
 		oauthAccount := &entities.OAuthAccount{
@@ -140,7 +171,7 @@ func (s *GoogleOAuthService) createUserFromOAuth(ctx context.Context, userInfo *
 			ProviderData: s.buildProviderData(userInfo),
 		}
 
-		err = s.oauthRepo.CreateOAuthAccount(ctx, oauthAccount)
+		err = oauthRepo.CreateOAuthAccount(ctx, oauthAccount)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OAuth account for existing user: %w", err)
 		}
@@ -157,7 +188,7 @@ func (s *GoogleOAuthService) createUserFromOAuth(ctx context.Context, userInfo *
 	}
 
 	// Create the user in database
-	err = s.userRepo.Create(ctx, user)
+	err = userRepo.Create(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -173,10 +204,8 @@ func (s *GoogleOAuthService) createUserFromOAuth(ctx context.Context, userInfo *
 		ProviderData: s.buildProviderData(userInfo),
 	}
 
-	err = s.oauthRepo.CreateOAuthAccount(ctx, oauthAccount)
+	err = oauthRepo.CreateOAuthAccount(ctx, oauthAccount)
 	if err != nil {
-		// If OAuth account creation fails, we might want to clean up the user
-		// or handle this error appropriately
 		return nil, fmt.Errorf("failed to create OAuth account: %w", err)
 	}
 
@@ -196,66 +225,42 @@ func (s *GoogleOAuthService) buildProviderData(userInfo *GoogleUserInfo) map[str
 
 // RefreshToken refreshes the OAuth token if it's expired
 func (s *GoogleOAuthService) RefreshToken(ctx context.Context, userID string) error {
-	// Get the OAuth account for this user
-	oauthAccounts, err := s.oauthRepo.GetOAuthAccountsByUserID(ctx, userID)
-	if err != nil {
-		return fmt.Errorf("failed to get OAuth accounts: %w", err)
-	}
+	return s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
+		oauthRepo := s.oauthRepo.WithTx(tx)
 
-	var googleAccount *entities.OAuthAccount
-	for _, account := range oauthAccounts {
-		if account.Provider == "google" {
-			googleAccount = &account
-			break
+		// Get the OAuth account for this user
+		oauthAccounts, err := oauthRepo.GetOAuthAccountsByUserID(ctx, userID)
+		if err != nil {
+			return fmt.Errorf("failed to get OAuth accounts: %w", err)
 		}
-	}
 
-	if googleAccount == nil {
-		return fmt.Errorf("no Google OAuth account found for user")
-	}
-
-	// Create token source with refresh token
-	token := &oauth2.Token{
-		AccessToken:  googleAccount.AccessToken,
-		RefreshToken: googleAccount.RefreshToken,
-		Expiry:       googleAccount.TokenExpiry,
-	}
-
-	newToken, err := s.config.TokenSource(ctx, token).Token()
-	if err != nil {
-		return fmt.Errorf("failed to refresh token: %w", err)
-	}
-
-	// Update the tokens in database
-	return s.oauthRepo.UpdateOAuthTokens(ctx, googleAccount.ID, newToken.AccessToken, newToken.RefreshToken, newToken.Expiry)
-}
-
-// GetUserInfo retrieves current user info from Google
-func (s *GoogleOAuthService) GetUserInfo(ctx context.Context, userID string) (*GoogleUserInfo, error) {
-	// Get the OAuth account for this user
-	oauthAccounts, err := s.oauthRepo.GetOAuthAccountsByUserID(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get OAuth accounts: %w", err)
-	}
-
-	var googleAccount *entities.OAuthAccount
-	for _, account := range oauthAccounts {
-		if account.Provider == "google" {
-			googleAccount = &account
-			break
+		var googleAccount *entities.OAuthAccount
+		for _, account := range oauthAccounts {
+			if account.Provider == "google" {
+				googleAccount = &account
+				break
+			}
 		}
-	}
 
-	if googleAccount == nil {
-		return nil, fmt.Errorf("no Google OAuth account found for user")
-	}
+		if googleAccount == nil {
+			return fmt.Errorf("no Google OAuth account found for user")
+		}
 
-	token := &oauth2.Token{
-		AccessToken: googleAccount.AccessToken,
-		Expiry:      googleAccount.TokenExpiry,
-	}
+		// Create token source with refresh token
+		token := &oauth2.Token{
+			AccessToken:  googleAccount.AccessToken,
+			RefreshToken: googleAccount.RefreshToken,
+			Expiry:       googleAccount.TokenExpiry,
+		}
 
-	return s.getUserInfo(ctx, token)
+		newToken, err := s.config.TokenSource(ctx, token).Token()
+		if err != nil {
+			return fmt.Errorf("failed to refresh token: %w", err)
+		}
+
+		// Update the tokens in database
+		return oauthRepo.UpdateOAuthTokens(ctx, googleAccount.ID, newToken.AccessToken, newToken.RefreshToken, newToken.Expiry)
+	})
 }
 
 func generateRandomState() (string, error) {

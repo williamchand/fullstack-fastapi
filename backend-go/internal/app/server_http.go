@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	userv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto"
+	genprotov1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -15,7 +15,17 @@ func (a *App) runHTTP(ctx context.Context) error {
 	mux := runtime.NewServeMux()
 
 	// Register handlers for gRPC services
-	err := userv1.RegisterUserServiceHandlerFromEndpoint(
+	err := genprotov1.RegisterUserServiceHandlerFromEndpoint(
+		ctx,
+		mux,
+		fmt.Sprintf(":%d", a.cfg.GRPCPort),
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+	)
+	if err != nil {
+		return err
+	}
+
+	err := genprotov1.RegisterOauthHandlerFromEndpoint(
 		ctx,
 		mux,
 		fmt.Sprintf(":%d", a.cfg.GRPCPort),

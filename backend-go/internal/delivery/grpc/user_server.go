@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	userv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto"
+	genprotov1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
 
@@ -14,17 +14,17 @@ import (
 )
 
 type userServer struct {
-	userv1.UnimplementedUserServiceServer
+	genprotov1.UnimplementedUserServiceServer
 	userService *services.UserService
 }
 
-func NewUserServer(userService *services.UserService) userv1.UserServiceServer {
+func NewUserServer(userService *services.UserService) genprotov1.UserServiceServer {
 	return &userServer{
 		userService: userService,
 	}
 }
 
-func (s *userServer) GetUser(ctx context.Context, req *userv1.GetUserRequest) (*userv1.GetUserResponse, error) {
+func (s *userServer) GetUser(ctx context.Context, req *genprotov1.GetUserRequest) (*genprotov1.GetUserResponse, error) {
 	user, err := s.userService.GetUserByID(ctx, req.Id)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
@@ -33,13 +33,13 @@ func (s *userServer) GetUser(ctx context.Context, req *userv1.GetUserRequest) (*
 		return nil, status.Error(codes.Internal, "failed to get user")
 	}
 
-	return &userv1.GetUserResponse{
+	return &genprotov1.GetUserResponse{
 		User: s.userToProto(user),
 	}, nil
 }
 
-func (s *userServer) userToProto(user *entities.User) *userv1.User {
-	protoUser := &userv1.User{
+func (s *userServer) userToProto(user *entities.User) *genprotov1.User {
+	protoUser := &genprotov1.User{
 		Id:        user.ID.String(),
 		Email:     user.Email,
 		FullName:  fromPtr(user.FullName),
@@ -58,11 +58,4 @@ func (s *userServer) userToProto(user *entities.User) *userv1.User {
 	}
 
 	return protoUser
-}
-
-func fromPtr(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }

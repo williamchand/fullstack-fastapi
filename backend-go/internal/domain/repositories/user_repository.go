@@ -17,4 +17,5 @@ type UserRepository interface {
 	Update(ctx context.Context, user *entities.User) UserRepository
 	GetUserRoles(ctx context.Context, userID uuid.UUID) ([]entities.Role, error)
 	AssignRole(ctx context.Context, userID uuid.UUID, roleID int32) error
+	SetUserRoles(ctx context.Context, userID uuid.UUID, roleIDs []int32) error
 }

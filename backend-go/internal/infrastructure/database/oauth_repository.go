@@ -13,16 +13,18 @@ import (
 
 type oauthRepository struct {
 	queries *dbgen.Queries
+	db      repositories.ConnectionPool
 }
 
-func NewOAuthRepository(queries *dbgen.Queries) repositories.OAuthRepository {
-	return &oauthRepository{queries: queries}
+func NewOAuthRepository(queries *dbgen.Queries, db repositories.ConnectionPool) repositories.OAuthRepository {
+	return &oauthRepository{queries: queries, db: db}
 }
 
 // WithTx sets the transaction for the repository
 func (r *oauthRepository) WithTx(tx pgx.Tx) repositories.OAuthRepository {
 	return &oauthRepository{
 		queries: r.queries.WithTx(tx),
+		db:      r.db,
 	}
 }
 

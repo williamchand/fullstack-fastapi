@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package salonapp.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "v1/user_service.proto";
+option go_package = "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/salonapp/v1;salonappv1";
+
+// OAuth Service
+service OAuthService {
+  rpc GetOAuthURL(GetOAuthURLRequest) returns (GetOAuthURLResponse) {
+    option (google.api.http) = {
+      get: "/v1/oauth/{provider}"
+    };
+  }
+
+  rpc HandleOAuthCallback(HandleOAuthCallbackRequest) returns (HandleOAuthCallbackResponse) {
+    option (google.api.http) = {
+      post: "/v1/oauth/{provider}/callback"
+      body: "*"
+    };
+  }
+
+  rpc GetUserOAuthAccounts(GetUserOAuthAccountsRequest) returns (GetUserOAuthAccountsResponse) {
+    option (google.api.http) = {
+      get: "/v1/oauth/{user_id}"
+    };
+  }
+}
+
+// Messages for OAuth
+message GetOAuthURLRequest {
+  string provider = 1;  // e.g., "google", "github", etc.
+  string redirect_uri = 2; // Optional: override default redirect URI
+}
+
+message GetOAuthURLResponse {
+  string url = 1;
+  string state = 2;
+}
+
+message HandleOAuthCallbackRequest {
+  string provider = 1;
+  string code = 2;
+  string state = 3;
+}
+
+message HandleOAuthCallbackResponse {
+  salonapp.v1.User user = 1;
+  string access_token = 2;  // JWT or session token
+  string refresh_token = 3; // Optional refresh token
+  google.protobuf.Timestamp expires_at = 4;
+  bool is_new_user = 5;
+}
+
+message LinkOAuthAccountRequest {
+  string provider = 1;
+  string code = 2;
+  string state = 3;
+  string user_id = 4; // UUID of existing user
+}
+
+message LinkOAuthAccountResponse {
+  OAuthAccount account = 1;
+}
+
+message UnlinkOAuthAccountRequest {
+  string provider = 1;
+  string user_id = 2;
+}
+
+message UnlinkOAuthAccountResponse {
+  bool success = 1;
+}
+
+message GetUserOAuthAccountsRequest {
+  string user_id = 1;
+}
+
+message GetUserOAuthAccountsResponse {
+  repeated OAuthAccount accounts = 1;
+}
+
+message OAuthAccount {
+  string id = 1;
+  string provider = 2;
+  string provider_id = 3;
+  string user_id = 4;
+  string email = 5;
+  string name = 6;
+  string picture = 7;
+  google.protobuf.Timestamp linked_at = 8;
+  google.protobuf.Timestamp last_used_at = 9;
+}

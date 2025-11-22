@@ -25,12 +25,16 @@ SET
 WHERE id = $1
 RETURNING *;
 
--- name: GetUserRoles :many
+-- name: GetUserRole :many
 SELECT r.* FROM role r
-JOIN user_role ur ON r.id = ur.role_id
+INNER JOIN user_role ur ON r.id = ur.role_id
 WHERE ur.user_id = $1;
 
 -- name: AssignRoleToUser :exec
 INSERT INTO user_role (user_id, role_id)
 VALUES ($1, $2)
 ON CONFLICT (user_id, role_id) DO NOTHING;
+
+-- name: DeleteUserRole :exec
+DELETE FROM user_role
+WHERE user_id = $1;

@@ -13,17 +13,20 @@ import (
 
 type userRepository struct {
 	queries *dbgen.Queries
+	db      repositories.ConnectionPool
 }
 
-func NewUserRepository(queries *dbgen.Queries) repositories.UserRepository {
-	return &userRepository{queries: queries}
+func NewUserRepository(queries *dbgen.Queries, db repositories.ConnectionPool) repositories.UserRepository {
+	return &userRepository{queries: queries, db: db}
 }
 
 // WithTx sets the transaction for the repository
-func (r *userRepository) WithTx(tx pgx.Tx) {
-	r.queries = r.queries.WithTx(tx)
+func (r *userRepository) WithTx(tx pgx.Tx) repositories.UserRepository {
+	return &userRepository{
+		queries: r.queries.WithTx(tx),
+		db:      r.db,
+	}
 }
-
 func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*entities.User, error) {
 	dbUser, err := r.queries.GetUserByID(ctx, id)
 	if err != nil {
@@ -60,6 +63,68 @@ func (r *userRepository) Create(ctx context.Context, user *entities.User) error 
 	user.UpdatedAt = dbUser.UpdatedAt.Time
 
 	return nil
+}
+
+func (r *userRepository) Update(ctx context.Context, user *entities.User) repositories.UserRepository {
+	// Implementation depends on your update strategy
+	// This could execute the update or return a transactional version
+	return r
+}
+
+func (r *userRepository) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]entities.Role, error) {
+	dbRoles, err := r.queries.GetUserRole(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	roles := make([]entities.Role, len(dbRoles))
+	for i, dbRole := range dbRoles {
+		roles[i] = entities.Role{
+			ID:          dbRole.ID,
+			Name:        dbRole.Name,
+			Description: fromPgText(dbRole.Description),
+			CreatedAt:   dbRole.CreatedAt.Time,
+			UpdatedAt:   dbRole.UpdatedAt.Time,
+		}
+	}
+
+	return roles, nil
+}
+
+func (r *userRepository) AssignRole(ctx context.Context, userID uuid.UUID, roleID int32) error {
+	params := dbgen.AssignRoleToUserParams{
+		UserID: userID,
+		RoleID: roleID,
+	}
+	return r.queries.AssignRoleToUser(ctx, params)
+}
+
+func (r *userRepository) SetUserRoles(ctx context.Context, userID uuid.UUID, roleIDs []int32) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := r.queries.WithTx(tx)
+
+	err = qtx.DeleteUserRole(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	for _, roleID := range roleIDs {
+		params := dbgen.AssignRoleToUserParams{
+			UserID: userID,
+			RoleID: roleID,
+		}
+		err = qtx.AssignRoleToUser(ctx, params)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (r *userRepository) toEntity(dbUser *dbgen.User) *entities.User {

@@ -5,15 +5,15 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 )
 
 // TransactionManager handles database transactions
 type TransactionManager struct {
-	pool *pgxpool.Pool
+	pool repositories.ConnectionPool
 }
 
-func NewTransactionManager(pool *pgxpool.Pool) *TransactionManager {
+func NewTransactionManager(pool repositories.ConnectionPool) *TransactionManager {
 	return &TransactionManager{pool: pool}
 }
 

@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	genproto "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto"
+	genprotov1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"google.golang.org/grpc"
 )
 
@@ -21,7 +21,8 @@ func (a *App) runGRPC(ctx context.Context) error {
 		),
 	)
 
-	genproto.RegisterUserServiceServer(server, a.serviceServer.userServer)
+	genprotov1.RegisterUserServiceServer(server, a.serviceServer.userServer)
+	genprotov1.RegisterOAuthServiceServer(server, a.serviceServer.oauthServer)
 
 	log.Printf("gRPC server running on :%s", a.cfg.GRPCPort)
 	return server.Serve(lis)

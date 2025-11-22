@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package user.v1;
+package salonapp.v1;
 
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/user/v1;userv1";
+option go_package = "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/salonapp/v1;salonappv1";
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {

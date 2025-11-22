@@ -10,7 +10,7 @@ vendor/
 # Generated code
 gen/
 internal/infrastructure/database/dbgen/*.go
-
+config/jwt/*.pem
 # Test files
 coverage.out
 coverage.html

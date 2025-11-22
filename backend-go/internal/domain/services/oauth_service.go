@@ -124,7 +124,7 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code
 	if err != nil {
 		return nil, err
 	}
-	// After user is fetched or created:
+
 	roles := []string{}
 	for _, role := range user.Roles {
 		roles = append(roles, role.Name)

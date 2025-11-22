@@ -61,7 +61,7 @@ func (s *userServer) UpdateUser(ctx context.Context, req *genprotov1.UpdateUserR
 		return nil, status.Error(codes.Internal, "failed to get user")
 	}
 
-	return &genprotov1.GetUserResponse{
+	return &genprotov1.UpdateUserResponse{
 		User: s.userToProto(user),
 	}, nil
 }

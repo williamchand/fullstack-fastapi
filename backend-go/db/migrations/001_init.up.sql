@@ -50,6 +50,7 @@ CREATE TABLE public.oauth_account (
     token_expires_at timestamptz NULL,
     created_at timestamptz DEFAULT now() NULL,
     updated_at timestamptz DEFAULT now() NULL,
+	provider_data jsonb DEFAULT '{}'::jsonb NOT NULL,
     CONSTRAINT oauth_account_pkey PRIMARY KEY (id),
     CONSTRAINT oauth_account_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id) ON DELETE CASCADE,
     CONSTRAINT uq_oauth_provider_user UNIQUE (provider, provider_user_id)

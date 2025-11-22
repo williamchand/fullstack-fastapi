@@ -1,14 +1,15 @@
-DROP TABLE public.payment_method;
-
-DROP TABLE public."template";
-
-DROP TABLE public.guest;
 
 DROP TABLE public.item;
 
-DROP TABLE public.payment;
+DROP TABLE public.guest;
 
 DROP TABLE public.wedding;
+
+DROP TABLE public.payment;
+
+DROP TABLE public."template";
+
+DROP TABLE public.payment_method;
 
 DROP TYPE public.rsvp_status;
 

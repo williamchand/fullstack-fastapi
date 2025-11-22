@@ -49,7 +49,7 @@ func (s *oAuthServer) GetOAuthURL(ctx context.Context, req *salonappv1.GetOAuthU
 //
 
 func (s *oAuthServer) HandleOAuthCallback(ctx context.Context, req *salonappv1.HandleOAuthCallbackRequest) (*salonappv1.HandleOAuthCallbackResponse, error) {
-	user, err := s.oauth.HandleCallback(ctx, req.Provider, req.Code)
+	oauthLoginResult, err := s.oauth.HandleCallback(ctx, req.Provider, req.Code)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidOAuthCode) {
 			return nil, status.Error(codes.InvalidArgument, "invalid authorization code")
@@ -61,11 +61,11 @@ func (s *oAuthServer) HandleOAuthCallback(ctx context.Context, req *salonappv1.H
 	}
 
 	return &salonappv1.HandleOAuthCallbackResponse{
-		User:         s.userToProto(user),
-		AccessToken:  tokenInfo.AccessToken,
-		RefreshToken: tokenInfo.RefreshToken,
-		ExpiresAt:    timestamppb.New(tokenInfo.ExpiresAt),
-		IsNewUser:    tokenInfo.IsNewUser,
+		User:         s.userToProto(oauthLoginResult.User),
+		AccessToken:  oauthLoginResult.AccessToken,
+		RefreshToken: oauthLoginResult.RefreshToken,
+		ExpiresAt:    timestamppb.New(oauthLoginResult.ExpiresAt),
+		IsNewUser:    oauthLoginResult.IsNewUser,
 	}, nil
 }
 

@@ -17,7 +17,7 @@ func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) 
 		return nil, err
 	}
 	return &AppServices{
-		UserService:  services.NewUserService(repo.UserRepo, repo.OAuthRepo),
+		UserService:  services.NewUserService(repo.UserRepo, repo.OAuthRepo, jwtService),
 		OauthService: services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager, jwtService),
 	}, nil
 }

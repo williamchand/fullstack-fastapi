@@ -8,7 +8,6 @@ import (
 )
 
 type RoleValidator struct {
-	// You can add configuration here if needed
 }
 
 func NewRoleValidator() *RoleValidator {

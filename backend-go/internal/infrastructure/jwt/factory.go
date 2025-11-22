@@ -6,16 +6,17 @@ import (
 	"os"
 
 	"github.com/williamchand/fullstack-fastapi/backend-go/config"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 )
 
 // NewService creates a JWT service from application config
-func NewService(cfg *config.Config) (JWTService, error) {
+func NewService(cfg *config.Config) (repositories.JWTRepository, error) {
 	jwtConfig := cfg.GetJWTConfig()
 	return NewServiceFromConfig(jwtConfig)
 }
 
 // NewServiceFromConfig creates a JWT service from JWT-specific config
-func NewServiceFromConfig(cfg *config.JWTConfig) (JWTService, error) {
+func NewServiceFromConfig(cfg *config.JWTConfig) (repositories.JWTRepository, error) {
 	// Try to create RSA signer first (recommended)
 	if signer, err := createRSASigner(cfg); err == nil {
 		log.Println("✅ Using RSA JWT signing (recommended for production)")

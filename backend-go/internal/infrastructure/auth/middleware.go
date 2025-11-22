@@ -6,21 +6,20 @@ import (
 	"strings"
 
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type AuthMiddleware struct {
-	jwtService    jwt.JWTService
+	jwtRepository repositories.JWTRepository
 	roleValidator *RoleValidator
 	userRepo      repositories.UserRepository // interface to get user by ID
 }
 
-func NewAuthMiddleware(jwtService jwt.JWTService, roleValidator *RoleValidator, userRepo repositories.UserRepository) *AuthMiddleware {
+func NewAuthMiddleware(jwtRepository repositories.JWTRepository, roleValidator *RoleValidator, userRepo repositories.UserRepository) *AuthMiddleware {
 	return &AuthMiddleware{
-		jwtService:    jwtService,
+		jwtRepository: jwtRepository,
 		roleValidator: roleValidator,
 		userRepo:      userRepo,
 	}
@@ -40,7 +39,7 @@ func (m *AuthMiddleware) HTTPMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		claims, err := m.jwtService.ValidateToken(token)
+		claims, err := m.jwtRepository.ValidateToken(token)
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
@@ -71,7 +70,7 @@ func (m *AuthMiddleware) GRPCAuthInterceptor(ctx context.Context, req interface{
 		return nil, status.Error(codes.Unauthenticated, "authentication required")
 	}
 
-	claims, err := m.jwtService.ValidateToken(token)
+	claims, err := m.jwtRepository.ValidateToken(token)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}

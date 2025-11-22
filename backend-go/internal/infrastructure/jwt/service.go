@@ -6,31 +6,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 )
-
-// JWTService defines the interface for JWT token operations
-type JWTService interface {
-	GenerateToken(userID uuid.UUID, email string, roles []string) (*TokenResult, error)
-	GenerateRefreshToken(userID uuid.UUID) (*TokenResult, error)
-	ValidateToken(tokenString string) (*TokenClaims, error)
-	RefreshToken(refreshToken string) (*TokenResult, error)
-	ExtractUserIDFromToken(tokenString string) (uuid.UUID, error)
-}
-
-type TokenResult struct {
-	Token     string
-	ExpiresAt time.Time
-}
-
-// TokenClaims represents the claims embedded in JWT tokens
-type TokenClaims struct {
-	UserID    uuid.UUID `json:"user_id"`
-	Email     string    `json:"email"`
-	Roles     []string  `json:"roles"`
-	ExpiresAt int64     `json:"exp"`
-	IssuedAt  int64     `json:"iat"`
-	Type      string    `json:"type"` // "access" or "refresh"
-}
 
 // jwtService implements JWTService
 type jwtService struct {
@@ -41,7 +19,7 @@ type jwtService struct {
 }
 
 // NewJWTService creates a new JWT service
-func NewJWTService(signer Signer, accessTokenExp, refreshTokenExp time.Duration, issuer string) JWTService {
+func NewJWTService(signer Signer, accessTokenExp, refreshTokenExp time.Duration, issuer string) repositories.JWTRepository {
 	return &jwtService{
 		signer:          signer,
 		accessTokenExp:  accessTokenExp,
@@ -51,7 +29,7 @@ func NewJWTService(signer Signer, accessTokenExp, refreshTokenExp time.Duration,
 }
 
 // GenerateToken creates a new JWT access token
-func (j *jwtService) GenerateToken(userID uuid.UUID, email string, roles []string) (*TokenResult, error) {
+func (j *jwtService) GenerateToken(userID uuid.UUID, email string, roles []string) (*entities.TokenResult, error) {
 	now := time.Now()
 	expiresAt := now.Add(j.accessTokenExp)
 
@@ -66,14 +44,14 @@ func (j *jwtService) GenerateToken(userID uuid.UUID, email string, roles []strin
 	}
 
 	token, err := j.signer.Sign(claims)
-	return &TokenResult{
+	return &entities.TokenResult{
 		Token:     token,
 		ExpiresAt: expiresAt,
 	}, err
 }
 
 // GenerateRefreshToken creates a new refresh token
-func (j *jwtService) GenerateRefreshToken(userID uuid.UUID) (*TokenResult, error) {
+func (j *jwtService) GenerateRefreshToken(userID uuid.UUID) (*entities.TokenResult, error) {
 	now := time.Now()
 	expiresAt := now.Add(j.refreshTokenExp)
 
@@ -86,14 +64,14 @@ func (j *jwtService) GenerateRefreshToken(userID uuid.UUID) (*TokenResult, error
 	}
 
 	token, err := j.signer.Sign(claims)
-	return &TokenResult{
+	return &entities.TokenResult{
 		Token:     token,
 		ExpiresAt: expiresAt,
 	}, err
 }
 
 // ValidateToken validates and parses a JWT token
-func (j *jwtService) ValidateToken(tokenString string) (*TokenClaims, error) {
+func (j *jwtService) ValidateToken(tokenString string) (*entities.TokenClaims, error) {
 	claims, err := j.signer.Verify(tokenString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify token: %w", err)
@@ -128,7 +106,7 @@ func (j *jwtService) ValidateToken(tokenString string) (*TokenClaims, error) {
 	iat, _ := claims["iat"].(float64)
 	tokenType, _ := claims["type"].(string)
 
-	return &TokenClaims{
+	return &entities.TokenClaims{
 		UserID:    userID,
 		Email:     email,
 		Roles:     roles,
@@ -139,7 +117,7 @@ func (j *jwtService) ValidateToken(tokenString string) (*TokenClaims, error) {
 }
 
 // RefreshToken validates a refresh token and returns a new access token
-func (j *jwtService) RefreshToken(refreshToken string) (*TokenResult, error) {
+func (j *jwtService) RefreshToken(refreshToken string) (*entities.TokenResult, error) {
 	claims, err := j.ValidateToken(refreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("invalid refresh token: %w", err)

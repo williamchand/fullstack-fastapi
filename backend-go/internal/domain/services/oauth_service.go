@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/williamchand/fullstack-fastapi/backend-go/config"
@@ -35,6 +36,7 @@ type OAuthLoginResult struct {
 	AccessToken  string
 	RefreshToken string
 	IsNewUser    bool
+	ExpiresAt    time.Time
 }
 
 type OAuthService struct {
@@ -140,8 +142,9 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code
 	}
 	return &OAuthLoginResult{
 		User:         user,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		AccessToken:  accessToken.Token,
+		RefreshToken: refreshToken.Token,
+		ExpiresAt:    accessToken.ExpiresAt,
 		IsNewUser:    isNewUser,
 	}, nil
 }

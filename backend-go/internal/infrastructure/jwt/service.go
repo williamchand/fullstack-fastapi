@@ -10,11 +10,16 @@ import (
 
 // JWTService defines the interface for JWT token operations
 type JWTService interface {
-	GenerateToken(userID uuid.UUID, email string, roles []string) (string, error)
-	GenerateRefreshToken(userID uuid.UUID) (string, error)
+	GenerateToken(userID uuid.UUID, email string, roles []string) (*TokenResult, error)
+	GenerateRefreshToken(userID uuid.UUID) (*TokenResult, error)
 	ValidateToken(tokenString string) (*TokenClaims, error)
-	RefreshToken(refreshToken string) (string, error)
+	RefreshToken(refreshToken string) (*TokenResult, error)
 	ExtractUserIDFromToken(tokenString string) (uuid.UUID, error)
+}
+
+type TokenResult struct {
+	Token     string
+	ExpiresAt time.Time
 }
 
 // TokenClaims represents the claims embedded in JWT tokens
@@ -46,7 +51,7 @@ func NewJWTService(signer Signer, accessTokenExp, refreshTokenExp time.Duration,
 }
 
 // GenerateToken creates a new JWT access token
-func (j *jwtService) GenerateToken(userID uuid.UUID, email string, roles []string) (string, error) {
+func (j *jwtService) GenerateToken(userID uuid.UUID, email string, roles []string) (*TokenResult, error) {
 	now := time.Now()
 	expiresAt := now.Add(j.accessTokenExp)
 
@@ -60,11 +65,15 @@ func (j *jwtService) GenerateToken(userID uuid.UUID, email string, roles []strin
 		"type":    "access",
 	}
 
-	return j.signer.Sign(claims)
+	token, err := j.signer.Sign(claims)
+	return &TokenResult{
+		Token:     token,
+		ExpiresAt: expiresAt,
+	}, err
 }
 
 // GenerateRefreshToken creates a new refresh token
-func (j *jwtService) GenerateRefreshToken(userID uuid.UUID) (string, error) {
+func (j *jwtService) GenerateRefreshToken(userID uuid.UUID) (*TokenResult, error) {
 	now := time.Now()
 	expiresAt := now.Add(j.refreshTokenExp)
 
@@ -76,7 +85,11 @@ func (j *jwtService) GenerateRefreshToken(userID uuid.UUID) (string, error) {
 		"type":    "refresh",
 	}
 
-	return j.signer.Sign(claims)
+	token, err := j.signer.Sign(claims)
+	return &TokenResult{
+		Token:     token,
+		ExpiresAt: expiresAt,
+	}, err
 }
 
 // ValidateToken validates and parses a JWT token
@@ -126,20 +139,20 @@ func (j *jwtService) ValidateToken(tokenString string) (*TokenClaims, error) {
 }
 
 // RefreshToken validates a refresh token and returns a new access token
-func (j *jwtService) RefreshToken(refreshToken string) (string, error) {
+func (j *jwtService) RefreshToken(refreshToken string) (*TokenResult, error) {
 	claims, err := j.ValidateToken(refreshToken)
 	if err != nil {
-		return "", fmt.Errorf("invalid refresh token: %w", err)
+		return nil, fmt.Errorf("invalid refresh token: %w", err)
 	}
 
 	if claims.Type != "refresh" {
-		return "", fmt.Errorf("token is not a refresh token")
+		return nil, fmt.Errorf("token is not a refresh token")
 	}
 
 	// Generate new access token
 	newAccessToken, err := j.GenerateToken(claims.UserID, claims.Email, claims.Roles)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate new access token: %w", err)
+		return nil, fmt.Errorf("failed to generate new access token: %w", err)
 	}
 
 	return newAccessToken, nil

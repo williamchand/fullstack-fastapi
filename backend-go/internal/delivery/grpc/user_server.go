@@ -53,7 +53,7 @@ func (s *userServer) CreateUser(ctx context.Context, req *genprotov1.CreateUserR
 }
 
 func (s *userServer) UpdateUser(ctx context.Context, req *genprotov1.UpdateUserRequest) (*genprotov1.UpdateUserResponse, error) {
-	user, err := s.userService.GetUserByID(ctx, req.Id)
+	user, err := s.userService.UpdateUser(ctx, req.Id, *req.Email, *req.FullName, *req.PhoneNumber)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")

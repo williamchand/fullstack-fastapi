@@ -82,10 +82,6 @@ func (s *oAuthServer) userToProto(u *entities.User) *salonappv1.User {
 		UpdatedAt:       timestamppb.New(u.UpdatedAt),
 	}
 
-	if u.LastLoginAt != nil {
-		p.LastLoginAt = timestamppb.New(*u.LastLoginAt)
-	}
-
 	return p
 }
 

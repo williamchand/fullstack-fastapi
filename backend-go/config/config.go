@@ -117,6 +117,22 @@ func (c *Config) GetJWTConfig() *JWTConfig {
 	}
 }
 
+// GetJWTConfig returns JWT-specific configuration
+func (c *Config) GetOauthConfig() *OAuthConfig {
+	return &OAuthConfig{
+		ClientID:     c.OAuth.GoogleClientID,
+		ClientSecret: c.OAuth.GoogleClientSecret,
+		RedirectURL:  c.OAuth.GoogleRedirectURL,
+	}
+}
+
+// OAuthConfig is a subset of Config for OAuth-specific settings
+type OAuthConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+}
+
 // JWTConfig is a subset of Config for JWT-specific settings
 type JWTConfig struct {
 	PrivateKeyPath         string

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/salonapp/v1"
+	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
 

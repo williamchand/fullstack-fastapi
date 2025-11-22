@@ -25,7 +25,7 @@ func (a *App) runHTTP(ctx context.Context) error {
 		return err
 	}
 
-	err := genprotov1.RegisterOauthHandlerFromEndpoint(
+	err = genprotov1.RegisterOAuthServiceHandlerFromEndpoint(
 		ctx,
 		mux,
 		fmt.Sprintf(":%d", a.cfg.GRPCPort),

@@ -6,12 +6,15 @@ import (
 )
 
 type ServiceServer struct {
-	userServer genprotov1.UserServiceServer
+	userServer  genprotov1.UserServiceServer
+	oauthServer genprotov1.OAuthServiceServer
 }
 
 func initServiceServer(appServices *AppServices) *ServiceServer {
 	userServer := grpc.NewUserServer(appServices.UserService)
+	oauthServer := grpc.NewOAuthServer(appServices.OauthService)
 	return &ServiceServer{
-		userServer: userServer,
+		userServer:  userServer,
+		oauthServer: oauthServer,
 	}
 }

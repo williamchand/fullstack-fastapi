@@ -1,4 +1,4 @@
-package auth
+package services
 
 import (
 	"context"
@@ -10,17 +10,12 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/williamchand/fullstack-fastapi/backend-go/config"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
-
-type GoogleOAuthConfig struct {
-	ClientID     string
-	ClientSecret string
-	RedirectURL  string
-}
 
 // GoogleUserInfo represents the user information returned by Google OAuth
 type GoogleUserInfo struct {
@@ -34,19 +29,19 @@ type GoogleUserInfo struct {
 	Locale        string `json:"locale"`
 }
 
-type GoogleOAuthService struct {
+type OAuthService struct {
 	config    *oauth2.Config
 	oauthRepo repositories.OAuthRepository
 	userRepo  repositories.UserRepository
 	txManager repositories.TransactionManager
 }
 
-func NewGoogleOAuthService(
-	cfg *GoogleOAuthConfig,
+func NewOAuthService(
+	cfg config.OAuthConfig,
 	oauthRepo repositories.OAuthRepository,
 	userRepo repositories.UserRepository,
 	txManager repositories.TransactionManager,
-) *GoogleOAuthService {
+) *OAuthService {
 	config := &oauth2.Config{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
@@ -58,7 +53,7 @@ func NewGoogleOAuthService(
 		Endpoint: google.Endpoint,
 	}
 
-	return &GoogleOAuthService{
+	return &OAuthService{
 		config:    config,
 		oauthRepo: oauthRepo,
 		userRepo:  userRepo,
@@ -66,7 +61,7 @@ func NewGoogleOAuthService(
 	}
 }
 
-func (s *GoogleOAuthService) GetAuthURL() (string, string, error) {
+func (s *OAuthService) GetAuthURL() (string, string, error) {
 	state, err := generateRandomState()
 	if err != nil {
 		return "", "", err
@@ -75,7 +70,7 @@ func (s *GoogleOAuthService) GetAuthURL() (string, string, error) {
 	return s.config.AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
 }
 
-func (s *GoogleOAuthService) HandleCallback(ctx context.Context, code string) (*entities.User, error) {
+func (s *OAuthService) HandleCallback(ctx context.Context, code string) (*entities.User, error) {
 	token, err := s.config.Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code for token: %w", err)
@@ -122,7 +117,7 @@ func (s *GoogleOAuthService) HandleCallback(ctx context.Context, code string) (*
 }
 
 // getUserInfo retrieves user information from Google API
-func (s *GoogleOAuthService) getUserInfo(ctx context.Context, token *oauth2.Token) (*GoogleUserInfo, error) {
+func (s *OAuthService) getUserInfo(ctx context.Context, token *oauth2.Token) (*GoogleUserInfo, error) {
 	client := s.config.Client(ctx, token)
 
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
@@ -150,7 +145,7 @@ func (s *GoogleOAuthService) getUserInfo(ctx context.Context, token *oauth2.Toke
 }
 
 // createUserFromOAuth creates a new user from OAuth information
-func (s *GoogleOAuthService) createUserFromOAuth(
+func (s *OAuthService) createUserFromOAuth(
 	ctx context.Context,
 	userRepo repositories.UserRepository,
 	oauthRepo repositories.OAuthRepository,
@@ -213,7 +208,7 @@ func (s *GoogleOAuthService) createUserFromOAuth(
 }
 
 // buildProviderData builds the provider data JSON from user info
-func (s *GoogleOAuthService) buildProviderData(userInfo *GoogleUserInfo) map[string]interface{} {
+func (s *OAuthService) buildProviderData(userInfo *GoogleUserInfo) map[string]interface{} {
 	return map[string]interface{}{
 		"name":        userInfo.Name,
 		"given_name":  userInfo.GivenName,
@@ -224,7 +219,7 @@ func (s *GoogleOAuthService) buildProviderData(userInfo *GoogleUserInfo) map[str
 }
 
 // RefreshToken refreshes the OAuth token if it's expired
-func (s *GoogleOAuthService) RefreshToken(ctx context.Context, userID string) error {
+func (s *OAuthService) RefreshToken(ctx context.Context, userID string) error {
 	return s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
 		oauthRepo := s.oauthRepo.WithTx(tx)
 

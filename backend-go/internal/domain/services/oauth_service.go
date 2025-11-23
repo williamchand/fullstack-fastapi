@@ -216,7 +216,7 @@ func (s *OAuthService) createUserFromOAuth(
 	}
 
 	// Create the user in database
-	err = userRepo.Create(ctx, user)
+	user, err = userRepo.Create(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}

@@ -38,8 +38,13 @@ type OAuthLoginResult struct {
 	ExpiresAt    time.Time
 }
 
+type OAuthConfigService struct {
+	configService *oauth2.Config
+	infoURL       string
+}
+
 type OAuthService struct {
-	config    map[string]*oauth2.Config
+	config    map[string]OAuthConfigService
 	oauthRepo repositories.OAuthRepository
 	userRepo  repositories.UserRepository
 	txManager repositories.TransactionManager
@@ -53,16 +58,19 @@ func NewOAuthService(
 	txManager repositories.TransactionManager,
 	JwtRepo repositories.JWTRepository,
 ) *OAuthService {
-	config := map[string]*oauth2.Config{}
-	config["google"] = &oauth2.Config{
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-		RedirectURL:  cfg.RedirectURL,
-		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
+	config := map[string]OAuthConfigService{}
+	config["google"] = OAuthConfigService{
+		configService: &oauth2.Config{
+			ClientID:     cfg.ClientID,
+			ClientSecret: cfg.ClientSecret,
+			RedirectURL:  cfg.RedirectURL,
+			Scopes: []string{
+				"https://www.googleapis.com/auth/userinfo.email",
+				"https://www.googleapis.com/auth/userinfo.profile",
+			},
+			Endpoint: google.Endpoint,
 		},
-		Endpoint: google.Endpoint,
+		infoURL: "https://www.googleapis.com/oauth2/v2/userinfo",
 	}
 	return &OAuthService{
 		config:    config,
@@ -79,11 +87,11 @@ func (s *OAuthService) GetAuthURL(provider string) (string, string, error) {
 		return "", "", err
 	}
 
-	return s.config[provider].AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
+	return s.config[provider].configService.AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
 }
 
 func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code string) (*OAuthLoginResult, error) {
-	token, err := s.config[provider].Exchange(ctx, code)
+	token, err := s.config[provider].configService.Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code for token: %w", err)
 	}
@@ -150,9 +158,9 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code
 
 // getUserInfo retrieves user information from Google API
 func (s *OAuthService) getUserInfo(ctx context.Context, provider string, token *oauth2.Token) (*ProviderUserInfo, error) {
-	client := s.config[provider].Client(ctx, token)
+	client := s.config[provider].configService.Client(ctx, token)
 
-	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	resp, err := client.Get(s.config[provider].infoURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info from Provider: %w", err)
 	}
@@ -273,7 +281,7 @@ func (s *OAuthService) RefreshToken(ctx context.Context, provider string, userID
 			Expiry:       *oauthAccounts.TokenExpiresAt,
 		}
 
-		newToken, err := s.config[provider].TokenSource(ctx, token).Token()
+		newToken, err := s.config[provider].configService.TokenSource(ctx, token).Token()
 		if err != nil {
 			return fmt.Errorf("failed to refresh token: %w", err)
 		}

@@ -60,7 +60,7 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName,
 		user.PhoneNumber = &phoneNumber
 	}
 
-	err = s.userRepo.Create(ctx, user)
+	user, err = s.userRepo.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -70,30 +70,26 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName,
 
 func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName, phoneNumber string) (*entities.User, error) {
 	// Check if user exists
-	existing, _ := s.userRepo.GetByEmail(ctx, email)
-	if existing != nil {
-		return nil, ErrUserExists
-	}
-
+	existingUser, _ := s.userRepo.GetByEmail(ctx, email)
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
-	hashedPasswordStr := string(hashedPassword)
 	user := &entities.User{
-		Email:          email,
-		HashedPassword: &hashedPasswordStr,
-		FullName:       &fullName,
-		IsActive:       true,
+		ID:          existingUser.ID,
+		Email:       email,
+		FullName:    &fullName,
+		PhoneNumber: &phoneNumber,
+		IsActive:    true,
+	}
+	hashedPasswordStr := string(hashedPassword)
+	if password != "" {
+		user.HashedPassword = &hashedPasswordStr
 	}
 
-	if phoneNumber != "" {
-		user.PhoneNumber = &phoneNumber
-	}
-
-	err = s.userRepo.Create(ctx, user)
+	user, err = s.userRepo.Update(ctx, user)
 	if err != nil {
 		return nil, err
 	}

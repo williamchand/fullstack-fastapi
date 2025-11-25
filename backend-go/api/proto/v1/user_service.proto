@@ -50,6 +50,13 @@ service UserService {
     };
   }
   
+  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse) {
+    option (google.api.http) = {
+      post: "/v1/login/access-token"
+      body: "*"
+    };
+  }
+  
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
     option (google.api.http) = {
       put: "/v1/users/{id}"
@@ -65,6 +72,22 @@ service UserService {
       }
     };
   }
+}
+
+message LoginUserRequest {
+  string grant_type = 1;
+  string username = 2;
+  string password = 3;
+  repeated string scopes = 4;
+  string client_id = 5;
+  string client_secret = 6;
+}
+
+message LoginUserResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+  string token_type = 4;
 }
 
 message User {

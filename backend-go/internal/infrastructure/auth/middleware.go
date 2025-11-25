@@ -8,6 +8,7 @@ import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -116,9 +117,24 @@ func extractTokenFromHeader(r *http.Request) string {
 }
 
 func extractTokenFromGRPCContext(ctx context.Context) string {
-	// This depends on how you pass tokens in gRPC
-	// Common approach is using metadata
-	return ""
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return ""
+	}
+
+	// gRPC metadata keys are lowercase
+	authHeaders := md.Get("authorization")
+	if len(authHeaders) == 0 {
+		return ""
+	}
+
+	// Expected format: "Bearer <token>"
+	parts := strings.SplitN(authHeaders[0], " ", 2)
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		return ""
+	}
+
+	return parts[1]
 }
 
 func isPublicMethod(method string) bool {

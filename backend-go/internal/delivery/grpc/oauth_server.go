@@ -24,12 +24,6 @@ func NewOAuthServer(oauth *services.OAuthService) salonappv1.OAuthServiceServer 
 	}
 }
 
-//
-// ────────────────────────────────────────────────────────────────
-//   1. Get OAuth URL
-// ────────────────────────────────────────────────────────────────
-//
-
 func (s *oAuthServer) GetOAuthURL(ctx context.Context, req *salonappv1.GetOAuthURLRequest) (*salonappv1.GetOAuthURLResponse, error) {
 	url, state, err := s.oauth.GetAuthURL(req.Provider)
 	if err != nil {
@@ -41,12 +35,6 @@ func (s *oAuthServer) GetOAuthURL(ctx context.Context, req *salonappv1.GetOAuthU
 		State: state,
 	}, nil
 }
-
-//
-// ────────────────────────────────────────────────────────────────
-//   2. Handle OAuth Callback
-// ────────────────────────────────────────────────────────────────
-//
 
 func (s *oAuthServer) HandleOAuthCallback(ctx context.Context, req *salonappv1.HandleOAuthCallbackRequest) (*salonappv1.HandleOAuthCallbackResponse, error) {
 	oauthLoginResult, err := s.oauth.HandleCallback(ctx, req.Provider, req.Code)
@@ -83,18 +71,4 @@ func (s *oAuthServer) userToProto(u *entities.User) *salonappv1.User {
 	}
 
 	return p
-}
-
-func (s *oAuthServer) oauthAccountToProto(a *entities.OAuthAccount) *salonappv1.OAuthAccount {
-	return &salonappv1.OAuthAccount{
-		Id:         a.ID,
-		Provider:   a.Provider,
-		ProviderId: a.ProviderID,
-		UserId:     a.UserID,
-		Email:      a.Email,
-		Name:       a.Name,
-		Picture:    a.Picture,
-		LinkedAt:   timestamppb.New(a.LinkedAt),
-		LastUsedAt: timestamppb.New(a.LastUsedAt),
-	}
 }

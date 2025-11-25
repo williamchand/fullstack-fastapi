@@ -71,3 +71,9 @@ CREATE TABLE public.verification_code (
 
 CREATE INDEX idx_verification_code_user_type ON public.verification_code (user_id, verification_type);
 CREATE INDEX idx_verification_code_expires ON public.verification_code (expires_at) WHERE used_at IS NULL;
+
+INSERT INTO public.role (name, description) VALUES
+('salon_owner','Beauty salon owner'),
+('salon_employee','salon employee role'),
+('customer','Default customer role'),
+('superuser','Superuser role');

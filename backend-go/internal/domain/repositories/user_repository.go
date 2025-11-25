@@ -15,5 +15,5 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*entities.User, error)
 	Create(ctx context.Context, user *entities.User) (*entities.User, error)
 	Update(ctx context.Context, user *entities.User) (*entities.User, error)
-	SetUserRoles(ctx context.Context, userID uuid.UUID, roleIDs []int32) error
+	SetUserRoles(ctx context.Context, userID uuid.UUID, roles []entities.RoleEnum) error
 }

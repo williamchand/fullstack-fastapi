@@ -30,6 +30,11 @@ SELECT r.* FROM role r
 INNER JOIN user_role ur ON r.id = ur.role_id
 WHERE ur.user_id = $1;
 
+-- name: GetRole :many
+SELECT r.id
+FROM role r
+WHERE r.name = ANY($1::text[]);
+
 -- name: AssignRoleToUser :exec
 INSERT INTO user_role (user_id, role_id)
 VALUES ($1, $2)

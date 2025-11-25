@@ -38,6 +38,9 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*entities.U
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
 	dbUser, err := r.queries.GetUserByEmail(ctx, email)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -87,6 +90,19 @@ func (r *userRepository) Update(ctx context.Context, user *entities.User) (*enti
 	return r.toEntity(&dbUser), err
 }
 
+func (r *userRepository) GetRoles(ctx context.Context, roles []entities.RoleEnum) ([]int32, error) {
+	roleNames := []string{}
+	for _, r := range roles {
+		roleNames = append(roleNames, string(r))
+	}
+	dbRoles, err := r.queries.GetRole(ctx, roleNames)
+	if err != nil {
+		return nil, err
+	}
+
+	return dbRoles, nil
+}
+
 func (r *userRepository) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]entities.Role, error) {
 	dbRoles, err := r.queries.GetUserRole(ctx, userID)
 	if err != nil {
@@ -115,32 +131,25 @@ func (r *userRepository) AssignRole(ctx context.Context, userID uuid.UUID, roleI
 	return r.queries.AssignRoleToUser(ctx, params)
 }
 
-func (r *userRepository) SetUserRoles(ctx context.Context, userID uuid.UUID, roleIDs []int32) error {
-	tx, err := r.db.Begin(ctx)
+func (r *userRepository) SetUserRoles(ctx context.Context, userID uuid.UUID, roles []entities.RoleEnum) error {
+	roleIDs, err := r.GetRoles(ctx, roles)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
 
-	qtx := r.queries.WithTx(tx)
-
-	err = qtx.DeleteUserRole(ctx, userID)
+	err = r.queries.DeleteUserRole(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	for _, roleID := range roleIDs {
-		params := dbgen.AssignRoleToUserParams{
-			UserID: userID,
-			RoleID: roleID,
-		}
-		err = qtx.AssignRoleToUser(ctx, params)
+		err = r.AssignRole(ctx, userID, roleID)
 		if err != nil {
 			return err
 		}
 	}
 
-	return tx.Commit(ctx)
+	return nil
 }
 
 func (r *userRepository) toEntity(dbUser *dbgen.User) *entities.User {
@@ -151,7 +160,6 @@ func (r *userRepository) toEntity(dbUser *dbgen.User) *entities.User {
 		FullName:        fromPgText(dbUser.FullName),
 		HashedPassword:  fromPgText(dbUser.HashedPassword),
 		IsActive:        dbUser.IsActive,
-		IsSuperuser:     dbUser.IsSuperuser,
 		IsEmailVerified: dbUser.IsEmailVerified,
 		IsPhoneVerified: dbUser.IsPhoneVerified,
 		IsTOTPEnabled:   dbUser.IsTotpEnabled,

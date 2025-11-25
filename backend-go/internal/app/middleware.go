@@ -15,7 +15,7 @@ func initMiddleware(cfg *config.Config, repo *Repositories) (*Middleware, error)
 	if err != nil {
 		return nil, err
 	}
-	roleValidator := auth.NewRoleValidator()
+	roleValidator := auth.NewRoleValidator(cfg)
 
 	return &Middleware{
 		Auth: auth.NewAuthMiddleware(jwtService, roleValidator, repo.UserRepo),

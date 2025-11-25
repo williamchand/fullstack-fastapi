@@ -202,6 +202,11 @@ generate-jwt-keys:
 	@mkdir -p config/jwt
 	@go run scripts/generate-jwt-keys/main.go
 
+generate-test-accounts:
+	@echo "Generating Test accounts..."
+	@go run scripts/generate-test-accounts/main.go
+
+
 setup-dev: env-example generate-jwt-keys
 	@echo "✅ Development environment setup complete!"
 	@echo "📝 Please edit .env with your actual configuration values"

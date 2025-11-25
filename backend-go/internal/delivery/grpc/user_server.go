@@ -39,7 +39,7 @@ func (s *userServer) GetUser(ctx context.Context, req *genprotov1.GetUserRequest
 }
 
 func (s *userServer) CreateUser(ctx context.Context, req *genprotov1.CreateUserRequest) (*genprotov1.CreateUserResponse, error) {
-	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, req.PhoneNumber)
+	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, req.PhoneNumber, []entities.RoleEnum{entities.RoleCustomer})
 	if err != nil {
 		if errors.Is(err, services.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exist")

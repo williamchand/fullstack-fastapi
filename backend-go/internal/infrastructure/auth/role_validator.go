@@ -4,27 +4,30 @@ import (
 	"context"
 	"strings"
 
+	"github.com/williamchand/fullstack-fastapi/backend-go/config"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 )
 
 type RoleValidator struct {
+	cfg *config.Config
 }
 
-func NewRoleValidator() *RoleValidator {
-	return &RoleValidator{}
+func NewRoleValidator(cfg *config.Config) *RoleValidator {
+	return &RoleValidator{
+		cfg: cfg,
+	}
 }
 
 // HasRole checks if user has any of the required roles
 func (v *RoleValidator) HasRole(user *entities.User, requiredRoles ...string) bool {
-	if user.IsSuperuser {
-		return true
-	}
-
 	userRoles := make(map[string]bool)
 	for _, role := range user.Roles {
 		userRoles[strings.ToLower(role.Name)] = true
 	}
 
+	if userRoles[strings.ToLower(v.cfg.Superuser.Groupname)] {
+		return true
+	}
 	for _, required := range requiredRoles {
 		if userRoles[strings.ToLower(required)] {
 			return true
@@ -36,15 +39,14 @@ func (v *RoleValidator) HasRole(user *entities.User, requiredRoles ...string) bo
 
 // HasAllRoles checks if user has all required roles
 func (v *RoleValidator) HasAllRoles(user *entities.User, requiredRoles ...string) bool {
-	if user.IsSuperuser {
-		return true
-	}
-
 	userRoles := make(map[string]bool)
 	for _, role := range user.Roles {
 		userRoles[strings.ToLower(role.Name)] = true
 	}
 
+	if userRoles[strings.ToLower(v.cfg.Superuser.Groupname)] {
+		return true
+	}
 	for _, required := range requiredRoles {
 		if !userRoles[strings.ToLower(required)] {
 			return false

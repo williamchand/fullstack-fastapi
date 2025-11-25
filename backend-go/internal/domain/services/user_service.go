@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 
@@ -14,18 +15,23 @@ import (
 type UserService struct {
 	userRepo  repositories.UserRepository
 	oauthRepo repositories.OAuthRepository
+	txManager repositories.TransactionManager
 	jwtRepo   repositories.JWTRepository
 }
 
-func NewUserService(userRepo repositories.UserRepository, oauthRepo repositories.OAuthRepository, jwtRepo repositories.JWTRepository) *UserService {
+func NewUserService(
+	userRepo repositories.UserRepository,
+	oauthRepo repositories.OAuthRepository,
+	txManager repositories.TransactionManager,
+	jwtRepo repositories.JWTRepository,
+) *UserService {
 	return &UserService{
 		userRepo:  userRepo,
 		oauthRepo: oauthRepo,
+		txManager: txManager,
 		jwtRepo:   jwtRepo,
 	}
 }
-
-// Existing methods...
 
 func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.User, error) {
 	userID, err := uuid.Parse(id)
@@ -36,14 +42,12 @@ func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.Use
 	return s.userRepo.GetByID(ctx, userID)
 }
 
-func (s *UserService) CreateUser(ctx context.Context, email, password, fullName, phoneNumber string) (*entities.User, error) {
-	// Check if user exists
+func (s *UserService) CreateUser(ctx context.Context, email, password, fullName, phoneNumber string, roles []entities.RoleEnum) (*entities.User, error) {
 	existing, _ := s.userRepo.GetByEmail(ctx, email)
 	if existing != nil {
 		return nil, ErrUserExists
 	}
 
-	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -61,18 +65,26 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName,
 		user.PhoneNumber = &phoneNumber
 	}
 
-	user, err = s.userRepo.Create(ctx, user)
-	if err != nil {
-		return nil, err
-	}
+	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
+		userRepoTx := s.userRepo.WithTx(tx)
+
+		user, err = userRepoTx.Create(ctx, user)
+		if err != nil {
+			return err
+		}
+
+		err = userRepoTx.SetUserRoles(ctx, user.ID, roles)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 
 	return user, nil
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName, phoneNumber string) (*entities.User, error) {
-	// Check if user exists
 	existingUser, _ := s.userRepo.GetByEmail(ctx, email)
-	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err

@@ -66,6 +66,13 @@ type Config struct {
 		Enabled        bool   `envconfig:"MONITORING_ENABLED" default:"false"`
 		PrometheusPort string `envconfig:"PROMETHEUS_PORT" default:"9091"`
 	}
+
+	// Superuser Configuration
+	Superuser struct {
+		Username  string `envconfig:"SUPERUSER_USERNAME"`
+		Groupname string `envconfig:"SUPERUSER_GROUP" default:"superuser"`
+		Password  string `envconfig:"SUPERUSER_PASSWORD"`
+	}
 }
 
 // Load loads configuration from environment variables and .env file

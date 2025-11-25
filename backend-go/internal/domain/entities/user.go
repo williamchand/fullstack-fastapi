@@ -13,7 +13,6 @@ type User struct {
 	FullName        *string
 	HashedPassword  *string
 	IsActive        bool
-	IsSuperuser     bool
 	IsEmailVerified bool
 	IsPhoneVerified bool
 	IsTOTPEnabled   bool

@@ -53,7 +53,7 @@ func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserR
 }
 
 func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserRequest) (*salonappv1.UpdateUserResponse, error) {
-	user, err := s.userService.UpdateUser(ctx, req.Id, *req.Email, *req.FullName, *req.PhoneNumber)
+	user, err := s.userService.UpdateUser(ctx, req.Id, *req.Email, *req.FullName, *req.PhoneNumber, []entities.RoleEnum{entities.RoleCustomer})
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
@@ -110,7 +110,6 @@ func (s *userServer) userToProto(user *entities.User) *salonappv1.User {
 		protoUser.PhoneNumber = *user.PhoneNumber
 	}
 
-	// Add roles
 	for _, role := range user.Roles {
 		protoUser.Roles = append(protoUser.Roles, role.Name)
 	}

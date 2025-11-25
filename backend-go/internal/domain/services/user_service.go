@@ -83,8 +83,11 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName,
 	return user, nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName, phoneNumber string) (*entities.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName, phoneNumber string, roles []entities.RoleEnum) (*entities.User, error) {
 	existingUser, _ := s.userRepo.GetByEmail(ctx, email)
+	if existingUser == nil {
+		return nil, ErrUserNotFound
+	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -102,10 +105,20 @@ func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName,
 		user.HashedPassword = &hashedPasswordStr
 	}
 
-	user, err = s.userRepo.Update(ctx, user)
-	if err != nil {
-		return nil, err
-	}
+	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
+		userRepoTx := s.userRepo.WithTx(tx)
+
+		user, err = userRepoTx.Create(ctx, user)
+		if err != nil {
+			return err
+		}
+
+		err = userRepoTx.SetUserRoles(ctx, user.ID, roles)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 
 	return user, nil
 }

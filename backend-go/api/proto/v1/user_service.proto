@@ -82,7 +82,7 @@ message LoginUserRequest {
 message LoginUserResponse {
   string access_token = 1;
   string refresh_token = 2;
-  int64 expires_in = 3;
+  google.protobuf.Timestamp expires_at = 3;
   string token_type = 4;
 }
 

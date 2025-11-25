@@ -91,7 +91,7 @@ func (s *userServer) LoginUser(ctx context.Context, req *genprotov1.LoginUserReq
 	return &genprotov1.LoginUserResponse{
 		AccessToken:  tokenPair.AccessToken,
 		RefreshToken: tokenPair.RefreshToken,
-		ExpiresIn:    tokenPair.ExpiresIn,
+		ExpiresAt:    timestamppb.New(tokenPair.ExpiresAt),
 		TokenType:    "bearer",
 	}, nil
 }

@@ -123,8 +123,8 @@ func extractTokenFromGRPCContext(ctx context.Context) string {
 
 func isPublicMethod(method string) bool {
 	publicMethods := map[string]bool{
-		"/user.v1.UserService/CreateUser": true,
-		"/auth.v1.AuthService/Login":      true,
+		"/salonapp.v1.UserService/CreateUser": true,
+		"/salonapp.v1.UserService/LoginUser":  true,
 	}
 
 	if _, ok := publicMethods[method]; ok {
@@ -135,8 +135,8 @@ func isPublicMethod(method string) bool {
 
 func isPublicHTTPPath(path string) bool {
 	publicPaths := map[string]bool{
-		"/user.v1.UserService/CreateUser": true,
-		"/auth.v1.AuthService/Login":      true,
+		"/v1/login/access-token": true,
+		"/v1/users":              true,
 	}
 
 	if _, ok := publicPaths[path]; ok {

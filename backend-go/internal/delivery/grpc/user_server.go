@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	genprotov1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
+	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
 
@@ -14,17 +14,17 @@ import (
 )
 
 type userServer struct {
-	genprotov1.UnimplementedUserServiceServer
+	salonappv1.UnimplementedUserServiceServer
 	userService *services.UserService
 }
 
-func NewUserServer(userService *services.UserService) genprotov1.UserServiceServer {
+func NewUserServer(userService *services.UserService) salonappv1.UserServiceServer {
 	return &userServer{
 		userService: userService,
 	}
 }
 
-func (s *userServer) GetUser(ctx context.Context, req *genprotov1.GetUserRequest) (*genprotov1.GetUserResponse, error) {
+func (s *userServer) GetUser(ctx context.Context, req *salonappv1.GetUserRequest) (*salonappv1.GetUserResponse, error) {
 	user, err := s.userService.GetUserByID(ctx, req.Id)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
@@ -33,12 +33,12 @@ func (s *userServer) GetUser(ctx context.Context, req *genprotov1.GetUserRequest
 		return nil, status.Error(codes.Internal, "failed to get user")
 	}
 
-	return &genprotov1.GetUserResponse{
+	return &salonappv1.GetUserResponse{
 		User: s.userToProto(user),
 	}, nil
 }
 
-func (s *userServer) CreateUser(ctx context.Context, req *genprotov1.CreateUserRequest) (*genprotov1.CreateUserResponse, error) {
+func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserRequest) (*salonappv1.CreateUserResponse, error) {
 	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, req.PhoneNumber, []entities.RoleEnum{entities.RoleCustomer})
 	if err != nil {
 		if errors.Is(err, services.ErrUserExists) {
@@ -47,12 +47,12 @@ func (s *userServer) CreateUser(ctx context.Context, req *genprotov1.CreateUserR
 		return nil, status.Error(codes.Internal, "failed to get user")
 	}
 
-	return &genprotov1.CreateUserResponse{
+	return &salonappv1.CreateUserResponse{
 		User: s.userToProto(user),
 	}, nil
 }
 
-func (s *userServer) UpdateUser(ctx context.Context, req *genprotov1.UpdateUserRequest) (*genprotov1.UpdateUserResponse, error) {
+func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserRequest) (*salonappv1.UpdateUserResponse, error) {
 	user, err := s.userService.UpdateUser(ctx, req.Id, *req.Email, *req.FullName, *req.PhoneNumber)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
@@ -61,11 +61,11 @@ func (s *userServer) UpdateUser(ctx context.Context, req *genprotov1.UpdateUserR
 		return nil, status.Error(codes.Internal, "failed to get user")
 	}
 
-	return &genprotov1.UpdateUserResponse{
+	return &salonappv1.UpdateUserResponse{
 		User: s.userToProto(user),
 	}, nil
 }
-func (s *userServer) LoginUser(ctx context.Context, req *genprotov1.LoginUserRequest) (*genprotov1.LoginUserResponse, error) {
+func (s *userServer) LoginUser(ctx context.Context, req *salonappv1.LoginUserRequest) (*salonappv1.LoginUserResponse, error) {
 	// Validate required params
 	if req.Username == "" || req.Password == "" {
 		return nil, status.Error(codes.InvalidArgument, "username and password are required")
@@ -88,7 +88,7 @@ func (s *userServer) LoginUser(ctx context.Context, req *genprotov1.LoginUserReq
 	}
 
 	// Map to proto response
-	return &genprotov1.LoginUserResponse{
+	return &salonappv1.LoginUserResponse{
 		AccessToken:  tokenPair.AccessToken,
 		RefreshToken: tokenPair.RefreshToken,
 		ExpiresAt:    timestamppb.New(tokenPair.ExpiresAt),
@@ -96,8 +96,8 @@ func (s *userServer) LoginUser(ctx context.Context, req *genprotov1.LoginUserReq
 	}, nil
 }
 
-func (s *userServer) userToProto(user *entities.User) *genprotov1.User {
-	protoUser := &genprotov1.User{
+func (s *userServer) userToProto(user *entities.User) *salonappv1.User {
+	protoUser := &salonappv1.User{
 		Id:        user.ID.String(),
 		Email:     user.Email,
 		FullName:  fromPtr(user.FullName),

@@ -16,6 +16,9 @@ type Repositories struct {
 
 func initRepositories(ctx context.Context, dbURL string) (*Repositories, repositories.ConnectionPool, error) {
 	dbPool, err := database.NewPool(ctx, dbURL)
+	if err != nil {
+		return nil, nil, err
+	}
 	queries := dbgen.New(dbPool)
 
 	return &Repositories{

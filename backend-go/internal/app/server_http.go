@@ -18,7 +18,7 @@ func (a *App) runHTTP(ctx context.Context) error {
 	err := genprotov1.RegisterUserServiceHandlerFromEndpoint(
 		ctx,
 		mux,
-		fmt.Sprintf(":%d", a.cfg.GRPCPort),
+		fmt.Sprintf(":%s", a.cfg.GRPCPort),
 		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
 	)
 	if err != nil {
@@ -28,7 +28,7 @@ func (a *App) runHTTP(ctx context.Context) error {
 	err = genprotov1.RegisterOAuthServiceHandlerFromEndpoint(
 		ctx,
 		mux,
-		fmt.Sprintf(":%d", a.cfg.GRPCPort),
+		fmt.Sprintf(":%s", a.cfg.GRPCPort),
 		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
 	)
 	if err != nil {
@@ -37,7 +37,7 @@ func (a *App) runHTTP(ctx context.Context) error {
 
 	handler := a.middleware.Auth.HTTPMiddleware(mux)
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", a.cfg.HTTPPort),
+		Addr:    fmt.Sprintf(":%s", a.cfg.HTTPPort),
 		Handler: handler,
 	}
 

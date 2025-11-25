@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
@@ -117,4 +118,40 @@ func (s *UserService) ValidatePassword(ctx context.Context, email, password stri
 	}
 
 	return user, nil
+}
+func (s *UserService) Login(
+	ctx context.Context,
+	username string,
+	password string,
+) (*entities.TokenPair, error) {
+	user, err := s.ValidatePassword(ctx, username, password)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	if !user.IsActive {
+		return nil, ErrUserNotActive
+	}
+
+	roles := []string{}
+	for _, role := range user.Roles {
+		roles = append(roles, role.Name)
+	}
+
+	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, roles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.jwtRepo.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+	return &entities.TokenPair{
+		User:         user,
+		AccessToken:  accessToken.Token,
+		RefreshToken: refreshToken.Token,
+		ExpiresAt:    accessToken.ExpiresAt,
+		IsNewUser:    false,
+	}, nil
 }

@@ -20,3 +20,11 @@ type TokenClaims struct {
 	IssuedAt  int64     `json:"iat"`
 	Type      string    `json:"type"` // "access" or "refresh"
 }
+
+type TokenPair struct {
+	User         *User
+	AccessToken  string
+	RefreshToken string
+	ExpiresAt    time.Time // seconds
+	IsNewUser    bool
+}

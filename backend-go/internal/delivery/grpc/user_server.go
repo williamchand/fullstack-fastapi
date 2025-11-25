@@ -65,6 +65,36 @@ func (s *userServer) UpdateUser(ctx context.Context, req *genprotov1.UpdateUserR
 		User: s.userToProto(user),
 	}, nil
 }
+func (s *userServer) LoginUser(ctx context.Context, req *genprotov1.LoginUserRequest) (*genprotov1.LoginUserResponse, error) {
+	// Validate required params
+	if req.Username == "" || req.Password == "" {
+		return nil, status.Error(codes.InvalidArgument, "username and password are required")
+	}
+
+	tokenPair, err := s.userService.Login(
+		ctx,
+		req.Username,
+		req.Password,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrInvalidCredentials):
+			return nil, status.Error(codes.Unauthenticated, "invalid username or password")
+		case errors.Is(err, services.ErrUserNotActive):
+			return nil, status.Error(codes.PermissionDenied, "user is not active")
+		default:
+			return nil, status.Error(codes.Internal, "failed to login user")
+		}
+	}
+
+	// Map to proto response
+	return &genprotov1.LoginUserResponse{
+		AccessToken:  tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
+		ExpiresIn:    tokenPair.ExpiresIn,
+		TokenType:    "bearer",
+	}, nil
+}
 
 func (s *userServer) userToProto(user *entities.User) *genprotov1.User {
 	protoUser := &genprotov1.User{

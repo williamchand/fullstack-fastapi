@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/williamchand/fullstack-fastapi/backend-go/config"
@@ -30,14 +29,6 @@ type ProviderUserInfo struct {
 	Locale        string `json:"locale"`
 }
 
-type OAuthLoginResult struct {
-	User         *entities.User
-	AccessToken  string
-	RefreshToken string
-	IsNewUser    bool
-	ExpiresAt    time.Time
-}
-
 type OAuthConfigService struct {
 	configService *oauth2.Config
 	infoURL       string
@@ -48,7 +39,7 @@ type OAuthService struct {
 	oauthRepo repositories.OAuthRepository
 	userRepo  repositories.UserRepository
 	txManager repositories.TransactionManager
-	JwtRepo   repositories.JWTRepository
+	jwtRepo   repositories.JWTRepository
 }
 
 func NewOAuthService(
@@ -56,7 +47,7 @@ func NewOAuthService(
 	oauthRepo repositories.OAuthRepository,
 	userRepo repositories.UserRepository,
 	txManager repositories.TransactionManager,
-	JwtRepo repositories.JWTRepository,
+	jwtRepo repositories.JWTRepository,
 ) *OAuthService {
 	config := map[string]OAuthConfigService{}
 	config["google"] = OAuthConfigService{
@@ -77,7 +68,7 @@ func NewOAuthService(
 		oauthRepo: oauthRepo,
 		userRepo:  userRepo,
 		txManager: txManager,
-		JwtRepo:   JwtRepo,
+		jwtRepo:   jwtRepo,
 	}
 }
 
@@ -90,7 +81,7 @@ func (s *OAuthService) GetAuthURL(provider string) (string, string, error) {
 	return s.config[provider].configService.AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
 }
 
-func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code string) (*OAuthLoginResult, error) {
+func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code string) (*entities.TokenPair, error) {
 	token, err := s.config[provider].configService.Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code for token: %w", err)
@@ -138,16 +129,16 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code
 	for _, role := range user.Roles {
 		roles = append(roles, role.Name)
 	}
-	accessToken, err := s.JwtRepo.GenerateToken(user.ID, user.Email, roles)
+	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
-	refreshToken, err := s.JwtRepo.GenerateRefreshToken(user.ID)
+	refreshToken, err := s.jwtRepo.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
-	return &OAuthLoginResult{
+	return &entities.TokenPair{
 		User:         user,
 		AccessToken:  accessToken.Token,
 		RefreshToken: refreshToken.Token,

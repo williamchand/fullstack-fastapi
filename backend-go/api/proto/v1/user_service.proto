@@ -75,12 +75,8 @@ service UserService {
 }
 
 message LoginUserRequest {
-  string grant_type = 1;
-  string username = 2;
-  string password = 3;
-  repeated string scopes = 4;
-  string client_id = 5;
-  string client_secret = 6;
+  string username = 1;
+  string password = 2;
 }
 
 message LoginUserResponse {

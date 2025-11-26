@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -14,16 +15,10 @@ import (
 
 // Exact public paths that are always allowed
 var (
-	publicExactPaths = map[string]map[string]bool{
-		"/v1/login/access-token": {"POST": true},
-		"/v1/oauth/callback":     {"POST": true},
-	}
+	publicExactPaths = map[string]map[string]bool{}
 
 	// Public URL prefixes allowed without auth
-	publicPrefixes = []string{
-		"/v1/public/",
-		"/v1/oauth/",
-	}
+	publicPrefixes  = []string{}
 	publicGRPCExact = map[string]bool{
 		"/salonapp.v1.UserService/CreateUser": true,
 		"/salonapp.v1.UserService/LoginUser":  true,
@@ -31,6 +26,9 @@ var (
 	publicGRPCPrefixes = []string{
 		"/salonapp.v1.PublicService/",
 		"/salonapp.v1.OAuthService/",
+	}
+	grpcRoleRules = map[string][]string{
+		"/salonapp.v1.UserService/GetUser": {string(entities.RoleSuperuser)},
 	}
 )
 
@@ -103,9 +101,19 @@ func (m *AuthMiddleware) GRPCAuthInterceptor(ctx context.Context, req interface{
 		return nil, status.Error(codes.Unauthenticated, "user not found or inactive")
 	}
 
+	// ROLE AUTHORIZATION (NEW)
+	requiredRoles := m.roleValidator.RequiredGRPCRoles(info.FullMethod)
+	if !m.roleValidator.HasRole(user, requiredRoles...) {
+		return nil, status.Error(codes.PermissionDenied, "insufficient permissions")
+	}
+
 	// Add user to context
 	ctx = WithUser(ctx, user)
 	return handler(ctx, req)
+}
+
+func (r *RoleValidator) RequiredGRPCRoles(method string) []string {
+	return grpcRoleRules[method]
 }
 
 // GRPC interceptor for role-based authorization

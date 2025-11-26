@@ -32,8 +32,11 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*entities.U
 	if err != nil {
 		return nil, err
 	}
-
-	return r.toEntity(&dbUser), nil
+	dbRoles, err := r.queries.GetUserRole(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return r.toEntity(&dbUser, dbRoles), nil
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
@@ -44,8 +47,12 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entitie
 	if err != nil {
 		return nil, err
 	}
+	dbRoles, err := r.queries.GetUserRole(ctx, dbUser.ID)
+	if err != nil {
+		return nil, err
+	}
 
-	return r.toEntity(&dbUser), nil
+	return r.toEntity(&dbUser, dbRoles), nil
 }
 
 func (r *userRepository) Create(ctx context.Context, user *entities.User) (*entities.User, error) {
@@ -58,27 +65,27 @@ func (r *userRepository) Create(ctx context.Context, user *entities.User) (*enti
 
 	dbUser, err := r.queries.CreateUser(ctx, params)
 	if err != nil {
-		return r.toEntity(&dbUser), err
+		return r.toEntity(&dbUser, []dbgen.Role{}), err
 	}
 
 	user.ID = dbUser.ID
 	user.CreatedAt = dbUser.CreatedAt.Time
 	user.UpdatedAt = dbUser.UpdatedAt.Time
 
-	return r.toEntity(&dbUser), err
+	return r.toEntity(&dbUser, []dbgen.Role{}), err
 }
 
 func (r *userRepository) Update(ctx context.Context, user *entities.User) (*entities.User, error) {
-	params := dbgen.CreateUserParams{
+	params := dbgen.UpdateUserParams{
 		Email:          user.Email,
 		PhoneNumber:    toPgText(user.PhoneNumber),
 		FullName:       toPgText(user.FullName),
 		HashedPassword: toPgText(user.HashedPassword),
 	}
 
-	dbUser, err := r.queries.CreateUser(ctx, params)
+	dbUser, err := r.queries.UpdateUser(ctx, params)
 	if err != nil {
-		return r.toEntity(&dbUser), err
+		return r.toEntity(&dbUser, []dbgen.Role{}), err
 	}
 
 	user.ID = dbUser.ID
@@ -87,7 +94,7 @@ func (r *userRepository) Update(ctx context.Context, user *entities.User) (*enti
 
 	// Implementation depends on your update strategy
 	// This could execute the update or return a transactional version
-	return r.toEntity(&dbUser), err
+	return r.toEntity(&dbUser, []dbgen.Role{}), err
 }
 
 func (r *userRepository) GetRoles(ctx context.Context, roles []entities.RoleEnum) ([]int32, error) {
@@ -152,8 +159,8 @@ func (r *userRepository) SetUserRoles(ctx context.Context, userID uuid.UUID, rol
 	return nil
 }
 
-func (r *userRepository) toEntity(dbUser *dbgen.User) *entities.User {
-	return &entities.User{
+func (r *userRepository) toEntity(dbUser *dbgen.User, dbRoles []dbgen.Role) *entities.User {
+	user := &entities.User{
 		ID:              dbUser.ID,
 		Email:           dbUser.Email,
 		PhoneNumber:     fromPgText(dbUser.PhoneNumber),
@@ -168,4 +175,8 @@ func (r *userRepository) toEntity(dbUser *dbgen.User) *entities.User {
 		UpdatedAt:       dbUser.UpdatedAt.Time,
 		LastLoginAt:     fromPgTime(dbUser.LastLoginAt),
 	}
+	for _, role := range dbRoles {
+		user.Roles = append(user.Roles, role.Name)
+	}
+	return user
 }

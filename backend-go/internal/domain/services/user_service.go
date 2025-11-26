@@ -79,6 +79,10 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName,
 		return nil
 	})
 
+	for _, role := range roles {
+		user.Roles = append(user.Roles, string(role))
+	}
+
 	return user, nil
 }
 
@@ -118,6 +122,10 @@ func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName,
 		}
 		return nil
 	})
+
+	for _, role := range roles {
+		user.Roles = append(user.Roles, string(role))
+	}
 
 	return user, nil
 }

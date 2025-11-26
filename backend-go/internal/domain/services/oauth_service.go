@@ -127,7 +127,7 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code
 
 	roles := []string{}
 	for _, role := range user.Roles {
-		roles = append(roles, role.Name)
+		roles = append(roles, role)
 	}
 	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, roles)
 	if err != nil {

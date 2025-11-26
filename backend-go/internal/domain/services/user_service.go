@@ -107,7 +107,7 @@ func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName,
 	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
 		userRepoTx := s.userRepo.WithTx(tx)
 
-		user, err = userRepoTx.Create(ctx, user)
+		user, err = userRepoTx.Update(ctx, user)
 		if err != nil {
 			return err
 		}
@@ -159,7 +159,7 @@ func (s *UserService) Login(
 
 	roles := []string{}
 	for _, role := range user.Roles {
-		roles = append(roles, role.Name)
+		roles = append(roles, role)
 	}
 
 	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, roles)

@@ -107,6 +107,7 @@ func (s *userServer) userToProto(user *entities.User) *salonappv1.User {
 		IsActive:  user.IsActive,
 		CreatedAt: timestamppb.New(user.CreatedAt),
 		UpdatedAt: timestamppb.New(user.UpdatedAt),
+		Roles:     user.Roles,
 	}
 
 	if user.PhoneNumber != nil {
@@ -114,7 +115,7 @@ func (s *userServer) userToProto(user *entities.User) *salonappv1.User {
 	}
 
 	for _, role := range user.Roles {
-		protoUser.Roles = append(protoUser.Roles, role.Name)
+		protoUser.Roles = append(protoUser.Roles, role)
 	}
 
 	return protoUser

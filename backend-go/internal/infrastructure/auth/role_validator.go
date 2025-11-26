@@ -22,7 +22,7 @@ func NewRoleValidator(cfg *config.Config) *RoleValidator {
 func (v *RoleValidator) HasRole(user *entities.User, requiredRoles ...string) bool {
 	userRoles := make(map[string]bool)
 	for _, role := range user.Roles {
-		userRoles[strings.ToLower(role.Name)] = true
+		userRoles[strings.ToLower(role)] = true
 	}
 
 	if userRoles[strings.ToLower(v.cfg.Superuser.Groupname)] {
@@ -41,7 +41,7 @@ func (v *RoleValidator) HasRole(user *entities.User, requiredRoles ...string) bo
 func (v *RoleValidator) HasAllRoles(user *entities.User, requiredRoles ...string) bool {
 	userRoles := make(map[string]bool)
 	for _, role := range user.Roles {
-		userRoles[strings.ToLower(role.Name)] = true
+		userRoles[strings.ToLower(role)] = true
 	}
 
 	if userRoles[strings.ToLower(v.cfg.Superuser.Groupname)] {

@@ -134,7 +134,7 @@ func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName,
 func (s *UserService) ValidatePassword(ctx context.Context, email, password string) (*entities.User, error) {
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		return nil, ErrInvalidPassword
+		return nil, ErrInvalidCredentials
 	}
 
 	if !user.IsActive {
@@ -146,7 +146,7 @@ func (s *UserService) ValidatePassword(ctx context.Context, email, password stri
 
 	err = bcrypt.CompareHashAndPassword([]byte(*user.HashedPassword), []byte(password))
 	if err != nil {
-		return nil, ErrInvalidPassword
+		return nil, ErrInvalidCredentials
 	}
 
 	return user, nil
@@ -158,7 +158,7 @@ func (s *UserService) Login(
 ) (*entities.TokenPair, error) {
 	user, err := s.ValidatePassword(ctx, username, password)
 	if err != nil {
-		return nil, ErrInvalidCredentials
+		return nil, err
 	}
 
 	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, user.Roles)

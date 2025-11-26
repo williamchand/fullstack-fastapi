@@ -83,7 +83,7 @@ func (s *userServer) LoginUser(ctx context.Context, req *salonappv1.LoginUserReq
 		switch {
 		case errors.Is(err, services.ErrInvalidCredentials):
 			return nil, status.Error(codes.Unauthenticated, "invalid username or password")
-		case errors.Is(err, services.ErrUserNotActive):
+		case errors.Is(err, services.ErrUserNotActive) || errors.Is(err, services.ErrInvalidEmailNotVerified):
 			return nil, status.Error(codes.PermissionDenied, "user is not active")
 		default:
 			return nil, status.Error(codes.Internal, "failed to login user")

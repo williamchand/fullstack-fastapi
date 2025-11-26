@@ -17,14 +17,12 @@ CREATE TABLE public."user" (
     full_name varchar(255) NULL,
     hashed_password varchar NULL,
     is_active bool DEFAULT true NOT NULL,
-    is_superuser bool DEFAULT false NOT NULL,
     is_email_verified bool DEFAULT false NOT NULL,
     is_phone_verified bool DEFAULT false NOT NULL,
     is_totp_enabled bool DEFAULT false NOT NULL,
     totp_secret varchar NULL,
     created_at timestamptz DEFAULT now() NULL,
     updated_at timestamptz DEFAULT now() NULL,
-    last_login_at timestamptz NULL,
     CONSTRAINT user_pkey PRIMARY KEY (id)
 );
 

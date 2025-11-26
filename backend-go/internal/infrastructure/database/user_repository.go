@@ -173,7 +173,6 @@ func (r *userRepository) toEntity(dbUser *dbgen.User, dbRoles []dbgen.Role) *ent
 		TOTPSecret:      fromPgText(dbUser.TotpSecret),
 		CreatedAt:       dbUser.CreatedAt.Time,
 		UpdatedAt:       dbUser.UpdatedAt.Time,
-		LastLoginAt:     fromPgTime(dbUser.LastLoginAt),
 	}
 	for _, role := range dbRoles {
 		user.Roles = append(user.Roles, role.Name)

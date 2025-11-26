@@ -135,11 +135,12 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 	return &entities.TokenPair{
-		User:         user,
-		AccessToken:  accessToken.Token,
-		RefreshToken: refreshToken.Token,
-		ExpiresAt:    accessToken.ExpiresAt,
-		IsNewUser:    isNewUser,
+		User:             user,
+		AccessToken:      accessToken.Token,
+		RefreshToken:     refreshToken.Token,
+		ExpiresAt:        accessToken.ExpiresAt,
+		RefreshExpiresAt: refreshToken.ExpiresAt,
+		IsNewUser:        isNewUser,
 	}, nil
 }
 

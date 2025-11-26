@@ -55,6 +55,25 @@ func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserR
 	}, nil
 }
 
+func (s *userServer) RefreshToken(ctx context.Context, req *salonappv1.RefreshTokenRequest) (*salonappv1.RefreshTokenResponse, error) {
+	tokenPair, err := s.userService.RefreshToken(
+		ctx,
+		req.RefreshToken,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrInvalidRefreshToken):
+			return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
+		default:
+			return nil, status.Error(codes.Internal, "failed to refresh token")
+		}
+	}
+	return &salonappv1.RefreshTokenResponse{
+		AccessToken: tokenPair.Token,
+		ExpiresAt:   timestamppb.New(tokenPair.ExpiresAt),
+	}, nil
+}
+
 func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserRequest) (*salonappv1.UpdateUserResponse, error) {
 	user, err := s.userService.UpdateUser(ctx, req.Id, *req.Email, *req.FullName, *req.PhoneNumber, []entities.RoleEnum{entities.RoleCustomer})
 	if err != nil {
@@ -68,6 +87,7 @@ func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserR
 		User: s.userToProto(user),
 	}, nil
 }
+
 func (s *userServer) LoginUser(ctx context.Context, req *salonappv1.LoginUserRequest) (*salonappv1.LoginUserResponse, error) {
 	// Validate required params
 	if req.Username == "" || req.Password == "" {
@@ -92,10 +112,11 @@ func (s *userServer) LoginUser(ctx context.Context, req *salonappv1.LoginUserReq
 
 	// Map to proto response
 	return &salonappv1.LoginUserResponse{
-		AccessToken:  tokenPair.AccessToken,
-		RefreshToken: tokenPair.RefreshToken,
-		ExpiresAt:    timestamppb.New(tokenPair.ExpiresAt),
-		TokenType:    "bearer",
+		AccessToken:      tokenPair.AccessToken,
+		RefreshToken:     tokenPair.RefreshToken,
+		ExpiresAt:        timestamppb.New(tokenPair.ExpiresAt),
+		RefreshExpiresAt: timestamppb.New(tokenPair.RefreshExpiresAt),
+		TokenType:        "bearer",
 	}, nil
 }
 

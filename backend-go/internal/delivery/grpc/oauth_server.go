@@ -49,11 +49,12 @@ func (s *oAuthServer) HandleOAuthCallback(ctx context.Context, req *salonappv1.H
 	}
 
 	return &salonappv1.HandleOAuthCallbackResponse{
-		User:         s.userToProto(oauthLoginResult.User),
-		AccessToken:  oauthLoginResult.AccessToken,
-		RefreshToken: oauthLoginResult.RefreshToken,
-		ExpiresAt:    timestamppb.New(oauthLoginResult.ExpiresAt),
-		IsNewUser:    oauthLoginResult.IsNewUser,
+		User:             s.userToProto(oauthLoginResult.User),
+		AccessToken:      oauthLoginResult.AccessToken,
+		RefreshToken:     oauthLoginResult.RefreshToken,
+		ExpiresAt:        timestamppb.New(oauthLoginResult.ExpiresAt),
+		RefreshExpiresAt: timestamppb.New(oauthLoginResult.RefreshExpiresAt),
+		IsNewUser:        oauthLoginResult.IsNewUser,
 	}, nil
 }
 

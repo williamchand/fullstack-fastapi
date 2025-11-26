@@ -16,8 +16,9 @@ import (
 // Exact public paths that are always allowed
 var (
 	publicExactPaths = map[string]map[string]bool{
-		"/v1/login/access-token": {"POST": true},
-		"/v1/user/":              {"POST": true},
+		"/v1/login/access-token":  {"POST": true},
+		"/v1/login/refresh-token": {"POST": true},
+		"/v1/user/":               {"POST": true},
 	}
 
 	// Public URL prefixes allowed without auth
@@ -25,8 +26,9 @@ var (
 		"/v1/public/",
 	}
 	publicGRPCExact = map[string]bool{
-		"/salonapp.v1.UserService/CreateUser": true,
-		"/salonapp.v1.UserService/LoginUser":  true,
+		"/salonapp.v1.UserService/CreateUser":   true,
+		"/salonapp.v1.UserService/LoginUser":    true,
+		"/salonapp.v1.UserService/RefreshToken": true,
 	}
 	publicGRPCPrefixes = []string{
 		"/salonapp.v1.PublicService/",

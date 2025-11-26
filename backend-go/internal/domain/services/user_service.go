@@ -151,6 +151,7 @@ func (s *UserService) ValidatePassword(ctx context.Context, email, password stri
 
 	return user, nil
 }
+
 func (s *UserService) Login(
 	ctx context.Context,
 	username string,
@@ -171,10 +172,23 @@ func (s *UserService) Login(
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 	return &entities.TokenPair{
-		User:         user,
-		AccessToken:  accessToken.Token,
-		RefreshToken: refreshToken.Token,
-		ExpiresAt:    accessToken.ExpiresAt,
-		IsNewUser:    false,
+		User:             user,
+		AccessToken:      accessToken.Token,
+		RefreshToken:     refreshToken.Token,
+		ExpiresAt:        accessToken.ExpiresAt,
+		RefreshExpiresAt: refreshToken.ExpiresAt,
+		IsNewUser:        false,
 	}, nil
+}
+
+func (s *UserService) RefreshToken(
+	ctx context.Context,
+	refreshToken string,
+) (*entities.TokenResult, error) {
+	newRefreshToken, err := s.jwtRepo.RefreshToken(refreshToken)
+	if err != nil {
+		return nil, ErrInvalidRefreshToken
+	}
+
+	return newRefreshToken, nil
 }

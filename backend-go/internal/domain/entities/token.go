@@ -22,9 +22,10 @@ type TokenClaims struct {
 }
 
 type TokenPair struct {
-	User         *User
-	AccessToken  string
-	RefreshToken string
-	ExpiresAt    time.Time // seconds
-	IsNewUser    bool
+	User             *User
+	AccessToken      string
+	RefreshToken     string
+	ExpiresAt        time.Time
+	RefreshExpiresAt time.Time
+	IsNewUser        bool
 }

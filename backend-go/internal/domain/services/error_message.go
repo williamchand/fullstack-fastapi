@@ -7,6 +7,7 @@ var (
 	ErrInvalidCredentials      = errors.New("invalid credentials")
 	ErrUserNotFound            = errors.New("user not found")
 	ErrInvalidEmailNotVerified = errors.New("invalid email not verified")
+	ErrInvalidRefreshToken     = errors.New("invalid refresh token")
 	ErrUserExists              = errors.New("user already exists")
 	ErrInvalidRole             = errors.New("invalid role")
 	ErrNoRolesProvided         = errors.New("no roles provided")

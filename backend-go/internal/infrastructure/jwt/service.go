@@ -92,7 +92,7 @@ func (j *jwtService) ValidateToken(tokenString string) (*entities.TokenClaims, e
 
 	var roles []string
 	if rolesClaim, ok := claims["roles"]; ok {
-		if rolesSlice, ok := rolesClaim.([]interface{}); ok {
+		if rolesSlice, ok := rolesClaim.([]any); ok {
 			roles = make([]string, len(rolesSlice))
 			for i, role := range rolesSlice {
 				if roleStr, ok := role.(string); ok {

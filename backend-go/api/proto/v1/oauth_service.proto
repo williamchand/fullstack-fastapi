@@ -43,5 +43,6 @@ message HandleOAuthCallbackResponse {
   string access_token = 2;  // JWT or session token
   string refresh_token = 3; // Optional refresh token
   google.protobuf.Timestamp expires_at = 4;
-  bool is_new_user = 5;
+  google.protobuf.Timestamp refresh_expires_at = 5;
+  bool is_new_user = 6;
 }

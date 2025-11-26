@@ -7,9 +7,11 @@ import (
 	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/auth"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -24,8 +26,9 @@ func NewUserServer(userService *services.UserService) salonappv1.UserServiceServ
 	}
 }
 
-func (s *userServer) GetUser(ctx context.Context, req *salonappv1.GetUserRequest) (*salonappv1.GetUserResponse, error) {
-	user, err := s.userService.GetUserByID(ctx, req.Id)
+func (s *userServer) GetUser(ctx context.Context, req *emptypb.Empty) (*salonappv1.GetUserResponse, error) {
+	user := auth.UserFromContext(ctx)
+	user, err := s.userService.GetUserByID(ctx, user.ID.String())
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")

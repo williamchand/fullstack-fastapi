@@ -24,6 +24,12 @@ func (a *App) runGRPC(ctx context.Context) error {
 	genprotov1.RegisterUserServiceServer(server, a.serviceServer.userServer)
 	genprotov1.RegisterOAuthServiceServer(server, a.serviceServer.oauthServer)
 
+	go func() {
+		<-ctx.Done()
+		server.GracefulStop()
+		lis.Close()
+	}()
+
 	log.Printf("gRPC server running on :%s", a.cfg.GRPCPort)
 	return server.Serve(lis)
 }

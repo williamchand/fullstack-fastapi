@@ -12,6 +12,28 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Exact public paths that are always allowed
+var (
+	publicExactPaths = map[string]map[string]bool{
+		"/v1/login/access-token": {"POST": true},
+		"/v1/oauth/callback":     {"POST": true},
+	}
+
+	// Public URL prefixes allowed without auth
+	publicPrefixes = []string{
+		"/v1/public/",
+		"/v1/oauth/",
+	}
+	publicGRPCExact = map[string]bool{
+		"/salonapp.v1.UserService/CreateUser": true,
+		"/salonapp.v1.UserService/LoginUser":  true,
+	}
+	publicGRPCPrefixes = []string{
+		"/salonapp.v1.PublicService/",
+		"/salonapp.v1.OAuthService/",
+	}
+)
+
 type AuthMiddleware struct {
 	jwtRepository repositories.JWTRepository
 	roleValidator *RoleValidator
@@ -29,7 +51,7 @@ func NewAuthMiddleware(jwtRepository repositories.JWTRepository, roleValidator *
 // HTTP middleware
 func (m *AuthMiddleware) HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isPublicHTTPPath(r.URL.Path) {
+		if isPublicHTTPPath(r.URL.Path, r.Method) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -138,25 +160,33 @@ func extractTokenFromGRPCContext(ctx context.Context) string {
 }
 
 func isPublicMethod(method string) bool {
-	publicMethods := map[string]bool{
-		"/salonapp.v1.UserService/CreateUser": true,
-		"/salonapp.v1.UserService/LoginUser":  true,
+	if _, ok := publicGRPCExact[method]; ok {
+		return true
 	}
 
-	if _, ok := publicMethods[method]; ok {
-		return ok
+	// 2. Prefix match
+	for _, prefix := range publicGRPCPrefixes {
+		if strings.HasPrefix(method, prefix) {
+			return true
+		}
 	}
+
 	return false
 }
 
-func isPublicHTTPPath(path string) bool {
-	publicPaths := map[string]bool{
-		"/v1/login/access-token": true,
-		"/v1/users":              true,
+func isPublicHTTPPath(path string, method string) bool {
+	if publicPath, ok := publicExactPaths[path]; ok {
+		if _, ok := publicPath[method]; ok {
+			return true
+		}
+		return false
 	}
 
-	if _, ok := publicPaths[path]; ok {
-		return ok
+	for _, prefix := range publicPrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
 	}
+
 	return false
 }

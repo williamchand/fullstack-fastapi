@@ -32,8 +32,8 @@ type Config struct {
 		HMACSecret string `envconfig:"JWT_HMAC_SECRET"`
 
 		// Token Settings
-		AccessTokenExpiration  time.Duration `envconfig:"JWT_ACCESS_EXPIRATION" default:"15m"`
-		RefreshTokenExpiration time.Duration `envconfig:"JWT_REFRESH_EXPIRATION" default:"168h"` // 7 days
+		AccessTokenExpiration  time.Duration `envconfig:"JWT_ACCESS_EXPIRATION" default:"168h"`
+		RefreshTokenExpiration time.Duration `envconfig:"JWT_REFRESH_EXPIRATION" default:"336h"` // 14 days
 		Issuer                 string        `envconfig:"JWT_ISSUER" default:"salonapp"`
 
 		// Auto-generation (Development Only)

@@ -157,12 +157,7 @@ func (s *UserService) Login(
 		return nil, ErrUserNotActive
 	}
 
-	roles := []string{}
-	for _, role := range user.Roles {
-		roles = append(roles, role)
-	}
-
-	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, roles)
+	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, user.Roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}

@@ -114,9 +114,7 @@ func (s *userServer) userToProto(user *entities.User) *salonappv1.User {
 		protoUser.PhoneNumber = *user.PhoneNumber
 	}
 
-	for _, role := range user.Roles {
-		protoUser.Roles = append(protoUser.Roles, role)
-	}
+	protoUser.Roles = user.Roles
 
 	return protoUser
 }

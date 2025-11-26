@@ -42,7 +42,7 @@ func (s *userServer) GetUser(ctx context.Context, req *emptypb.Empty) (*salonapp
 }
 
 func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserRequest) (*salonappv1.CreateUserResponse, error) {
-	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, req.PhoneNumber, []entities.RoleEnum{entities.RoleCustomer})
+	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, req.PhoneNumber, []entities.RoleEnum{entities.RoleCustomer}, false)
 	if err != nil {
 		if errors.Is(err, services.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exist")

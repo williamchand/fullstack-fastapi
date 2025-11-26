@@ -36,5 +36,5 @@ func setup() {
 func generateTestAccounts() {
 	ctx := context.Background()
 	fullName := "Superuser"
-	userService.CreateUser(ctx, cfg.Superuser.Username, cfg.Superuser.Password, fullName, "", []entities.RoleEnum{entities.RoleSuperuser})
+	userService.CreateUser(ctx, cfg.Superuser.Username, cfg.Superuser.Password, fullName, "", []entities.RoleEnum{entities.RoleSuperuser}, true)
 }

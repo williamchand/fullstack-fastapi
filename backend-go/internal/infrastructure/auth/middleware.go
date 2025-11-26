@@ -15,10 +15,15 @@ import (
 
 // Exact public paths that are always allowed
 var (
-	publicExactPaths = map[string]map[string]bool{}
+	publicExactPaths = map[string]map[string]bool{
+		"/v1/login/access-token": {"POST": true},
+		"/v1/user/":              {"POST": true},
+	}
 
 	// Public URL prefixes allowed without auth
-	publicPrefixes  = []string{}
+	publicPrefixes = []string{
+		"/v1/public/",
+	}
 	publicGRPCExact = map[string]bool{
 		"/salonapp.v1.UserService/CreateUser": true,
 		"/salonapp.v1.UserService/LoginUser":  true,

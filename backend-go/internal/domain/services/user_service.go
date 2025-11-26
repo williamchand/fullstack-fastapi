@@ -41,7 +41,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.Use
 	return s.userRepo.GetByID(ctx, userID)
 }
 
-func (s *UserService) CreateUser(ctx context.Context, email, password, fullName, phoneNumber string, roles []entities.RoleEnum) (*entities.User, error) {
+func (s *UserService) CreateUser(ctx context.Context, email, password, fullName, phoneNumber string, roles []entities.RoleEnum, isEmailVerified bool) (*entities.User, error) {
 	existing, _ := s.userRepo.GetByEmail(ctx, email)
 	if existing != nil {
 		return nil, ErrUserExists
@@ -54,10 +54,11 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName,
 
 	hashedPasswordStr := string(hashedPassword)
 	user := &entities.User{
-		Email:          email,
-		HashedPassword: &hashedPasswordStr,
-		FullName:       &fullName,
-		IsActive:       true,
+		Email:           email,
+		HashedPassword:  &hashedPasswordStr,
+		FullName:        &fullName,
+		IsActive:        true,
+		IsEmailVerified: isEmailVerified,
 	}
 
 	if phoneNumber != "" {
@@ -137,11 +138,10 @@ func (s *UserService) ValidatePassword(ctx context.Context, email, password stri
 	}
 
 	if !user.IsActive {
-		return nil, ErrInvalidPassword
+		return nil, ErrUserNotActive
 	}
-
-	if user.HashedPassword == nil {
-		return nil, ErrInvalidPassword
+	if !user.IsEmailVerified {
+		return nil, ErrInvalidEmailNotVerified
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(*user.HashedPassword), []byte(password))
@@ -159,10 +159,6 @@ func (s *UserService) Login(
 	user, err := s.ValidatePassword(ctx, username, password)
 	if err != nil {
 		return nil, ErrInvalidCredentials
-	}
-
-	if !user.IsActive {
-		return nil, ErrUserNotActive
 	}
 
 	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, user.Roles)

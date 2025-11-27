@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS email_template (
 
 CREATE UNIQUE INDEX idx_email_template_name ON public.email_template USING btree (name) WHERE (is_active = true);
 
-INSERT INTO email_templates (name, subject, body)
+INSERT INTO email_template (name, subject, body)
 VALUES 
 (
   'verification_email',

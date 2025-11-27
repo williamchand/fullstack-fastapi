@@ -1,5 +1,7 @@
 -- Enhanced schema with better constraints and indexing
 
+DROP TABLE public.email_template;
+
 DROP TABLE public.verification_code;
 
 DROP TABLE public.oauth_account;

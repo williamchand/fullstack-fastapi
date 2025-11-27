@@ -75,3 +75,29 @@ INSERT INTO public.role (name, description) VALUES
 ('salon_employee','salon employee role'),
 ('customer','Default customer role'),
 ('superuser','Superuser role');
+
+CREATE TABLE IF NOT EXISTS email_template (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name TEXT NOT NULL UNIQUE,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX idx_email_template_name ON public.email_template USING btree (name) WHERE (is_active = true);
+
+INSERT INTO email_templates (name, subject, body)
+VALUES 
+(
+  'verification_email',
+  'Verify Your Email Address',
+  '<p>Hello,</p><p>Your verification code is: <strong>{{code}}</strong></p>'
+),
+(
+  'password_reset',
+  'Reset Your Password',
+  '<p>Hello,</p><p>Click the link to reset your password: <a href="{{link}}">Reset Password</a></p>'
+)
+ON CONFLICT (name) DO NOTHING;

@@ -8,9 +8,9 @@ WHERE email = $1 LIMIT 1;
 
 -- name: CreateUser :one
 INSERT INTO "user" (
-    email, phone_number, full_name, hashed_password
+    email, phone_number, full_name, hashed_password, is_active, is_email_verified
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5, $6
 ) RETURNING *;
 
 -- name: UpdateUser :one

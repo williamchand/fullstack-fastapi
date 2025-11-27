@@ -57,10 +57,12 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entitie
 
 func (r *userRepository) Create(ctx context.Context, user *entities.User) (*entities.User, error) {
 	params := dbgen.CreateUserParams{
-		Email:          user.Email,
-		PhoneNumber:    toPgText(user.PhoneNumber),
-		FullName:       toPgText(user.FullName),
-		HashedPassword: toPgText(user.HashedPassword),
+		Email:           user.Email,
+		IsActive:        user.IsActive,
+		IsEmailVerified: user.IsEmailVerified,
+		PhoneNumber:     toPgText(user.PhoneNumber),
+		FullName:        toPgText(user.FullName),
+		HashedPassword:  toPgText(user.HashedPassword),
 	}
 
 	dbUser, err := r.queries.CreateUser(ctx, params)

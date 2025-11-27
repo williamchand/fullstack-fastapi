@@ -71,7 +71,6 @@ service UserService {
       put: "/v1/user/{id}"
       body: "*"
     };
-    // Require BearerAuth for this route
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       security: {
         security_requirement: {
@@ -182,9 +181,6 @@ message RefreshTokenResponse {
   string access_token = 1;
   google.protobuf.Timestamp expires_at = 2; 
 }
-//
-// New Feature Messages
-//
 
 // Email resend
 message ResendEmailVerificationRequest {

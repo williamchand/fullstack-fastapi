@@ -23,6 +23,9 @@ func (a *App) runGRPC(ctx context.Context) error {
 
 	genprotov1.RegisterUserServiceServer(server, a.serviceServer.userServer)
 	genprotov1.RegisterOAuthServiceServer(server, a.serviceServer.oauthServer)
+	genprotov1.RegisterDataSourceServiceServer(server, a.serviceServer.dataSourceServer)
+	genprotov1.RegisterBillingServiceServer(server, a.serviceServer.billingServer)
+	genprotov1.RegisterWeddingServiceServer(server, a.serviceServer.weddingServer)
 
 	go func() {
 		<-ctx.Done()

@@ -6,15 +6,24 @@ import (
 )
 
 type ServiceServer struct {
-	userServer  genprotov1.UserServiceServer
-	oauthServer genprotov1.OAuthServiceServer
+    userServer  genprotov1.UserServiceServer
+    oauthServer genprotov1.OAuthServiceServer
+    dataSourceServer genprotov1.DataSourceServiceServer
+    billingServer genprotov1.BillingServiceServer
+    weddingServer genprotov1.WeddingServiceServer
 }
 
 func initServiceServer(appServices *AppServices) *ServiceServer {
-	userServer := grpc.NewUserServer(appServices.UserService)
-	oauthServer := grpc.NewOAuthServer(appServices.OauthService)
-	return &ServiceServer{
-		userServer:  userServer,
-		oauthServer: oauthServer,
-	}
+    userServer := grpc.NewUserServer(appServices.UserService)
+    oauthServer := grpc.NewOAuthServer(appServices.OauthService)
+    dsServer := grpc.NewDataSourceServer(appServices.DataSourceService)
+    billServer := grpc.NewBillingServer(appServices.BillingService)
+    wedServer := grpc.NewWeddingServer(appServices.WeddingService)
+    return &ServiceServer{
+        userServer:  userServer,
+        oauthServer: oauthServer,
+        dataSourceServer: dsServer,
+        billingServer: billServer,
+        weddingServer: wedServer,
+    }
 }

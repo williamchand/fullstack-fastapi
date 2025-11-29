@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package salonapp.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/salonapp/v1;salonappv1";
+
+service BillingService {
+  rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse) {
+    option (google.api.http) = { post: "/v1/billing/checkout" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+    };
+  }
+
+  rpc GetSubscriptionStatus(google.protobuf.Empty) returns (GetSubscriptionStatusResponse) {
+    option (google.api.http) = { get: "/v1/billing/subscription" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+    };
+  }
+
+  rpc HandleWebhook(HandleWebhookRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { post: "/v1/billing/webhook" body: "*" };
+  }
+}
+
+message CreateCheckoutSessionRequest {
+  string price_id = 1;
+  string success_url = 2;
+  string cancel_url = 3;
+}
+
+message CreateCheckoutSessionResponse { string url = 1; string session_id = 2; }
+
+message GetSubscriptionStatusResponse {
+  string status = 1;
+  string stripe_subscription_id = 2;
+  google.protobuf.Timestamp current_period_end = 3;
+}
+
+message HandleWebhookRequest { bytes payload = 1; string signature = 2; }

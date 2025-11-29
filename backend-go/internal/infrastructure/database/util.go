@@ -2,8 +2,10 @@ package database
 
 import (
 	"encoding/json"
+	"math/big"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -50,4 +52,22 @@ func fromPgJSON(j []byte) map[string]any {
 	var m map[string]any
 	_ = json.Unmarshal(j, &m)
 	return m
+}
+
+func toPgNumeric(f *float64) pgtype.Numeric {
+	if f == nil {
+		return pgtype.Numeric{Valid: false}
+	}
+	n := &pgtype.Numeric{Valid: true}
+	n.Int = new(big.Int)
+	n.Exp = -2
+	n.Int.SetInt64(int64(*f * 100))
+	return *n
+}
+
+func toPgUUIDPtr(u *uuid.UUID) pgtype.UUID {
+	if u == nil {
+		return pgtype.UUID{Valid: false}
+	}
+	return pgtype.UUID{Bytes: u[:], Valid: true}
 }

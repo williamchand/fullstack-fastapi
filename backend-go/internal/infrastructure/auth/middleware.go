@@ -15,11 +15,12 @@ import (
 
 // Exact public paths that are always allowed
 var (
-	publicExactPaths = map[string]map[string]bool{
-		"/v1/login/access-token":  {"POST": true},
-		"/v1/login/refresh-token": {"POST": true},
-		"/v1/user/":               {"POST": true},
-	}
+    publicExactPaths = map[string]map[string]bool{
+        "/v1/login/access-token":  {"POST": true},
+        "/v1/login/refresh-token": {"POST": true},
+        "/v1/user/":               {"POST": true},
+        "/v1/billing/webhook":     {"POST": true},
+    }
 
 	// Public URL prefixes allowed without auth
 	publicPrefixes = []string{

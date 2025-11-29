@@ -1,10 +1,10 @@
 package database
 
 import (
-    "encoding/json"
-    "time"
+	"encoding/json"
+	"time"
 
-    "github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // Helper functions for pgtype conversion
@@ -31,25 +31,23 @@ func fromPgTime(t pgtype.Timestamptz) *time.Time {
 
 // Helper functions for pgtype conversion
 func toPgTimestamptz(t *time.Time) pgtype.Timestamptz {
-    if t == nil {
-        return pgtype.Timestamptz{Valid: false}
-    }
-    return pgtype.Timestamptz{Time: *t, Valid: true}
+	if t == nil {
+		return pgtype.Timestamptz{Valid: false}
+	}
+	return pgtype.Timestamptz{Time: *t, Valid: true}
 }
 
-func toPgJSON(m map[string]interface{}) pgtype.JSONB {
-    if m == nil {
-        return pgtype.JSONB{Valid: false}
-    }
-    b, _ := json.Marshal(m)
-    return pgtype.JSONB{Bytes: b, Valid: true}
+func toPgJSON(m map[string]interface{}) []byte {
+	if m == nil {
+		return []byte{}
+	}
+	b, _ := json.Marshal(m)
+
+	return b
 }
 
-func fromPgJSON(j pgtype.JSONB) map[string]interface{} {
-    if !j.Valid {
-        return nil
-    }
-    var m map[string]interface{}
-    _ = json.Unmarshal(j.Bytes, &m)
-    return m
+func fromPgJSON(j []byte) map[string]interface{} {
+	var m map[string]interface{}
+	_ = json.Unmarshal(j, &m)
+	return m
 }

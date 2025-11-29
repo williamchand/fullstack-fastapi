@@ -41,5 +41,5 @@ type OAuthAccount struct {
 	TokenExpiresAt *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
-	ProviderData   map[string]interface{}
+	ProviderData   map[string]any
 }

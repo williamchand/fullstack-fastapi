@@ -237,8 +237,8 @@ func (s *OAuthService) createUserFromOAuth(
 }
 
 // buildProviderData builds the provider data JSON from user info
-func (s *OAuthService) buildProviderData(userInfo *ProviderUserInfo) map[string]interface{} {
-	return map[string]interface{}{
+func (s *OAuthService) buildProviderData(userInfo *ProviderUserInfo) map[string]any {
+	return map[string]any{
 		"name":        userInfo.Name,
 		"given_name":  userInfo.GivenName,
 		"family_name": userInfo.FamilyName,

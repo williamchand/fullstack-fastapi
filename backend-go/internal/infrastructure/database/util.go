@@ -37,7 +37,7 @@ func toPgTimestamptz(t *time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{Time: *t, Valid: true}
 }
 
-func toPgJSON(m map[string]interface{}) []byte {
+func toPgJSON(m map[string]any) []byte {
 	if m == nil {
 		return []byte{}
 	}
@@ -46,8 +46,8 @@ func toPgJSON(m map[string]interface{}) []byte {
 	return b
 }
 
-func fromPgJSON(j []byte) map[string]interface{} {
-	var m map[string]interface{}
+func fromPgJSON(j []byte) map[string]any {
+	var m map[string]any
 	_ = json.Unmarshal(j, &m)
 	return m
 }

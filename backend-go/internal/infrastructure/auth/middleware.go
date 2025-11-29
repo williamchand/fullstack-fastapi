@@ -86,7 +86,7 @@ func (m *AuthMiddleware) HTTPMiddleware(next http.Handler) http.Handler {
 }
 
 // GRPC interceptor for authentication
-func (m *AuthMiddleware) GRPCAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func (m *AuthMiddleware) GRPCAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	// Skip auth for certain methods (like login)
 	if isPublicMethod(info.FullMethod) {
 		return handler(ctx, req)
@@ -125,7 +125,7 @@ func (r *RoleValidator) RequiredGRPCRoles(method string) []string {
 
 // GRPC interceptor for role-based authorization
 func (m *AuthMiddleware) GRPCRoleInterceptor(requiredRoles ...string) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		user := UserFromContext(ctx)
 		if user == nil {
 			return nil, status.Error(codes.Unauthenticated, "authentication required")

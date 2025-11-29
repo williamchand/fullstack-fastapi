@@ -67,6 +67,15 @@ type Config struct {
 		PrometheusPort string `envconfig:"PROMETHEUS_PORT" default:"9091"`
 	}
 
+	// SMTP Configuration
+	SMTP struct {
+		Host     string `envconfig:"SMTP_HOST" default:""`
+		Port     int    `envconfig:"SMTP_PORT" default:"587"`
+		Username string `envconfig:"SMTP_USERNAME" default:""`
+		Password string `envconfig:"SMTP_PASSWORD" default:""`
+		From     string `envconfig:"SMTP_FROM" default:""`
+	}
+
 	// Superuser Configuration
 	Superuser struct {
 		Username  string `envconfig:"SUPERUSER_USERNAME"`
@@ -106,7 +115,7 @@ func (c *Config) UseRSAKeys() bool {
 
 // UseHMAC returns true if HMAC should be used for JWT
 func (c *Config) UseHMAC() bool {
-	return c.JWT.HMACSecret != "" && !c.UseRSAKeys()
+    return c.JWT.HMACSecret != "" && !c.UseRSAKeys()
 }
 
 // GetJWTConfig returns JWT-specific configuration

@@ -120,6 +120,87 @@ func (s *userServer) LoginUser(ctx context.Context, req *salonappv1.LoginUserReq
 	}, nil
 }
 
+func (s *userServer) ResendEmailVerification(ctx context.Context, req *salonappv1.ResendEmailVerificationRequest) (*salonappv1.ResendEmailVerificationResponse, error) {
+    if req.Email == "" {
+        return nil, status.Error(codes.InvalidArgument, "email is required")
+    }
+    if err := s.userService.SendEmailVerification(ctx, req.Email); err != nil {
+        if errors.Is(err, services.ErrUserNotFound) {
+            return nil, status.Error(codes.NotFound, "user not found")
+        }
+        return nil, status.Error(codes.Internal, "failed to send verification email")
+    }
+    return &salonappv1.ResendEmailVerificationResponse{Success: true, Message: "verification email sent"}, nil
+}
+
+func (s *userServer) RequestPhoneOTP(ctx context.Context, req *salonappv1.RequestPhoneOTPRequest) (*salonappv1.RequestPhoneOTPResponse, error) {
+    if req.PhoneNumber == "" {
+        return nil, status.Error(codes.InvalidArgument, "phone_number is required")
+    }
+    if err := s.userService.RequestPhoneOTP(ctx, req.PhoneNumber); err != nil {
+        if errors.Is(err, services.ErrUserNotFound) {
+            return nil, status.Error(codes.NotFound, "user not found")
+        }
+        return nil, status.Error(codes.Internal, "failed to generate otp")
+    }
+    return &salonappv1.RequestPhoneOTPResponse{Success: true, Message: "otp generated"}, nil
+}
+
+func (s *userServer) VerifyPhoneOTP(ctx context.Context, req *salonappv1.VerifyPhoneOTPRequest) (*salonappv1.VerifyPhoneOTPResponse, error) {
+    if req.PhoneNumber == "" || req.OtpCode == "" {
+        return nil, status.Error(codes.InvalidArgument, "phone_number and otp_code are required")
+    }
+    if err := s.userService.VerifyPhoneOTP(ctx, req.PhoneNumber, req.OtpCode); err != nil {
+        switch {
+        case errors.Is(err, services.ErrUserNotFound):
+            return nil, status.Error(codes.NotFound, "user not found")
+        case errors.Is(err, services.ErrInvalidOrExpiredCode):
+            return nil, status.Error(codes.InvalidArgument, "invalid or expired code")
+        default:
+            return nil, status.Error(codes.Internal, "failed to verify phone")
+        }
+    }
+    return &salonappv1.VerifyPhoneOTPResponse{Success: true, Message: "phone verified"}, nil
+}
+
+func (s *userServer) LoginWithPhone(ctx context.Context, req *salonappv1.LoginWithPhoneRequest) (*salonappv1.LoginWithPhoneResponse, error) {
+    if req.PhoneNumber == "" || req.OtpCode == "" {
+        return nil, status.Error(codes.InvalidArgument, "phone_number and otp_code are required")
+    }
+    pair, err := s.userService.LoginWithPhone(ctx, req.PhoneNumber, req.OtpCode)
+    if err != nil {
+        switch {
+        case errors.Is(err, services.ErrUserNotFound):
+            return nil, status.Error(codes.NotFound, "user not found")
+        case errors.Is(err, services.ErrInvalidOrExpiredCode):
+            return nil, status.Error(codes.Unauthenticated, "invalid or expired code")
+        default:
+            return nil, status.Error(codes.Internal, "failed to login with phone")
+        }
+    }
+    return &salonappv1.LoginWithPhoneResponse{
+        AccessToken:      pair.AccessToken,
+        RefreshToken:     pair.RefreshToken,
+        ExpiresAt:        timestamppb.New(pair.ExpiresAt),
+        RefreshExpiresAt: timestamppb.New(pair.RefreshExpiresAt),
+        TokenType:        "bearer",
+    }, nil
+}
+
+func (s *userServer) RegisterPhoneUser(ctx context.Context, req *salonappv1.RegisterPhoneUserRequest) (*salonappv1.RegisterPhoneUserResponse, error) {
+    if req.PhoneNumber == "" || req.FullName == "" {
+        return nil, status.Error(codes.InvalidArgument, "phone_number and full_name are required")
+    }
+    user, err := s.userService.RegisterPhoneUser(ctx, req.PhoneNumber, req.FullName)
+    if err != nil {
+        if errors.Is(err, services.ErrUserExists) {
+            return nil, status.Error(codes.AlreadyExists, "user already exists")
+        }
+        return nil, status.Error(codes.Internal, "failed to register user")
+    }
+    return &salonappv1.RegisterPhoneUserResponse{User: s.userToProto(user)}, nil
+}
+
 func (s *userServer) userToProto(user *entities.User) *salonappv1.User {
 	protoUser := &salonappv1.User{
 		Id:        user.ID.String(),

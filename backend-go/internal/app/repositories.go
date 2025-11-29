@@ -9,9 +9,11 @@ import (
 )
 
 type Repositories struct {
-	TransactionManager repositories.TransactionManager
-	UserRepo           repositories.UserRepository
-	OAuthRepo          repositories.OAuthRepository
+    TransactionManager repositories.TransactionManager
+    UserRepo           repositories.UserRepository
+    OAuthRepo          repositories.OAuthRepository
+    EmailTemplateRepo  repositories.EmailTemplateRepository
+    VerificationRepo   repositories.VerificationCodeRepository
 }
 
 func initRepositories(ctx context.Context, dbURL string) (*Repositories, repositories.ConnectionPool, error) {
@@ -21,9 +23,11 @@ func initRepositories(ctx context.Context, dbURL string) (*Repositories, reposit
 	}
 	queries := dbgen.New(dbPool)
 
-	return &Repositories{
-		TransactionManager: database.NewTransactionManager(dbPool),
-		UserRepo:           database.NewUserRepository(queries, dbPool),
-		OAuthRepo:          database.NewOAuthRepository(queries, dbPool),
-	}, dbPool, err
+    return &Repositories{
+        TransactionManager: database.NewTransactionManager(dbPool),
+        UserRepo:           database.NewUserRepository(queries, dbPool),
+        OAuthRepo:          database.NewOAuthRepository(queries, dbPool),
+        EmailTemplateRepo:  database.NewEmailTemplateRepository(queries, dbPool),
+        VerificationRepo:   database.NewVerificationCodeRepository(queries, dbPool),
+    }, dbPool, err
 }

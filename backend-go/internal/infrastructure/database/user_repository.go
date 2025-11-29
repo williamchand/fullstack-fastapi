@@ -78,14 +78,16 @@ func (r *userRepository) Create(ctx context.Context, user *entities.User) (*enti
 }
 
 func (r *userRepository) Update(ctx context.Context, user *entities.User) (*entities.User, error) {
-	params := dbgen.UpdateUserParams{
-		Email:          user.Email,
-		PhoneNumber:    toPgText(user.PhoneNumber),
-		FullName:       toPgText(user.FullName),
-		HashedPassword: toPgText(user.HashedPassword),
-	}
+    params := dbgen.UpdateUserParams{
+        ID:             user.ID,
+        Email:          user.Email,
+        PhoneNumber:    toPgText(user.PhoneNumber),
+        FullName:       toPgText(user.FullName),
+        HashedPassword: toPgText(user.HashedPassword),
+        IsActive:       user.IsActive,
+    }
 
-	dbUser, err := r.queries.UpdateUser(ctx, params)
+    dbUser, err := r.queries.UpdateUser(ctx, params)
 	if err != nil {
 		return r.toEntity(&dbUser, []dbgen.Role{}), err
 	}
@@ -97,6 +99,26 @@ func (r *userRepository) Update(ctx context.Context, user *entities.User) (*enti
 	// Implementation depends on your update strategy
 	// This could execute the update or return a transactional version
 	return r.toEntity(&dbUser, []dbgen.Role{}), err
+}
+
+func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*entities.User, error) {
+    dbUser, err := r.queries.GetUserByPhone(ctx, phone)
+    if err == pgx.ErrNoRows {
+        return nil, nil
+    }
+    if err != nil {
+        return nil, err
+    }
+    dbRoles, err := r.queries.GetUserRole(ctx, dbUser.ID)
+    if err != nil {
+        return nil, err
+    }
+    return r.toEntity(&dbUser, dbRoles), nil
+}
+
+func (r *userRepository) SetPhoneVerified(ctx context.Context, userID uuid.UUID) error {
+    _, err := r.queries.SetPhoneVerified(ctx, userID)
+    return err
 }
 
 func (r *userRepository) GetRoles(ctx context.Context, roles []entities.RoleEnum) ([]int32, error) {

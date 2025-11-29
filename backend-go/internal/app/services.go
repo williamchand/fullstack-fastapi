@@ -1,9 +1,10 @@
 package app
 
 import (
-	"github.com/williamchand/fullstack-fastapi/backend-go/config"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
+    "github.com/williamchand/fullstack-fastapi/backend-go/config"
+    "github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
+    "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
+    "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/smtp"
 )
 
 type AppServices struct {
@@ -12,12 +13,13 @@ type AppServices struct {
 }
 
 func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) {
-	jwtService, err := jwt.NewService(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return &AppServices{
-		UserService:  services.NewUserService(repo.UserRepo, repo.OAuthRepo, repo.TransactionManager, jwtService),
-		OauthService: services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager, jwtService),
-	}, nil
+    jwtService, err := jwt.NewService(cfg)
+    if err != nil {
+        return nil, err
+    }
+    smtpSender := smtp.NewSMTPSender(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.Username, cfg.SMTP.Password, cfg.SMTP.From)
+    return &AppServices{
+        UserService:  services.NewUserService(repo.UserRepo, repo.OAuthRepo, repo.TransactionManager, jwtService, repo.EmailTemplateRepo, repo.VerificationRepo, smtpSender),
+        OauthService: services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager, jwtService),
+    }, nil
 }

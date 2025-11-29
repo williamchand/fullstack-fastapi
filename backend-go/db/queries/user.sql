@@ -6,6 +6,10 @@ WHERE id = $1 LIMIT 1;
 SELECT * FROM "user"
 WHERE email = $1 LIMIT 1;
 
+-- name: GetUserByPhone :one
+SELECT * FROM "user"
+WHERE phone_number = $1 LIMIT 1;
+
 -- name: CreateUser :one
 INSERT INTO "user" (
     email, phone_number, full_name, hashed_password, is_active, is_email_verified
@@ -21,6 +25,13 @@ SET
     full_name = COALESCE($4, full_name),
     hashed_password = COALESCE($5, hashed_password),
     is_active = COALESCE($6, is_active),
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: SetPhoneVerified :one
+UPDATE "user"
+SET is_phone_verified = TRUE,
     updated_at = now()
 WHERE id = $1
 RETURNING *;

@@ -9,6 +9,7 @@ import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/database"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/database/dbgen"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/smtp"
 )
 
 var (
@@ -29,8 +30,11 @@ func setup() {
 	transactionManager := database.NewTransactionManager(dbPool)
 	userRepo := database.NewUserRepository(queries, dbPool)
 	oAuthRepo := database.NewOAuthRepository(queries, dbPool)
+	emailTemplateRepo := database.NewEmailTemplateRepository(queries, dbPool)
+	verificationRepo := database.NewVerificationCodeRepository(queries, dbPool)
+	smtpSender := smtp.NewSMTPSender(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.Username, cfg.SMTP.Password, cfg.SMTP.From)
 	jwtService, _ := jwt.NewService(cfg)
-	userService = services.NewUserService(userRepo, oAuthRepo, transactionManager, jwtService)
+	userService = services.NewUserService(userRepo, oAuthRepo, transactionManager, jwtService, emailTemplateRepo, verificationRepo, smtpSender)
 }
 
 func generateTestAccounts() {

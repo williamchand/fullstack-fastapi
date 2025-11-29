@@ -71,9 +71,9 @@ type Config struct {
 	SMTP struct {
 		Host     string `envconfig:"SMTP_HOST" default:""`
 		Port     int    `envconfig:"SMTP_PORT" default:"587"`
-		Username string `envconfig:"SMTP_USERNAME" default:""`
+		Username string `envconfig:"SMTP_USER" default:""`
 		Password string `envconfig:"SMTP_PASSWORD" default:""`
-		From     string `envconfig:"SMTP_FROM" default:""`
+		From     string `envconfig:"EMAILS_FROM_EMAIL" default:""`
 	}
 
 	// Superuser Configuration
@@ -115,7 +115,7 @@ func (c *Config) UseRSAKeys() bool {
 
 // UseHMAC returns true if HMAC should be used for JWT
 func (c *Config) UseHMAC() bool {
-    return c.JWT.HMACSecret != "" && !c.UseRSAKeys()
+	return c.JWT.HMACSecret != "" && !c.UseRSAKeys()
 }
 
 // GetJWTConfig returns JWT-specific configuration

@@ -27,9 +27,9 @@ func (r *paymentRepository) Create(ctx context.Context, p *entities.Payment) (*e
 	out, err := r.queries.CreatePayment(ctx, dbgen.CreatePaymentParams{
 		UserID:          p.UserID,
 		PaymentMethodID: toPgUUIDPtr(p.PaymentMethodID),
-		Amount:          p.Amount,
+		Amount:          toPgNumericFromFloat64(p.Amount),
 		Currency:        p.Currency,
-		Status:          string(p.Status),
+		Status:          dbgen.PaymentStatus(p.Status),
 		TransactionID:   p.TransactionID,
 		ExtraMetadata:   toPgJSON(p.ExtraMetadata),
 	})
@@ -58,9 +58,9 @@ func (r *paymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*entitie
 func (r *paymentRepository) UpdateStatus(ctx context.Context, txid string, status entities.PaymentStatus, amount *float64, currency *string, metadata map[string]any) (*entities.Payment, error) {
 	out, err := r.queries.UpdatePaymentStatus(ctx, dbgen.UpdatePaymentStatusParams{
 		TransactionID: txid,
-		Status:        string(status),
+		Status:        dbgen.PaymentStatus(status),
 		Amount:        toPgNumeric(amount),
-		Currency:      toPgText(currency),
+		Currency:      *currency,
 		ExtraMetadata: toPgJSON(metadata),
 	})
 	if err != nil {
@@ -79,7 +79,7 @@ func (r *paymentRepository) toEntity(v *dbgen.Payment) *entities.Payment {
 		ID:              v.ID,
 		UserID:          v.UserID,
 		PaymentMethodID: pmID,
-		Amount:          v.Amount,
+		Amount:          fromPgNumericToFloat64(v.Amount),
 		Currency:        v.Currency,
 		Status:          entities.PaymentStatus(v.Status),
 		TransactionID:   v.TransactionID,

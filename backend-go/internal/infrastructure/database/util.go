@@ -69,5 +69,25 @@ func toPgUUIDPtr(u *uuid.UUID) pgtype.UUID {
 	if u == nil {
 		return pgtype.UUID{Valid: false}
 	}
-	return pgtype.UUID{Bytes: u[:], Valid: true}
+
+	return pgtype.UUID{
+		Bytes: [16]byte(*u), // convert value to fixed array
+		Valid: true,
+	}
+}
+
+func toPgNumericFromFloat64(f float64) pgtype.Numeric {
+	var num pgtype.Numeric
+	if err := num.Scan(f); err != nil {
+		return pgtype.Numeric{}
+	}
+	return num
+}
+
+func fromPgNumericToFloat64(n pgtype.Numeric) float64 {
+	if !n.Valid {
+		return 0
+	}
+	amount, _ := n.Int.Float64()
+	return amount
 }

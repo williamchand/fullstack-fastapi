@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v78"
@@ -57,7 +58,7 @@ func (b *BillingService) HandleWebhook(ctx context.Context, payload []byte, sig 
 	switch evt.Type {
 	case "checkout.session.completed":
 		var s stripe.CheckoutSession
-		err := stripe.UnmarshalJSON(evt.Data.Raw, &s)
+		err := json.Unmarshal(evt.Data.Raw, &s)
 		if err != nil {
 			return err
 		}
@@ -65,7 +66,7 @@ func (b *BillingService) HandleWebhook(ctx context.Context, payload []byte, sig 
 		_, _ = b.payRepo.UpdateStatus(ctx, s.ID, entities.PaymentStatusPaid, nil, nil, map[string]any{"customer": s.Customer.ID})
 	case "checkout.session.expired":
 		var s stripe.CheckoutSession
-		err := stripe.UnmarshalJSON(evt.Data.Raw, &s)
+		err := json.Unmarshal(evt.Data.Raw, &s)
 		if err != nil {
 			return err
 		}

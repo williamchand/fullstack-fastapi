@@ -36,6 +36,13 @@ SET is_phone_verified = TRUE,
 WHERE id = $1
 RETURNING *;
 
+-- name: SetEmailVerified :one
+UPDATE "user"
+SET is_email_verified = TRUE,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
 -- name: GetUserRole :many
 SELECT r.* FROM role r
 INNER JOIN user_role ur ON r.id = ur.role_id

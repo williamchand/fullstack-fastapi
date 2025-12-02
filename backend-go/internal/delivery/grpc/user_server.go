@@ -163,6 +163,22 @@ func (s *userServer) VerifyPhoneOTP(ctx context.Context, req *salonappv1.VerifyP
 	return &salonappv1.VerifyPhoneOTPResponse{Success: true, Message: "phone verified"}, nil
 }
 
+func (s *userServer) VerifyEmailOTP(ctx context.Context, req *salonappv1.VerifyEmailOTPRequest) (*salonappv1.VerifyEmailOTPResponse, error) {
+    if req.Email == "" || req.OtpCode == "" {
+        return nil, status.Error(codes.InvalidArgument, "email and otp_code are required")
+    }
+    if err := s.userService.VerifyEmailOTP(ctx, req.Email, req.OtpCode); err != nil {
+        switch {
+        case errors.Is(err, services.ErrUserNotFound):
+            return nil, status.Error(codes.NotFound, "user not found")
+        case errors.Is(err, services.ErrInvalidOrExpiredCode):
+            return nil, status.Error(codes.InvalidArgument, "invalid or expired code")
+        default:
+            return nil, status.Error(codes.Internal, "failed to verify email")
+        }
+    }
+    return &salonappv1.VerifyEmailOTPResponse{Success: true, Message: "email verified"}, nil
+}
 func (s *userServer) LoginWithPhone(ctx context.Context, req *salonappv1.LoginWithPhoneRequest) (*salonappv1.LoginWithPhoneResponse, error) {
 	if req.PhoneNumber == "" || req.OtpCode == "" {
 		return nil, status.Error(codes.InvalidArgument, "phone_number and otp_code are required")

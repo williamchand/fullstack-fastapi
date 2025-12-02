@@ -315,6 +315,28 @@ func (s *UserService) VerifyPhoneOTP(ctx context.Context, phone, code string) er
 	return nil
 }
 
+// VerifyEmailOTP verifies the OTP and marks email as verified
+func (s *UserService) VerifyEmailOTP(ctx context.Context, email, code string) error {
+    user, err := s.userRepo.GetByEmail(ctx, email)
+    if err != nil || user == nil {
+        return ErrUserNotFound
+    }
+    v, err := s.verificationRepo.GetByCode(ctx, user.ID, entities.VerificationTypeEmail, code)
+    if err != nil || v == nil {
+        return ErrInvalidOrExpiredCode
+    }
+    if v.UsedAt != nil || time.Now().After(v.ExpiresAt) {
+        return ErrInvalidOrExpiredCode
+    }
+    if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
+        return fmt.Errorf("failed to mark code used: %w", err)
+    }
+    if err := s.userRepo.SetEmailVerified(ctx, user.ID); err != nil {
+        return fmt.Errorf("failed to set email verified: %w", err)
+    }
+    return nil
+}
+
 // LoginWithPhone verifies OTP and returns token pair
 func (s *UserService) LoginWithPhone(ctx context.Context, phone, code string) (*entities.TokenPair, error) {
 	user, err := s.userRepo.GetByPhone(ctx, phone)

@@ -102,6 +102,14 @@ service UserService {
     };
   }
 
+  // Verify email using OTP code
+  rpc VerifyEmailOTP(VerifyEmailOTPRequest) returns (VerifyEmailOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/user/verify-email"
+      body: "*"
+    };
+  }
+
   rpc LoginWithPhone(LoginWithPhoneRequest) returns (LoginWithPhoneResponse) {
     option (google.api.http) = {
       post: "/v1/login/phone"
@@ -208,6 +216,17 @@ message VerifyPhoneOTPRequest {
 }
 
 message VerifyPhoneOTPResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Email OTP verification
+message VerifyEmailOTPRequest {
+  string email = 1;
+  string otp_code = 2;
+}
+
+message VerifyEmailOTPResponse {
   bool success = 1;
   string message = 2;
 }

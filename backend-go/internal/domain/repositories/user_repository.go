@@ -18,4 +18,5 @@ type UserRepository interface {
     Update(ctx context.Context, user *entities.User) (*entities.User, error)
     SetUserRoles(ctx context.Context, userID uuid.UUID, roles []entities.RoleEnum) error
     SetPhoneVerified(ctx context.Context, userID uuid.UUID) error
+    SetEmailVerified(ctx context.Context, userID uuid.UUID) error
 }

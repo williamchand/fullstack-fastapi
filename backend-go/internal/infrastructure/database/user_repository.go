@@ -117,8 +117,13 @@ func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*entitie
 }
 
 func (r *userRepository) SetPhoneVerified(ctx context.Context, userID uuid.UUID) error {
-	_, err := r.queries.SetPhoneVerified(ctx, userID)
-	return err
+    _, err := r.queries.SetPhoneVerified(ctx, userID)
+    return err
+}
+
+func (r *userRepository) SetEmailVerified(ctx context.Context, userID uuid.UUID) error {
+    _, err := r.queries.SetEmailVerified(ctx, userID)
+    return err
 }
 
 func (r *userRepository) GetRoles(ctx context.Context, roles []entities.RoleEnum) ([]int32, error) {

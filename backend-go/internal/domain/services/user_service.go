@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -251,7 +252,13 @@ func (s *UserService) SendEmailVerification(ctx context.Context, email string) e
 	if err != nil {
 		return fmt.Errorf("failed to load email template: %w", err)
 	}
-	body := strings.ReplaceAll(tpl.Body, "{{code}}", code)
+	fieldMap := map[string]string{
+		"code": code,
+	}
+	body, err := util.FillTextTemplate(tpl.Body, fieldMap)
+	if err != nil {
+		return fmt.Errorf("failed to load email template: %w", err)
+	}
 	msg := entities.Message{To: user.Email, Subject: tpl.Subject, Body: body}
 	if err := s.smtpSender.Send(msg); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
@@ -317,24 +324,24 @@ func (s *UserService) VerifyPhoneOTP(ctx context.Context, phone, code string) er
 
 // VerifyEmailOTP verifies the OTP and marks email as verified
 func (s *UserService) VerifyEmailOTP(ctx context.Context, email, code string) error {
-    user, err := s.userRepo.GetByEmail(ctx, email)
-    if err != nil || user == nil {
-        return ErrUserNotFound
-    }
-    v, err := s.verificationRepo.GetByCode(ctx, user.ID, entities.VerificationTypeEmail, code)
-    if err != nil || v == nil {
-        return ErrInvalidOrExpiredCode
-    }
-    if v.UsedAt != nil || time.Now().After(v.ExpiresAt) {
-        return ErrInvalidOrExpiredCode
-    }
-    if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
-        return fmt.Errorf("failed to mark code used: %w", err)
-    }
-    if err := s.userRepo.SetEmailVerified(ctx, user.ID); err != nil {
-        return fmt.Errorf("failed to set email verified: %w", err)
-    }
-    return nil
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil || user == nil {
+		return ErrUserNotFound
+	}
+	v, err := s.verificationRepo.GetByCode(ctx, user.ID, entities.VerificationTypeEmail, code)
+	if err != nil || v == nil {
+		return ErrInvalidOrExpiredCode
+	}
+	if v.UsedAt != nil || time.Now().After(v.ExpiresAt) {
+		return ErrInvalidOrExpiredCode
+	}
+	if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
+		return fmt.Errorf("failed to mark code used: %w", err)
+	}
+	if err := s.userRepo.SetEmailVerified(ctx, user.ID); err != nil {
+		return fmt.Errorf("failed to set email verified: %w", err)
+	}
+	return nil
 }
 
 // LoginWithPhone verifies OTP and returns token pair

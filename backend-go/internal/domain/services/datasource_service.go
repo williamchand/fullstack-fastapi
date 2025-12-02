@@ -26,6 +26,10 @@ func NewDataSourceService(cfg *config.Config, dsRepo repositories.DataSourceRepo
 	return &DataSourceService{cfg: cfg, dsRepo: dsRepo, aiRepo: aiRepo, txManager: tx}
 }
 
+func (s *DataSourceService) GetByID(ctx context.Context, userID uuid.UUID, dataSourceID uuid.UUID) (*entities.DataSource, error) {
+	return s.dsRepo.GetByID(ctx, dataSourceID, userID)
+}
+
 func (s *DataSourceService) CreateDataSource(ctx context.Context, userID uuid.UUID, name, typ, host string, port int32, dbname, username, password string, options map[string]any) (*entities.DataSource, error) {
 	key := []byte(strings.TrimSpace(s.cfg.Security.CredentialEncryptionKey))
 	enc, err := crypto.Encrypt(key, []byte(password))

@@ -27,6 +27,10 @@ func (s *WeddingService) Create(ctx context.Context, userID uuid.UUID, templateI
 	return s.weddings.Create(ctx, w)
 }
 
+func (s *WeddingService) GetByID(ctx context.Context, weddingID uuid.UUID) (*entities.Wedding, error) {
+	return s.weddings.GetByID(ctx, weddingID)
+}
+
 func (s *WeddingService) SetTemplate(ctx context.Context, weddingID uuid.UUID, templateID uuid.UUID) (*entities.Wedding, error) {
 	return s.weddings.SetTemplate(ctx, weddingID, templateID)
 }

@@ -32,7 +32,7 @@ func (s *dataSourceServer) CreateDataSource(ctx context.Context, req *salonappv1
 
 func (s *dataSourceServer) TestConnection(ctx context.Context, req *salonappv1.TestConnectionRequest) (*salonappv1.TestConnectionResponse, error) {
 	user := auth.UserFromContext(ctx)
-	ds, err := s.svc.dsRepo.GetByID(ctx, uuid.MustParse(req.Id), user.ID)
+	ds, err := s.svc.GetByID(ctx, uuid.MustParse(req.Id), user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (s *dataSourceServer) TestConnection(ctx context.Context, req *salonappv1.T
 
 func (s *dataSourceServer) IntrospectSchema(ctx context.Context, req *salonappv1.IntrospectSchemaRequest) (*salonappv1.IntrospectSchemaResponse, error) {
 	user := auth.UserFromContext(ctx)
-	ds, err := s.svc.dsRepo.GetByID(ctx, uuid.MustParse(req.Id), user.ID)
+	ds, err := s.svc.GetByID(ctx, uuid.MustParse(req.Id), user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (s *dataSourceServer) SetAICredential(ctx context.Context, req *salonappv1.
 
 func (s *dataSourceServer) AskQuestion(ctx context.Context, req *salonappv1.AskQuestionRequest) (*salonappv1.AskQuestionResponse, error) {
 	user := auth.UserFromContext(ctx)
-	ds, err := s.svc.dsRepo.GetByID(ctx, uuid.MustParse(req.DataSourceId), user.ID)
+	ds, err := s.svc.GetByID(ctx, uuid.MustParse(req.DataSourceId), user.ID)
 	if err != nil {
 		return nil, err
 	}

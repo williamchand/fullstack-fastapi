@@ -9,6 +9,7 @@ import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/auth"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type weddingServer struct {
@@ -39,7 +40,7 @@ func (s *weddingServer) CreateWedding(ctx context.Context, req *salonappv1.Creat
 }
 
 func (s *weddingServer) GetWedding(ctx context.Context, req *salonappv1.GetWeddingRequest) (*salonappv1.WeddingResponse, error) {
-	w, err := s.svc.weddings.GetByID(ctx, uuid.MustParse(req.Id))
+	w, err := s.svc.GetByID(ctx, uuid.MustParse(req.Id))
 	if err != nil {
 		return nil, err
 	}
@@ -107,12 +108,12 @@ func (s *weddingServer) UpdateGuest(ctx context.Context, req *salonappv1.UpdateG
 	return &salonappv1.GuestResponse{Guest: toGuestProto(g)}, nil
 }
 
-func (s *weddingServer) DeleteGuest(ctx context.Context, req *salonappv1.DeleteGuestRequest) (*salonappv1.Empty, error) {
+func (s *weddingServer) DeleteGuest(ctx context.Context, req *salonappv1.DeleteGuestRequest) (*emptypb.Empty, error) {
 	err := s.svc.DeleteGuest(ctx, uuid.MustParse(req.GuestId))
 	if err != nil {
 		return nil, err
 	}
-	return &salonappv1.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 func (s *weddingServer) ListGuests(ctx context.Context, req *salonappv1.ListGuestsRequest) (*salonappv1.GuestsResponse, error) {

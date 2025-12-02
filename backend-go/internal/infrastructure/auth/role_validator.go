@@ -20,6 +20,9 @@ func NewRoleValidator(cfg *config.Config) *RoleValidator {
 
 // HasRole checks if user has any of the required roles
 func (v *RoleValidator) HasRole(user *entities.User, requiredRoles ...string) bool {
+	if len(requiredRoles) == 0 {
+		return true
+	}
 	userRoles := make(map[string]bool)
 	for _, role := range user.Roles {
 		userRoles[strings.ToLower(role)] = true

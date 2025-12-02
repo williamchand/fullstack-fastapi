@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,8 +17,9 @@ var (
 	publicExactPaths = map[string]map[string]bool{
 		"/v1/login/access-token":  {"POST": true},
 		"/v1/login/refresh-token": {"POST": true},
+		"/v1/user/verify-email":   {"POST": true},
+		"/v1/user/resend-email":   {"POST": true},
 		"/v1/user":                {"POST": true},
-		"/v1/billing/webhook":     {"POST": true},
 	}
 
 	// Public URL prefixes allowed without auth
@@ -27,16 +27,18 @@ var (
 		"/v1/public/",
 	}
 	publicGRPCExact = map[string]bool{
-		"/salonapp.v1.UserService/CreateUser":   true,
-		"/salonapp.v1.UserService/LoginUser":    true,
-		"/salonapp.v1.UserService/RefreshToken": true,
+		"/salonapp.v1.UserService/CreateUser":              true,
+		"/salonapp.v1.UserService/LoginUser":               true,
+		"/salonapp.v1.UserService/RefreshToken":            true,
+		"/salonapp.v1.UserService/VerifyEmailOTP":          true,
+		"/salonapp.v1.UserService/ResendEmailVerification": true,
 	}
 	publicGRPCPrefixes = []string{
 		"/salonapp.v1.PublicService/",
 		"/salonapp.v1.OAuthService/",
 	}
 	grpcRoleRules = map[string][]string{
-		"/salonapp.v1.UserService/GetUser": {string(entities.RoleSuperuser)},
+		// "/salonapp.v1.UserService/GetUser": {string(entities.RoleSuperuser)},
 	}
 )
 

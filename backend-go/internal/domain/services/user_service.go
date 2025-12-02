@@ -93,6 +93,10 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName,
 		return nil
 	})
 
+	err = s.SendEmailVerification(ctx, email)
+	if err != nil {
+		return nil, err
+	}
 	for _, role := range roles {
 		user.Roles = append(user.Roles, string(role))
 	}

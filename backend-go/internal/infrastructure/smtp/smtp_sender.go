@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/smtp"
 	"strings"
+	"time"
 
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 )
@@ -32,20 +33,17 @@ func (s *SMTPSender) Send(msg entities.Message) error {
 
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
 
-	// Prepare email headers
-	headers := map[string]string{
-		"From":         s.from,
-		"To":           msg.To,
-		"Subject":      msg.Subject,
-		"MIME-Version": "1.0",
-		"Content-Type": "text/html; charset=\"UTF-8\"",
-	}
-
+	// Prepare email headers and body
 	var sb strings.Builder
-	for k, v := range headers {
-		sb.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
-	}
-	sb.WriteString("\r\n" + msg.Body)
+
+	sb.WriteString(fmt.Sprintf("From: %s\r\n", s.from))
+	sb.WriteString(fmt.Sprintf("To: %s\r\n", msg.To))
+	sb.WriteString(fmt.Sprintf("Subject: %s\r\n", msg.Subject))
+	sb.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().UTC().Format(time.RFC1123Z)))
+	sb.WriteString("MIME-Version: 1.0\r\n")
+	sb.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
+	sb.WriteString("\r\n") // empty line before body
+	sb.WriteString(msg.Body)
 
 	// TLS config
 	tlsConfig := &tls.Config{

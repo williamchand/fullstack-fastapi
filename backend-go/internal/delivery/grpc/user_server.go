@@ -42,7 +42,7 @@ func (s *userServer) GetUser(ctx context.Context, req *emptypb.Empty) (*salonapp
 }
 
 func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserRequest) (*salonappv1.CreateUserResponse, error) {
-	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, req.PhoneNumber, []entities.RoleEnum{entities.RoleCustomer}, false)
+	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, []entities.RoleEnum{entities.RoleCustomer}, false)
 	if err != nil {
 		if errors.Is(err, services.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exist")
@@ -164,20 +164,20 @@ func (s *userServer) VerifyPhoneOTP(ctx context.Context, req *salonappv1.VerifyP
 }
 
 func (s *userServer) VerifyEmailOTP(ctx context.Context, req *salonappv1.VerifyEmailOTPRequest) (*salonappv1.VerifyEmailOTPResponse, error) {
-    if req.Email == "" || req.OtpCode == "" {
-        return nil, status.Error(codes.InvalidArgument, "email and otp_code are required")
-    }
-    if err := s.userService.VerifyEmailOTP(ctx, req.Email, req.OtpCode); err != nil {
-        switch {
-        case errors.Is(err, services.ErrUserNotFound):
-            return nil, status.Error(codes.NotFound, "user not found")
-        case errors.Is(err, services.ErrInvalidOrExpiredCode):
-            return nil, status.Error(codes.InvalidArgument, "invalid or expired code")
-        default:
-            return nil, status.Error(codes.Internal, "failed to verify email")
-        }
-    }
-    return &salonappv1.VerifyEmailOTPResponse{Success: true, Message: "email verified"}, nil
+	if req.Email == "" || req.OtpCode == "" {
+		return nil, status.Error(codes.InvalidArgument, "email and otp_code are required")
+	}
+	if err := s.userService.VerifyEmailOTP(ctx, req.Email, req.OtpCode); err != nil {
+		switch {
+		case errors.Is(err, services.ErrUserNotFound):
+			return nil, status.Error(codes.NotFound, "user not found")
+		case errors.Is(err, services.ErrInvalidOrExpiredCode):
+			return nil, status.Error(codes.InvalidArgument, "invalid or expired code")
+		default:
+			return nil, status.Error(codes.Internal, "failed to verify email")
+		}
+	}
+	return &salonappv1.VerifyEmailOTPResponse{Success: true, Message: "email verified"}, nil
 }
 func (s *userServer) LoginWithPhone(ctx context.Context, req *salonappv1.LoginWithPhoneRequest) (*salonappv1.LoginWithPhoneResponse, error) {
 	if req.PhoneNumber == "" || req.OtpCode == "" {

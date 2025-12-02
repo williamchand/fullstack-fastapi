@@ -93,11 +93,11 @@ VALUES
 (
   'verification_email',
   'Verify Your Email Address',
-  '<p>Hello,</p><p>Your verification code is: <strong>{{code}}</strong></p>'
+  '<p>Hello,</p><p>Your verification code is: <strong>{{.code}}</strong></p>'
 ),
 (
   'password_reset',
   'Reset Your Password',
-  '<p>Hello,</p><p>Click the link to reset your password: <a href="{{link}}">Reset Password</a></p>'
+  '<p>Hello,</p><p>Click the link to reset your password: <a href="{{.link}}">Reset Password</a></p>'
 )
 ON CONFLICT (name) DO NOTHING;

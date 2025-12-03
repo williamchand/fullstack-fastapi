@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"strings"
 	"time"
@@ -253,9 +254,11 @@ func (s *UserService) SendEmailVerification(ctx context.Context, email string) e
 		return fmt.Errorf("failed to load email template: %w", err)
 	}
 	msg := entities.Message{To: user.Email, Subject: tpl.Subject, Body: body}
-	if err := s.smtpSender.Send(msg); err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
-	}
+	go func() {
+		if err := s.smtpSender.Send(msg); err != nil {
+			log.Println(fmt.Errorf("failed to send email: %w", err))
+		}
+	}()
 	return nil
 }
 
@@ -282,11 +285,11 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string) error {
 	}
 	// Optional: send notification via email as fallback if email exists
 	if user.Email != "" && s.smtpSender != nil {
-		tpl, tplErr := s.emailTplRepo.GetByName(ctx, "verification_email")
-		if tplErr == nil {
-			body := strings.ReplaceAll(tpl.Body, "{{code}}", code)
-			_ = s.smtpSender.Send(entities.Message{To: user.Email, Subject: tpl.Subject, Body: body})
-		}
+		// tpl, tplErr := s.emailTplRepo.GetByName(ctx, "verification_email")
+		// if tplErr == nil {
+		// 	body := strings.ReplaceAll(tpl.Body, "{{code}}", code)
+		// 	_ = s.smtpSender.Send(entities.Message{To: user.Email, Subject: tpl.Subject, Body: body})
+		// }
 	}
 	return nil
 }

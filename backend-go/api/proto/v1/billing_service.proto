@@ -17,6 +17,14 @@ service BillingService {
     };
   }
 
+  // Initiate DOKU Jokul payment and return payment URL
+  rpc CreateDokuPayment(CreateDokuPaymentRequest) returns (CreateDokuPaymentResponse) {
+    option (google.api.http) = { post: "/v1/billing/doku/payment" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+    };
+  }
+
   rpc GetSubscriptionStatus(google.protobuf.Empty) returns (GetSubscriptionStatusResponse) {
     option (google.api.http) = { get: "/v1/billing/subscription" };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -36,6 +44,14 @@ message CreateCheckoutSessionRequest {
 }
 
 message CreateCheckoutSessionResponse { string url = 1; string session_id = 2; }
+
+message CreateDokuPaymentRequest {
+  int64 amount_idr = 1; // IDR amount without decimals
+  string invoice_number = 2;
+  int32 payment_due_minutes = 3; // default 60 if not provided
+}
+
+message CreateDokuPaymentResponse { string payment_url = 1; string transaction_id = 2; }
 
 message GetSubscriptionStatusResponse {
   string status = 1;

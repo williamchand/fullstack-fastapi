@@ -1,8 +1,9 @@
 package services
 
 import (
-	"context"
-	"encoding/json"
+    "context"
+    "encoding/json"
+    "fmt"
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v78"
@@ -14,14 +15,15 @@ import (
 )
 
 type BillingService struct {
-	cfg     *config.Config
-	subs    repositories.SubscriptionRepository
-	payRepo repositories.PaymentRepository
-	stripe  *stripeinfra.Client
+    cfg     *config.Config
+    subs    repositories.SubscriptionRepository
+    payRepo repositories.PaymentRepository
+    stripe  *stripeinfra.Client
+    doku    repositories.DokuClient
 }
 
-func NewBillingService(cfg *config.Config, subs repositories.SubscriptionRepository, pay repositories.PaymentRepository, stripeClient *stripeinfra.Client) *BillingService {
-	return &BillingService{cfg: cfg, subs: subs, payRepo: pay, stripe: stripeClient}
+func NewBillingService(cfg *config.Config, subs repositories.SubscriptionRepository, pay repositories.PaymentRepository, stripeClient *stripeinfra.Client, dokuClient repositories.DokuClient) *BillingService {
+    return &BillingService{cfg: cfg, subs: subs, payRepo: pay, stripe: stripeClient, doku: dokuClient}
 }
 
 func (b *BillingService) CreateCheckoutSession(ctx context.Context, userID uuid.UUID, successURL, cancelURL string) (string, string, error) {
@@ -76,5 +78,29 @@ func (b *BillingService) HandleWebhook(ctx context.Context, payload []byte, sig 
 }
 
 func (b *BillingService) GetSubscriptionStatus(ctx context.Context, userID uuid.UUID) (*entities.Subscription, error) {
-	return b.subs.GetByUser(ctx, userID)
+    return b.subs.GetByUser(ctx, userID)
+}
+
+// CreateDokuPayment initiates a DOKU Jokul checkout and records a pending payment
+func (b *BillingService) CreateDokuPayment(ctx context.Context, userID uuid.UUID, amountIDR int64, invoiceNumber string, paymentDueMinutes int) (string, string, error) {
+    if b.doku == nil {
+        return "", "", fmt.Errorf("doku client not configured")
+    }
+    url, txid, amt, currency, err := b.doku.CreatePayment(ctx, amountIDR, invoiceNumber, paymentDueMinutes)
+    if err != nil {
+        return "", "", err
+    }
+    amount := float64(amt) // IDR has no decimals
+    _, err = b.payRepo.Create(ctx, &entities.Payment{
+        UserID:        userID,
+        Amount:        amount,
+        Currency:      currency,
+        Status:        entities.PaymentStatusPending,
+        TransactionID: txid,
+        ExtraMetadata: map[string]any{"payment_url": url, "invoice_number": invoiceNumber},
+    })
+    if err != nil {
+        return "", "", err
+    }
+    return url, txid, nil
 }

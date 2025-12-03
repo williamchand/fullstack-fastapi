@@ -1,11 +1,13 @@
 package app
 
 import (
-	"github.com/williamchand/fullstack-fastapi/backend-go/config"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/smtp"
-	stripeinfra "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/stripe"
+    "github.com/williamchand/fullstack-fastapi/backend-go/config"
+    "github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
+    "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
+    "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/smtp"
+    dokunfra "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/doku"
+    stripeinfra "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/stripe"
+    wahainfra "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/waha"
 )
 
 type AppServices struct {
@@ -17,17 +19,19 @@ type AppServices struct {
 }
 
 func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) {
-	jwtService, err := jwt.NewService(cfg)
-	if err != nil {
-		return nil, err
-	}
-	smtpSender := smtp.NewSMTPSender(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.Username, cfg.SMTP.Password, cfg.SMTP.From)
-	stripeClient := stripeinfra.New(cfg.Stripe.SecretKey)
-	return &AppServices{
-		UserService:       services.NewUserService(repo.UserRepo, repo.OAuthRepo, repo.TransactionManager, jwtService, repo.EmailTemplateRepo, repo.VerificationRepo, smtpSender),
-		OauthService:      services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager, jwtService),
-		DataSourceService: services.NewDataSourceService(cfg, repo.DataSourceRepo, repo.AICredRepo, repo.TransactionManager),
-		BillingService:    services.NewBillingService(cfg, repo.SubscriptionRepo, repo.PaymentRepo, stripeClient),
-		WeddingService:    services.NewWeddingService(repo.WeddingRepo, repo.GuestRepo, repo.TemplateRepo, repo.PaymentRepo, repo.SubscriptionRepo),
-	}, nil
+    jwtService, err := jwt.NewService(cfg)
+    if err != nil {
+        return nil, err
+    }
+    smtpSender := smtp.NewSMTPSender(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.Username, cfg.SMTP.Password, cfg.SMTP.From)
+    wahaClient := wahainfra.New(cfg.WAHA.URL, cfg.WAHA.APIKey, cfg.WAHA.Session)
+    stripeClient := stripeinfra.New(cfg.Stripe.SecretKey)
+    dokuClient := dokunfra.New(cfg.Doku.BaseURL, cfg.Doku.ClientID, cfg.Doku.SecretKey)
+    return &AppServices{
+        UserService:       services.NewUserService(repo.UserRepo, repo.OAuthRepo, repo.TransactionManager, jwtService, repo.EmailTemplateRepo, repo.VerificationRepo, smtpSender, wahaClient),
+        OauthService:      services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager, jwtService),
+        DataSourceService: services.NewDataSourceService(cfg, repo.DataSourceRepo, repo.AICredRepo, repo.TransactionManager),
+        BillingService:    services.NewBillingService(cfg, repo.SubscriptionRepo, repo.PaymentRepo, stripeClient, dokuClient),
+        WeddingService:    services.NewWeddingService(repo.WeddingRepo, repo.GuestRepo, repo.TemplateRepo, repo.PaymentRepo, repo.SubscriptionRepo),
+    }, nil
 }

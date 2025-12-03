@@ -47,13 +47,13 @@ type Config struct {
 		GoogleRedirectURL  string `envconfig:"GOOGLE_REDIRECT_URL" default:"http://localhost:8080/auth/google/callback"`
 	}
 
-    // Security Configuration
-    Security struct {
-        BCryptCost         int    `envconfig:"BCRYPT_COST" default:"12"`
-        CORSAllowedOrigins string `envconfig:"CORS_ALLOWED_ORIGINS" default:"*"`
-        RateLimitRPS       int    `envconfig:"RATE_LIMIT_RPS" default:"100"`
-        CredentialEncryptionKey string `envconfig:"CREDENTIAL_ENCRYPTION_KEY"`
-    }
+	// Security Configuration
+	Security struct {
+		BCryptCost              int    `envconfig:"BCRYPT_COST" default:"10"`
+		CORSAllowedOrigins      string `envconfig:"CORS_ALLOWED_ORIGINS" default:"*"`
+		RateLimitRPS            int    `envconfig:"RATE_LIMIT_RPS" default:"100"`
+		CredentialEncryptionKey string `envconfig:"CREDENTIAL_ENCRYPTION_KEY"`
+	}
 
 	// Logging Configuration
 	Logging struct {
@@ -62,13 +62,13 @@ type Config struct {
 		FilePath string `envconfig:"LOG_FILE_PATH" default:""`
 	}
 
-    // Monitoring Configuration
+	// Monitoring Configuration
 	Monitoring struct {
 		Enabled        bool   `envconfig:"MONITORING_ENABLED" default:"false"`
 		PrometheusPort string `envconfig:"PROMETHEUS_PORT" default:"9091"`
 	}
 
-    // SMTP Configuration
+	// SMTP Configuration
 	SMTP struct {
 		Host     string `envconfig:"SMTP_HOST" default:""`
 		Port     int    `envconfig:"SMTP_PORT" default:"587"`
@@ -77,7 +77,7 @@ type Config struct {
 		From     string `envconfig:"EMAILS_FROM_EMAIL" default:""`
 	}
 
-    // Superuser Configuration
+	// Superuser Configuration
 	Superuser struct {
 		Username  string `envconfig:"SUPERUSER_USERNAME"`
 		Groupname string `envconfig:"SUPERUSER_GROUP" default:"superuser"`
@@ -88,6 +88,20 @@ type Config struct {
         SecretKey       string `envconfig:"STRIPE_SECRET_KEY"`
         WebhookSecret   string `envconfig:"STRIPE_WEBHOOK_SECRET"`
         PriceID         string `envconfig:"STRIPE_PRICE_ID"`
+    }
+
+    // WAHA (WhatsApp Gateway) Configuration
+    WAHA struct {
+        URL     string `envconfig:"WAHA_URL" default:"http://localhost:3000"`
+        APIKey  string `envconfig:"WAHA_API_KEY"`
+        Session string `envconfig:"WAHA_SESSION" default:"default"`
+    }
+
+    // DOKU (Jokul Checkout) Configuration
+    Doku struct {
+        BaseURL  string `envconfig:"DOKU_BASE_URL" default:"https://api-sandbox.doku.com"`
+        ClientID string `envconfig:"DOKU_CLIENT_ID"`
+        SecretKey string `envconfig:"DOKU_SECRET_KEY"`
     }
 }
 

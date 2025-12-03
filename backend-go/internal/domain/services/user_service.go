@@ -18,33 +18,36 @@ import (
 )
 
 type UserService struct {
-	userRepo         repositories.UserRepository
-	oauthRepo        repositories.OAuthRepository
-	txManager        repositories.TransactionManager
-	jwtRepo          repositories.JWTRepository
-	emailTplRepo     repositories.EmailTemplateRepository
-	verificationRepo repositories.VerificationCodeRepository
-	smtpSender       repositories.Sender
+    userRepo         repositories.UserRepository
+    oauthRepo        repositories.OAuthRepository
+    txManager        repositories.TransactionManager
+    jwtRepo          repositories.JWTRepository
+    emailTplRepo     repositories.EmailTemplateRepository
+    verificationRepo repositories.VerificationCodeRepository
+    smtpSender       repositories.Sender
+    wahaClient       repositories.WahaClient
 }
 
 func NewUserService(
-	userRepo repositories.UserRepository,
-	oauthRepo repositories.OAuthRepository,
-	txManager repositories.TransactionManager,
-	jwtRepo repositories.JWTRepository,
-	emailTplRepo repositories.EmailTemplateRepository,
-	verificationRepo repositories.VerificationCodeRepository,
-	smtpSender repositories.Sender,
+    userRepo repositories.UserRepository,
+    oauthRepo repositories.OAuthRepository,
+    txManager repositories.TransactionManager,
+    jwtRepo repositories.JWTRepository,
+    emailTplRepo repositories.EmailTemplateRepository,
+    verificationRepo repositories.VerificationCodeRepository,
+    smtpSender repositories.Sender,
+    wahaClient repositories.WahaClient,
 ) *UserService {
-	return &UserService{
-		userRepo:         userRepo,
-		oauthRepo:        oauthRepo,
-		txManager:        txManager,
-		jwtRepo:          jwtRepo,
-		emailTplRepo:     emailTplRepo,
-		verificationRepo: verificationRepo,
-		smtpSender:       smtpSender,
-	}
+    return &UserService{
+        userRepo:         userRepo,
+        oauthRepo:        oauthRepo,
+        txManager:        txManager,
+        jwtRepo:          jwtRepo,
+        emailTplRepo:     emailTplRepo,
+        verificationRepo: verificationRepo,
+        smtpSender:       smtpSender,
+        wahaClient:       wahaClient,
+    }
 }
 
 func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.User, error) {
@@ -280,9 +283,18 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string) error {
 		ExpiresAt:     expires,
 		ExtraMetadata: map[string]any{"purpose": "phone_otp"},
 	}
-	if err := s.verificationRepo.Create(ctx, v); err != nil {
-		return fmt.Errorf("failed to save verification code: %w", err)
-	}
+    if err := s.verificationRepo.Create(ctx, v); err != nil {
+        return fmt.Errorf("failed to save verification code: %w", err)
+    }
+    // Send OTP via WhatsApp using WAHA client
+    if s.wahaClient != nil {
+        text := fmt.Sprintf("Your verification code is %s", code)
+        go func() {
+            if err := s.wahaClient.SendText(ctx, phone, text); err != nil {
+                log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
+            }
+        }()
+    }
 	// Optional: send notification via email as fallback if email exists
 	if user.Email != "" && s.smtpSender != nil {
 		// tpl, tplErr := s.emailTplRepo.GetByName(ctx, "verification_email")

@@ -127,11 +127,8 @@ func (s *UserService) UpdateProfile(ctx context.Context, id string, fullName *st
 	}
 	u := &entities.User{
 		ID:             existingUser.ID,
-		Email:          existingUser.Email,
-		PhoneNumber:    existingUser.PhoneNumber,
 		FullName:       fullName,
 		HashedPassword: hashed,
-		IsActive:       existingUser.IsActive,
 	}
 	updated, err := s.userRepo.UpdateProfile(ctx, u.ID, u.FullName, u.HashedPassword)
 	if err != nil {
@@ -173,14 +170,21 @@ func (s *UserService) AddPhoneNumber(ctx context.Context, id string, phone strin
 		Code:          code,
 		Type:          entities.VerificationTypePhone,
 		ExpiresAt:     time.Now().Add(10 * time.Minute),
-		ExtraMetadata: map[string]any{"purpose": "add_phone", "new_phone": normalized},
+		ExtraMetadata: map[string]any{"purpose": entities.VerificationPurposeAddPhone, "new_phone": normalized},
 	}
 	if err := s.verificationRepo.Create(ctx, v); err != nil {
 		return err
 	}
 	if s.wahaClient != nil {
-		text := fmt.Sprintf("Your verification code is %s", code)
-		go func() { _ = s.wahaClient.SendText(ctx, normalized, text) }()
+		tpl, tplErr := s.emailTplRepo.GetByName(ctx, entities.EmailTemplateVerificationPhone)
+		if tplErr == nil {
+			body, _ := util.FillTextTemplate(tpl.Body, map[string]string{"code": code})
+			go func() {
+				if err := s.wahaClient.SendText(ctx, normalized, body); err != nil {
+					log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
+				}
+			}()
+		}
 	}
 	return nil
 }
@@ -250,13 +254,13 @@ func (s *UserService) AddEmail(ctx context.Context, id string, email string) err
 		Code:          code,
 		Type:          entities.VerificationTypeEmail,
 		ExpiresAt:     time.Now().Add(15 * time.Minute),
-		ExtraMetadata: map[string]any{"purpose": "add_email", "new_email": email},
+		ExtraMetadata: map[string]any{"purpose": entities.VerificationPurposeAddEmail, "new_email": email},
 	}
 	if err := s.verificationRepo.Create(ctx, v); err != nil {
 		return err
 	}
 	if s.smtpSender != nil {
-		tpl, tplErr := s.emailTplRepo.GetByName(ctx, "verification_email")
+		tpl, tplErr := s.emailTplRepo.GetByName(ctx, entities.EmailTemplateVerificationEmail)
 		if tplErr == nil {
 			body, _ := util.FillTextTemplate(tpl.Body, map[string]string{"code": code})
 			go func() { _ = s.smtpSender.Send(entities.Message{To: email, Subject: tpl.Subject, Body: body}) }()
@@ -392,13 +396,13 @@ func (s *UserService) SendEmailVerification(ctx context.Context, email string) e
 		Code:          code,
 		Type:          entities.VerificationTypeEmail,
 		ExpiresAt:     expires,
-		ExtraMetadata: map[string]any{"purpose": "email_verification"},
+		ExtraMetadata: map[string]any{"purpose": entities.VerificationPurposeEmailVerification},
 	}
 	if err := s.verificationRepo.Create(ctx, v); err != nil {
 		return fmt.Errorf("failed to save verification code: %w", err)
 	}
 
-	tpl, err := s.emailTplRepo.GetByName(ctx, "verification_email")
+	tpl, err := s.emailTplRepo.GetByName(ctx, entities.EmailTemplateVerificationEmail)
 	if err != nil {
 		return fmt.Errorf("failed to load email template: %w", err)
 	}
@@ -438,27 +442,22 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string, region 
 		Code:          code,
 		Type:          entities.VerificationTypePhone,
 		ExpiresAt:     expires,
-		ExtraMetadata: map[string]any{"purpose": "phone_otp"},
+		ExtraMetadata: map[string]any{"purpose": entities.VerificationPurposePhoneOTP},
 	}
 	if err := s.verificationRepo.Create(ctx, v); err != nil {
 		return fmt.Errorf("failed to save verification code: %w", err)
 	}
 	// Send OTP via WhatsApp using WAHA client
 	if s.wahaClient != nil {
-		text := fmt.Sprintf("Your verification code is %s", code)
-		go func() {
-			if err := s.wahaClient.SendText(ctx, normalized, text); err != nil {
-				log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
-			}
-		}()
-	}
-	// Optional: send notification via email as fallback if email exists
-	if user.Email != "" && s.smtpSender != nil {
-		// tpl, tplErr := s.emailTplRepo.GetByName(ctx, "verification_email")
-		// if tplErr == nil {
-		// 	body := strings.ReplaceAll(tpl.Body, "{{code}}", code)
-		// 	_ = s.smtpSender.Send(entities.Message{To: user.Email, Subject: tpl.Subject, Body: body})
-		// }
+		tpl, tplErr := s.emailTplRepo.GetByName(ctx, entities.EmailTemplateVerificationPhone)
+		if tplErr == nil {
+			body, _ := util.FillTextTemplate(tpl.Body, map[string]string{"code": code})
+			go func() {
+				if err := s.wahaClient.SendText(ctx, normalized, body); err != nil {
+					log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
+				}
+			}()
+		}
 	}
 	return nil
 }

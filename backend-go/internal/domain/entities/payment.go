@@ -9,9 +9,20 @@ import (
 type PaymentStatus string
 
 const (
-	PaymentStatusPending PaymentStatus = "pending"
-	PaymentStatusPaid    PaymentStatus = "paid"
-	PaymentStatusFailed  PaymentStatus = "failed"
+	PaymentStatusPending   PaymentStatus = "pending"
+	PaymentStatusSuccess   PaymentStatus = "success"
+	PaymentStatusCompleted PaymentStatus = "completed"
+	PaymentStatusPaid      PaymentStatus = "paid"
+	PaymentStatusFailed    PaymentStatus = "failed"
+	PaymentStatusExpired   PaymentStatus = "expired"
+	PaymentStatusActive    PaymentStatus = "active"
+)
+
+type PaymentProvider string
+
+const (
+	PaymentProviderStripe PaymentProvider = "stripe"
+	PaymentProviderDoku   PaymentProvider = "doku"
 )
 
 type Payment struct {
@@ -27,9 +38,13 @@ type Payment struct {
 	CreatedAt       time.Time
 }
 
-type PaymentProvider string
-
-const (
-	PaymentProviderStripe PaymentProvider = "stripe"
-	PaymentProviderDoku   PaymentProvider = "doku"
-)
+type Subscription struct {
+	ID                   uuid.UUID
+	UserID               uuid.UUID
+	StripeCustomerID     *string
+	StripeSubscriptionID *string
+	Status               PaymentStatus
+	CurrentPeriodEnd     *time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+}

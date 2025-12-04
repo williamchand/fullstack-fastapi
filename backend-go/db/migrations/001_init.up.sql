@@ -99,5 +99,10 @@ VALUES
   'password_reset',
   'Reset Your Password',
   '<p>Hello,</p><p>Click the link to reset your password: <a href="{{.link}}">Reset Password</a></p>'
+),
+(
+  'verification_phone',
+  'Verify Your Phone Number',
+  'Your verification code is {{.code}}'
 )
 ON CONFLICT (name) DO NOTHING;

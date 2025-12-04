@@ -7,10 +7,18 @@ import (
 )
 
 type VerificationType string
+type VerificationPurpose string
 
 const (
 	VerificationTypeEmail VerificationType = "email"
 	VerificationTypePhone VerificationType = "phone"
+)
+
+const (
+	VerificationPurposeEmailVerification VerificationPurpose = "email_verification"
+	VerificationPurposeAddEmail          VerificationPurpose = "add_email"
+	VerificationPurposeAddPhone          VerificationPurpose = "add_phone"
+	VerificationPurposePhoneOTP          VerificationPurpose = "phone_otp"
 )
 
 type VerificationCode struct {
@@ -22,14 +30,4 @@ type VerificationCode struct {
 	CreatedAt     time.Time
 	ExpiresAt     time.Time
 	UsedAt        *time.Time
-}
-
-type EmailTemplate struct {
-	ID        uuid.UUID
-	Name      string
-	Subject   string
-	Body      string
-	IsActive  bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
 }

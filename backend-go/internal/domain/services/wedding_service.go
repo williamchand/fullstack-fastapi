@@ -61,7 +61,7 @@ func (s *WeddingService) SetPayment(ctx context.Context, weddingID uuid.UUID, pa
 
 func (s *WeddingService) Publish(ctx context.Context, weddingID uuid.UUID, userID uuid.UUID) (*entities.Wedding, error) {
 	sub, _ := s.subs.GetByUser(ctx, userID)
-	if sub != nil && strings.ToLower(sub.Status) == "active" {
+	if sub != nil && sub.Status == entities.PaymentStatusActive {
 		return s.weddings.Publish(ctx, weddingID)
 	}
 	w, err := s.weddings.GetByID(ctx, weddingID)
@@ -75,7 +75,7 @@ func (s *WeddingService) Publish(ctx context.Context, weddingID uuid.UUID, userI
 	if err != nil {
 		return nil, err
 	}
-	if strings.ToLower(string(pay.Status)) != "paid" {
+	if pay.Status != entities.PaymentStatusPaid {
 		return nil, errors.New("payment not paid")
 	}
 	return s.weddings.Publish(ctx, weddingID)

@@ -1,12 +1,13 @@
 package repositories
 
 import (
-    "context"
-    "github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
+	"context"
+
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 )
 
 type EmailTemplateRepository interface {
-    TxProvider[EmailTemplateRepository]
+	TxProvider[EmailTemplateRepository]
 
-    GetByName(ctx context.Context, name string) (*entities.EmailTemplate, error)
+	GetByName(ctx context.Context, name entities.EmailTemplateEnum) (*entities.EmailTemplate, error)
 }

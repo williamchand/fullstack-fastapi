@@ -44,6 +44,18 @@ func (r *subscriptionRepository) GetByUser(ctx context.Context, userID uuid.UUID
     return r.toEntity(&out), nil
 }
 
+func (r *subscriptionRepository) ListAll(ctx context.Context) ([]*entities.Subscription, error) {
+    rows, err := r.queries.ListAllSubscriptions(ctx)
+    if err != nil {
+        return nil, err
+    }
+    subs := make([]*entities.Subscription, 0, len(rows))
+    for _, s := range rows {
+        subs = append(subs, r.toEntity(&s))
+    }
+    return subs, nil
+}
+
 func (r *subscriptionRepository) toEntity(v *dbgen.Subscription) *entities.Subscription {
     return &entities.Subscription{
         ID:                   v.ID,

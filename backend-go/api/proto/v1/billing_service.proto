@@ -33,7 +33,20 @@ service BillingService {
   }
 
   rpc HandleWebhook(HandleWebhookRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = { post: "/v1/billing/webhook" body: "*" };
+    option (google.api.http) = { post: "/v1/billing/webhook/{provider}" body: "*" };
+  }
+
+  // Refresh payment status by provider and transaction id
+  rpc RefreshPaymentStatus(RefreshPaymentStatusRequest) returns (PaymentStatusResponse) {
+    option (google.api.http) = { post: "/v1/billing/payments/{transaction_id}/refresh" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+    };
+  }
+
+  // Daily subscriptions check (cron-triggered)
+  rpc CheckDailySubscriptions(google.protobuf.Empty) returns (CheckDailySubscriptionsResponse) {
+    option (google.api.http) = { post: "/v1/billing/subscriptions/check" };
   }
 }
 
@@ -59,4 +72,19 @@ message GetSubscriptionStatusResponse {
   google.protobuf.Timestamp current_period_end = 3;
 }
 
-message HandleWebhookRequest { bytes payload = 1; string signature = 2; }
+enum Provider {
+  PROVIDER_UNSPECIFIED = 0;
+  PROVIDER_STRIPE = 1;
+  PROVIDER_DOKU = 2;
+}
+
+message HandleWebhookRequest { bytes payload = 1; string signature = 2; Provider provider = 3; }
+
+message RefreshPaymentStatusRequest {
+  string transaction_id = 1;
+  Provider provider = 2; // STRIPE or DOKU
+}
+
+message PaymentStatusResponse { string transaction_id = 1; Provider provider = 2; string status = 3; }
+
+message CheckDailySubscriptionsResponse { int32 updated = 1; int32 expired = 2; }

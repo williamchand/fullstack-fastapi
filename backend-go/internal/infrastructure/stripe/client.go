@@ -1,10 +1,10 @@
 package stripeinfra
 
 import (
-	"github.com/stripe/stripe-go/v78"
-	"github.com/stripe/stripe-go/v78/checkout/session"
-	"github.com/stripe/stripe-go/v78/price"
-	"github.com/stripe/stripe-go/v78/webhook"
+    "github.com/stripe/stripe-go/v78"
+    "github.com/stripe/stripe-go/v78/checkout/session"
+    "github.com/stripe/stripe-go/v78/price"
+    "github.com/stripe/stripe-go/v78/webhook"
 )
 
 type Client struct{}
@@ -35,7 +35,7 @@ func (c *Client) CreateCheckoutSession(priceID, successURL, cancelURL string, me
 }
 
 func (c *Client) ConstructEvent(payload []byte, sig string, webhookSecret string) (stripe.Event, error) {
-	return webhook.ConstructEvent(payload, sig, webhookSecret)
+    return webhook.ConstructEvent(payload, sig, webhookSecret)
 }
 
 func (c *Client) GetPrice(priceID string) (*stripe.Price, error) {
@@ -44,4 +44,12 @@ func (c *Client) GetPrice(priceID string) (*stripe.Price, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+func (c *Client) GetCheckoutSession(id string) (*stripe.CheckoutSession, error) {
+    s, err := session.Get(id, nil)
+    if err != nil {
+        return nil, err
+    }
+    return s, nil
 }

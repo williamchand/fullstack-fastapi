@@ -27,6 +27,7 @@ func (r *paymentRepository) Create(ctx context.Context, p *entities.Payment) (*e
 	out, err := r.queries.CreatePayment(ctx, dbgen.CreatePaymentParams{
 		UserID:          p.UserID,
 		PaymentMethodID: toPgUUIDPtr(p.PaymentMethodID),
+		Provider:        string(p.Provider),
 		Amount:          toPgNumericFromFloat64(p.Amount),
 		Currency:        p.Currency,
 		Status:          dbgen.PaymentStatus(p.Status),
@@ -79,6 +80,7 @@ func (r *paymentRepository) toEntity(v *dbgen.Payment) *entities.Payment {
 		ID:              v.ID,
 		UserID:          v.UserID,
 		PaymentMethodID: pmID,
+		Provider:        entities.PaymentProvider(v.Provider),
 		Amount:          fromPgNumericToFloat64(v.Amount),
 		Currency:        v.Currency,
 		Status:          entities.PaymentStatus(v.Status),

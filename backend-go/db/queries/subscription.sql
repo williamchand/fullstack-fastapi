@@ -11,3 +11,6 @@ RETURNING *;
 
 -- name: GetSubscriptionByUser :one
 SELECT * FROM subscription WHERE user_id = $1 LIMIT 1;
+
+-- name: ListAllSubscriptions :many
+SELECT * FROM subscription;

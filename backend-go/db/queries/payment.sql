@@ -1,8 +1,8 @@
 -- name: CreatePayment :one
 INSERT INTO payment (
-    user_id, payment_method_id, amount, currency, status, transaction_id, extra_metadata
+    user_id, payment_method_id, provider, amount, currency, status, transaction_id, extra_metadata
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 ) RETURNING *;
 
 -- name: GetPaymentByTransaction :one

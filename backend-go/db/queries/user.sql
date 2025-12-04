@@ -32,6 +32,7 @@ RETURNING *;
 -- name: SetPhoneVerified :one
 UPDATE "user"
 SET is_phone_verified = TRUE,
+    is_active = TRUE,
     updated_at = now()
 WHERE id = $1
 RETURNING *;
@@ -39,6 +40,7 @@ RETURNING *;
 -- name: SetEmailVerified :one
 UPDATE "user"
 SET is_email_verified = TRUE,
+    is_active = TRUE,
     updated_at = now()
 WHERE id = $1
 RETURNING *;

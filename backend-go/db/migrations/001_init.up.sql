@@ -69,6 +69,8 @@ CREATE TABLE public.verification_code (
 
 CREATE INDEX idx_verification_code_user_type ON public.verification_code (user_id, verification_type);
 CREATE INDEX idx_verification_code_expires ON public.verification_code (expires_at) WHERE used_at IS NULL;
+-- Index to speed lookups by verification type + code for unused verification codes
+CREATE INDEX idx_verification_code_type_code ON public.verification_code (verification_type, verification_code) WHERE used_at IS NULL;
 
 INSERT INTO public.role (name, description) VALUES
 ('salon_owner','Beauty salon owner'),

@@ -20,6 +20,8 @@ var (
 		"/v1/user/verify-email":   {"POST": true},
 		"/v1/user/resend-email":   {"POST": true},
 		"/v1/user":                {"POST": true},
+		"/v1/password-recovery":   {"POST": true},
+		"/v1/reset-password":       {"POST": true},
 	}
 
 	// Public URL prefixes allowed without auth
@@ -32,6 +34,8 @@ var (
 		"/salonapp.v1.UserService/RefreshToken":            true,
 		"/salonapp.v1.UserService/VerifyEmailOTP":          true,
 		"/salonapp.v1.UserService/ResendEmailVerification": true,
+		"/salonapp.v1.UserService/RecoverPassword":         true,
+		"/salonapp.v1.UserService/ResetPassword":           true,
 	}
 	publicGRPCPrefixes = []string{
 		"/salonapp.v1.PublicService/",

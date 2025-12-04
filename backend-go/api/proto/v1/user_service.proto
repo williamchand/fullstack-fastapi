@@ -163,6 +163,22 @@ service UserService {
       body: "*"
     };
   }
+
+  // Send password recovery email with a reset link
+  rpc RecoverPassword(RecoverPasswordRequest) returns (RecoverPasswordResponse) {
+    option (google.api.http) = {
+      post: "/v1/password-recovery"
+      body: "*"
+    };
+  }
+
+  // Reset password using a token from email link
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post: "/v1/reset-password"
+      body: "*"
+    };
+  }
 }
 
 message LoginUserRequest {
@@ -303,3 +319,10 @@ message RegisterPhoneUserRequest {
 message RegisterPhoneUserResponse {
   User user = 1;
 }
+
+// Password recovery and reset messages
+message RecoverPasswordRequest { string email = 1; }
+message RecoverPasswordResponse { bool success = 1; string message = 2; }
+
+message ResetPasswordRequest { string token = 1; string new_password = 2; }
+message ResetPasswordResponse { bool success = 1; string message = 2; }

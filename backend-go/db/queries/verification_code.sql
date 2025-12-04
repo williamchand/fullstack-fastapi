@@ -24,6 +24,12 @@ WHERE user_id = $1
   AND verification_code = $3
 LIMIT 1;
 
+-- name: GetVerificationCodeByCodeOnly :one
+SELECT * FROM verification_code
+WHERE verification_type = $1
+  AND verification_code = $2
+LIMIT 1;
+
 -- name: MarkVerificationCodeUsed :one
 UPDATE verification_code
 SET used_at = now()

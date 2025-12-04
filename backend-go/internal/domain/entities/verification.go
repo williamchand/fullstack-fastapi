@@ -10,15 +10,17 @@ type VerificationType string
 type VerificationPurpose string
 
 const (
-	VerificationTypeEmail VerificationType = "email"
-	VerificationTypePhone VerificationType = "phone"
+    VerificationTypeEmail VerificationType = "email"
+    VerificationTypePhone VerificationType = "phone"
+    VerificationTypePasswordReset VerificationType = "password_reset"
 )
 
 const (
-	VerificationPurposeEmailVerification VerificationPurpose = "email_verification"
-	VerificationPurposeAddEmail          VerificationPurpose = "add_email"
-	VerificationPurposeAddPhone          VerificationPurpose = "add_phone"
-	VerificationPurposePhoneOTP          VerificationPurpose = "phone_otp"
+    VerificationPurposeEmailVerification VerificationPurpose = "email_verification"
+    VerificationPurposeAddEmail          VerificationPurpose = "add_email"
+    VerificationPurposeAddPhone          VerificationPurpose = "add_phone"
+    VerificationPurposePhoneOTP          VerificationPurpose = "phone_otp"
+    VerificationPurposePasswordReset     VerificationPurpose = "password_reset"
 )
 
 type VerificationCode struct {

@@ -1,13 +1,14 @@
 package services
 
 import (
-	"context"
-	"crypto/rand"
-	"fmt"
-	"log"
-	"math/big"
-	"strings"
-	"time"
+    "context"
+    "crypto/rand"
+    "encoding/base64"
+    "fmt"
+    "log"
+    "math/big"
+    "strings"
+    "time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -51,6 +52,8 @@ func NewUserService(
 }
 
 var ErrInvalidState = fmt.Errorf("invalid state")
+var ErrInvalidToken = fmt.Errorf("invalid token")
+var ErrWeakPassword = fmt.Errorf("weak password")
 
 func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.User, error) {
 	userID, err := uuid.Parse(id)
@@ -420,6 +423,80 @@ func (s *UserService) SendEmailVerification(ctx context.Context, email string) e
 		}
 	}()
 	return nil
+}
+
+// RequestPasswordReset creates a password reset token, stores it, and sends email
+func (s *UserService) RequestPasswordReset(ctx context.Context, email string) error {
+    user, err := s.userRepo.GetByEmail(ctx, email)
+    if err != nil || user == nil {
+        return ErrUserNotFound
+    }
+
+    // Generate URL-safe token
+    b := make([]byte, 32)
+    if _, err := rand.Read(b); err != nil {
+        return fmt.Errorf("failed to generate token: %w", err)
+    }
+    token := base64.RawURLEncoding.EncodeToString(b)
+
+    expires := time.Now().Add(60 * time.Minute)
+    v := &entities.VerificationCode{
+        UserID:        user.ID,
+        Code:          token,
+        Type:          entities.VerificationTypePasswordReset,
+        ExpiresAt:     expires,
+        ExtraMetadata: map[string]any{"purpose": entities.VerificationPurposePasswordReset},
+    }
+    if err := s.verificationRepo.Create(ctx, v); err != nil {
+        return fmt.Errorf("failed to save verification code: %w", err)
+    }
+
+    tpl, err := s.emailTplRepo.GetByName(ctx, entities.EmailTemplatePasswordReset)
+    if err != nil {
+        return fmt.Errorf("failed to load email template: %w", err)
+    }
+    link := fmt.Sprintf("http://localhost/reset-password?token=%s", token)
+    body, err := util.FillTextTemplate(tpl.Body, map[string]string{"link": link})
+    if err != nil {
+        return fmt.Errorf("failed to render email template: %w", err)
+    }
+    msg := entities.Message{To: user.Email, Subject: tpl.Subject, Body: body}
+    go func() {
+        if err := s.smtpSender.Send(msg); err != nil {
+            log.Println(fmt.Errorf("failed to send email: %w", err))
+        }
+    }()
+    return nil
+}
+
+// ResetPassword validates token and updates user's password
+func (s *UserService) ResetPassword(ctx context.Context, token, newPassword string) error {
+    if len(newPassword) < 8 {
+        return ErrWeakPassword
+    }
+    v, err := s.verificationRepo.GetByCodeOnly(ctx, entities.VerificationTypePasswordReset, token)
+    if err != nil || v == nil {
+        return ErrInvalidOrExpiredCode
+    }
+    if v.UsedAt != nil || time.Now().After(v.ExpiresAt) {
+        return ErrInvalidOrExpiredCode
+    }
+    user, err := s.userRepo.GetByID(ctx, v.UserID)
+    if err != nil || user == nil {
+        return ErrUserNotFound
+    }
+    hp, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+    if err != nil {
+        return fmt.Errorf("failed to hash password: %w", err)
+    }
+    hs := string(hp)
+    if _, err := s.userRepo.UpdateProfile(ctx, user.ID, nil, &hs); err != nil {
+        return fmt.Errorf("failed to update password: %w", err)
+    }
+    if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
+        return fmt.Errorf("failed to mark token used: %w", err)
+    }
+    return nil
 }
 
 // RequestPhoneOTP generates and stores OTP for a user with given phone number

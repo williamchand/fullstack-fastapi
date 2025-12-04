@@ -55,15 +55,26 @@ func (r *verificationCodeRepository) GetLatestUnused(ctx context.Context, userID
 }
 
 func (r *verificationCodeRepository) GetByCode(ctx context.Context, userID uuid.UUID, vType entities.VerificationType, code string) (*entities.VerificationCode, error) {
-	res, err := r.queries.GetVerificationCodeByCode(ctx, dbgen.GetVerificationCodeByCodeParams{
-		UserID:           userID,
-		VerificationType: string(vType),
-		VerificationCode: code,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return r.toEntity(&res), nil
+    res, err := r.queries.GetVerificationCodeByCode(ctx, dbgen.GetVerificationCodeByCodeParams{
+        UserID:           userID,
+        VerificationType: string(vType),
+        VerificationCode: code,
+    })
+    if err != nil {
+        return nil, err
+    }
+    return r.toEntity(&res), nil
+}
+
+func (r *verificationCodeRepository) GetByCodeOnly(ctx context.Context, vType entities.VerificationType, code string) (*entities.VerificationCode, error) {
+    res, err := r.queries.GetVerificationCodeByCodeOnly(ctx, dbgen.GetVerificationCodeByCodeOnlyParams{
+        VerificationType: string(vType),
+        VerificationCode: code,
+    })
+    if err != nil {
+        return nil, err
+    }
+    return r.toEntity(&res), nil
 }
 
 func (r *verificationCodeRepository) MarkUsed(ctx context.Context, id uuid.UUID) error {

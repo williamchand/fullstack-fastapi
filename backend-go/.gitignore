@@ -18,6 +18,8 @@ coverage.html
 # Environment files
 .env
 .env.local
+.env.staging
+.env.production
 
 # IDE
 .vscode/

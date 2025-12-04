@@ -16,6 +16,9 @@ type UserRepository interface {
     GetByPhone(ctx context.Context, phone string) (*entities.User, error)
     Create(ctx context.Context, user *entities.User) (*entities.User, error)
     Update(ctx context.Context, user *entities.User) (*entities.User, error)
+    UpdateProfile(ctx context.Context, userID uuid.UUID, fullName *string, hashedPassword *string) (*entities.User, error)
+    UpdateEmail(ctx context.Context, userID uuid.UUID, email string) (*entities.User, error)
+    UpdatePhone(ctx context.Context, userID uuid.UUID, phone string) (*entities.User, error)
     SetUserRoles(ctx context.Context, userID uuid.UUID, roles []entities.RoleEnum) error
     SetPhoneVerified(ctx context.Context, userID uuid.UUID) error
     SetEmailVerified(ctx context.Context, userID uuid.UUID) error

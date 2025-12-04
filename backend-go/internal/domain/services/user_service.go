@@ -50,6 +50,8 @@ func NewUserService(
 	}
 }
 
+var ErrInvalidState = fmt.Errorf("invalid state")
+
 func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.User, error) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
@@ -105,48 +107,195 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName 
 	return user, nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, email, password, fullName, phoneNumber string, roles []entities.RoleEnum) (*entities.User, error) {
-	existingUser, _ := s.userRepo.GetByEmail(ctx, email)
-	if existingUser == nil {
+func (s *UserService) UpdateProfile(ctx context.Context, id string, fullName *string, password *string) (*entities.User, error) {
+	userID, err := uuid.Parse(id)
+	if err != nil {
 		return nil, ErrUserNotFound
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	existingUser, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || existingUser == nil {
+		return nil, ErrUserNotFound
+	}
+	var hashed *string
+	if password != nil && *password != "" {
+		hp, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		hs := string(hp)
+		hashed = &hs
+	}
+	u := &entities.User{
+		ID:             existingUser.ID,
+		Email:          existingUser.Email,
+		PhoneNumber:    existingUser.PhoneNumber,
+		FullName:       fullName,
+		HashedPassword: hashed,
+		IsActive:       existingUser.IsActive,
+	}
+	updated, err := s.userRepo.UpdateProfile(ctx, u.ID, u.FullName, u.HashedPassword)
 	if err != nil {
 		return nil, err
 	}
+	updated.Roles = existingUser.Roles
+	return updated, nil
+}
 
-	user := &entities.User{
-		ID:          existingUser.ID,
-		Email:       email,
-		FullName:    &fullName,
-		PhoneNumber: &phoneNumber,
-		IsActive:    true,
+func (s *UserService) AddPhoneNumber(ctx context.Context, id string, phone string, region string) error {
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		return ErrUserNotFound
 	}
-	hashedPasswordStr := string(hashedPassword)
-	if password != "" {
-		user.HashedPassword = &hashedPasswordStr
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return ErrUserNotFound
 	}
+	if !user.IsEmailVerified {
+		return ErrInvalidState
+	}
+	phone = strings.TrimSpace(phone)
+	if phone == "" {
+		return ErrInvalidState
+	}
+	normalized, ok := util.NormalizeE164(phone, region)
+	if !ok {
+		return ErrInvalidState
+	}
+	if existing, _ := s.userRepo.GetByPhone(ctx, normalized); existing != nil && existing.ID != user.ID {
+		return ErrUserExists
+	}
+	code, err := generateOTP(6)
+	if err != nil {
+		return err
+	}
+	v := &entities.VerificationCode{
+		UserID:        user.ID,
+		Code:          code,
+		Type:          entities.VerificationTypePhone,
+		ExpiresAt:     time.Now().Add(10 * time.Minute),
+		ExtraMetadata: map[string]any{"purpose": "add_phone", "new_phone": normalized},
+	}
+	if err := s.verificationRepo.Create(ctx, v); err != nil {
+		return err
+	}
+	if s.wahaClient != nil {
+		text := fmt.Sprintf("Your verification code is %s", code)
+		go func() { _ = s.wahaClient.SendText(ctx, normalized, text) }()
+	}
+	return nil
+}
 
-	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
-		userRepoTx := s.userRepo.WithTx(tx)
+func (s *UserService) VerifyAddPhone(ctx context.Context, id string, code string, region string) error {
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		return ErrUserNotFound
+	}
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return ErrUserNotFound
+	}
+	v, err := s.verificationRepo.GetByCode(ctx, user.ID, entities.VerificationTypePhone, code)
+	if err != nil || v == nil {
+		return ErrInvalidOrExpiredCode
+	}
+	if v.UsedAt != nil || time.Now().After(v.ExpiresAt) {
+		return ErrInvalidOrExpiredCode
+	}
+	newPhone, _ := v.ExtraMetadata["new_phone"].(string)
+	if newPhone == "" {
+		return ErrInvalidState
+	}
+	newPhone = strings.TrimSpace(newPhone)
+	normalized, ok := util.NormalizeE164(newPhone, region)
+	if !ok {
+		return ErrInvalidState
+	}
+	if existing, _ := s.userRepo.GetByPhone(ctx, normalized); existing != nil && existing.ID != user.ID {
+		return ErrUserExists
+	}
+	if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
+		return err
+	}
+	if _, err := s.userRepo.UpdatePhone(ctx, user.ID, normalized); err != nil {
+		return err
+	}
+	return s.userRepo.SetPhoneVerified(ctx, user.ID)
+}
 
-		user, err = userRepoTx.Update(ctx, user)
-		if err != nil {
-			return err
+func (s *UserService) AddEmail(ctx context.Context, id string, email string) error {
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		return ErrUserNotFound
+	}
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return ErrUserNotFound
+	}
+	if !user.IsPhoneVerified {
+		return ErrInvalidState
+	}
+	email = strings.TrimSpace(strings.ToLower(email))
+	if email == "" {
+		return ErrInvalidState
+	}
+	if existing, _ := s.userRepo.GetByEmail(ctx, email); existing != nil && existing.ID != user.ID {
+		return ErrUserExists
+	}
+	code, err := generateOTP(6)
+	if err != nil {
+		return err
+	}
+	v := &entities.VerificationCode{
+		UserID:        user.ID,
+		Code:          code,
+		Type:          entities.VerificationTypeEmail,
+		ExpiresAt:     time.Now().Add(15 * time.Minute),
+		ExtraMetadata: map[string]any{"purpose": "add_email", "new_email": email},
+	}
+	if err := s.verificationRepo.Create(ctx, v); err != nil {
+		return err
+	}
+	if s.smtpSender != nil {
+		tpl, tplErr := s.emailTplRepo.GetByName(ctx, "verification_email")
+		if tplErr == nil {
+			body, _ := util.FillTextTemplate(tpl.Body, map[string]string{"code": code})
+			go func() { _ = s.smtpSender.Send(entities.Message{To: email, Subject: tpl.Subject, Body: body}) }()
 		}
-
-		err = userRepoTx.SetUserRoles(ctx, user.ID, roles)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
-	for _, role := range roles {
-		user.Roles = append(user.Roles, string(role))
 	}
+	return nil
+}
 
-	return user, nil
+func (s *UserService) VerifyAddEmail(ctx context.Context, id string, code string) error {
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		return ErrUserNotFound
+	}
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return ErrUserNotFound
+	}
+	v, err := s.verificationRepo.GetByCode(ctx, user.ID, entities.VerificationTypeEmail, code)
+	if err != nil || v == nil {
+		return ErrInvalidOrExpiredCode
+	}
+	if v.UsedAt != nil || time.Now().After(v.ExpiresAt) {
+		return ErrInvalidOrExpiredCode
+	}
+	newEmail, _ := v.ExtraMetadata["new_email"].(string)
+	if newEmail == "" {
+		return ErrInvalidState
+	}
+	newEmail = strings.TrimSpace(strings.ToLower(newEmail))
+	if existing, _ := s.userRepo.GetByEmail(ctx, newEmail); existing != nil && existing.ID != user.ID {
+		return ErrUserExists
+	}
+	if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
+		return err
+	}
+	if _, err := s.userRepo.UpdateEmail(ctx, user.ID, newEmail); err != nil {
+		return err
+	}
+	return s.userRepo.SetEmailVerified(ctx, user.ID)
 }
 
 func (s *UserService) ValidatePassword(ctx context.Context, email, password string) (*entities.User, error) {
@@ -270,8 +419,12 @@ func (s *UserService) SendEmailVerification(ctx context.Context, email string) e
 }
 
 // RequestPhoneOTP generates and stores OTP for a user with given phone number
-func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string) error {
-	user, err := s.userRepo.GetByPhone(ctx, phone)
+func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string, region string) error {
+	normalized, ok := util.NormalizeE164(phone, region)
+	if !ok {
+		return ErrInvalidState
+	}
+	user, err := s.userRepo.GetByPhone(ctx, normalized)
 	if err != nil || user == nil {
 		return ErrUserNotFound
 	}
@@ -294,7 +447,7 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string) error {
 	if s.wahaClient != nil {
 		text := fmt.Sprintf("Your verification code is %s", code)
 		go func() {
-			if err := s.wahaClient.SendText(ctx, phone, text); err != nil {
+			if err := s.wahaClient.SendText(ctx, normalized, text); err != nil {
 				log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
 			}
 		}()
@@ -313,8 +466,12 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string) error {
 var ErrInvalidOrExpiredCode = fmt.Errorf("invalid or expired code")
 
 // VerifyPhoneOTP verifies the OTP and marks phone as verified
-func (s *UserService) VerifyPhoneOTP(ctx context.Context, phone, code string) error {
-	user, err := s.userRepo.GetByPhone(ctx, phone)
+func (s *UserService) VerifyPhoneOTP(ctx context.Context, phone, code string, region string) error {
+	normalized, ok := util.NormalizeE164(phone, region)
+	if !ok {
+		return ErrInvalidState
+	}
+	user, err := s.userRepo.GetByPhone(ctx, normalized)
 	if err != nil || user == nil {
 		return ErrUserNotFound
 	}
@@ -357,8 +514,12 @@ func (s *UserService) VerifyEmailOTP(ctx context.Context, email, code string) er
 }
 
 // LoginWithPhone verifies OTP and returns token pair
-func (s *UserService) LoginWithPhone(ctx context.Context, phone, code string) (*entities.TokenPair, error) {
-	user, err := s.userRepo.GetByPhone(ctx, phone)
+func (s *UserService) LoginWithPhone(ctx context.Context, phone, code string, region string) (*entities.TokenPair, error) {
+	normalized, ok := util.NormalizeE164(phone, region)
+	if !ok {
+		return nil, ErrInvalidState
+	}
+	user, err := s.userRepo.GetByPhone(ctx, normalized)
 	if err != nil || user == nil {
 		return nil, ErrUserNotFound
 	}
@@ -391,15 +552,19 @@ func (s *UserService) LoginWithPhone(ctx context.Context, phone, code string) (*
 }
 
 // RegisterPhoneUser creates a user by phone and requests OTP
-func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName string) (*entities.User, error) {
-	existing, err := s.userRepo.GetByPhone(ctx, phone)
+func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName, region string) (*entities.User, error) {
+	normalized, ok := util.NormalizeE164(phone, region)
+	if !ok {
+		return nil, ErrInvalidState
+	}
+	existing, err := s.userRepo.GetByPhone(ctx, normalized)
 	if err == nil && existing != nil {
 		return nil, ErrUserExists
 	}
 
 	user := &entities.User{
 		Email:           "",
-		PhoneNumber:     &phone,
+		PhoneNumber:     &normalized,
 		FullName:        &fullName,
 		IsActive:        true,
 		IsEmailVerified: false,
@@ -423,6 +588,6 @@ func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName str
 		return nil, err
 	}
 	// Immediately issue OTP for phone verification
-	_ = s.RequestPhoneOTP(ctx, phone)
+	_ = s.RequestPhoneOTP(ctx, normalized, region)
 	return user, nil
 }

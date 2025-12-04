@@ -81,6 +81,46 @@ service UserService {
     };
   }
 
+  rpc AddPhoneNumber(AddPhoneNumberRequest) returns (AddPhoneNumberResponse) {
+    option (google.api.http) = {
+      post: "/v1/user/add-phone"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+    };
+  }
+
+  rpc VerifyAddPhoneOTP(VerifyAddPhoneOTPRequest) returns (VerifyAddPhoneOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/user/verify-add-phone"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+    };
+  }
+
+  rpc AddEmail(AddEmailRequest) returns (AddEmailResponse) {
+    option (google.api.http) = {
+      post: "/v1/user/add-email"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+    };
+  }
+
+  rpc VerifyAddEmailOTP(VerifyAddEmailOTPRequest) returns (VerifyAddEmailOTPResponse) {
+    option (google.api.http) = {
+      post: "/v1/user/verify-add-email"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: { security_requirement: { key: "BearerAuth" value: {} } }
+    };
+  }
+
   rpc ResendEmailVerification(ResendEmailVerificationRequest) returns (ResendEmailVerificationResponse) {
     option (google.api.http) = {
       post: "/v1/user/resend-email"
@@ -171,17 +211,28 @@ message CreateUserResponse {
 
 message UpdateUserRequest {
   string id = 1;
-  optional string email = 2;
-  optional string phone_number = 3;
-  optional string full_name = 4;
+  optional string full_name = 2;
+  optional string password = 3;
 }
 
 message UpdateUserResponse {
   User user = 1;
 }
 
+message AddPhoneNumberRequest { string phone_number = 1; string region = 2; }
+message AddPhoneNumberResponse { bool success = 1; string message = 2; }
+
+message VerifyAddPhoneOTPRequest { string otp_code = 1; string region = 2; }
+message VerifyAddPhoneOTPResponse { bool success = 1; string message = 2; }
+
+message AddEmailRequest { string email = 1; }
+message AddEmailResponse { bool success = 1; string message = 2; }
+
+message VerifyAddEmailOTPRequest { string otp_code = 1; }
+message VerifyAddEmailOTPResponse { bool success = 1; string message = 2; }
+
 message RefreshTokenRequest {
-  string refresh_token = 1; // the refresh token sent by the client
+  string refresh_token = 1;
 }
 
 message RefreshTokenResponse {
@@ -189,7 +240,6 @@ message RefreshTokenResponse {
   google.protobuf.Timestamp expires_at = 2; 
 }
 
-// Email resend
 message ResendEmailVerificationRequest {
   string email = 1;
 }
@@ -199,9 +249,9 @@ message ResendEmailVerificationResponse {
   string message = 2;
 }
 
-// Phone OTP
 message RequestPhoneOTPRequest {
   string phone_number = 1;
+  string region = 2;
 }
 
 message RequestPhoneOTPResponse {
@@ -212,6 +262,7 @@ message RequestPhoneOTPResponse {
 message VerifyPhoneOTPRequest {
   string phone_number = 1;
   string otp_code = 2;
+  string region = 3;
 }
 
 message VerifyPhoneOTPResponse {
@@ -219,7 +270,6 @@ message VerifyPhoneOTPResponse {
   string message = 2;
 }
 
-// Email OTP verification
 message VerifyEmailOTPRequest {
   string email = 1;
   string otp_code = 2;
@@ -230,10 +280,10 @@ message VerifyEmailOTPResponse {
   string message = 2;
 }
 
-// Login with phone
 message LoginWithPhoneRequest {
   string phone_number = 1;
   string otp_code = 2;
+  string region = 3;
 }
 
 message LoginWithPhoneResponse {
@@ -244,10 +294,10 @@ message LoginWithPhoneResponse {
   string token_type = 5;
 }
 
-// Register using phone
 message RegisterPhoneUserRequest {
   string phone_number = 1;
   string full_name = 2;
+  string region = 3;
 }
 
 message RegisterPhoneUserResponse {

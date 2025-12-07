@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
 
-import { type UserPublic, UsersService } from "@/client"
+import type { v1User as UserPublic } from "@/client/user"
+import { userServiceGetUser } from "@/client/user"
 import AddUser from "@/components/Admin/AddUser"
 import { UserActionsMenu } from "@/components/Common/UserActionsMenu"
 import PendingUsers from "@/components/Pending/PendingUsers"
@@ -22,8 +23,14 @@ const PER_PAGE = 5
 
 function getUsersQueryOptions({ page }: { page: number }) {
   return {
-    queryFn: () =>
-      UsersService.readUsers({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
+    queryFn: async () => {
+      const res = await userServiceGetUser()
+      const usr = res.user ?? null
+      return {
+        data: usr ? [usr].slice(0, PER_PAGE) : [],
+        meta: { total: usr ? 1 : 0 },
+      }
+    },
     queryKey: ["users", { page }],
   }
 }
@@ -70,8 +77,8 @@ function UsersTable() {
         <Table.Body>
           {users?.map((user) => (
             <Table.Row key={user.id} opacity={isPlaceholderData ? 0.5 : 1}>
-              <Table.Cell w="20%" color={!user.full_name ? "gray" : "inherit"}>
-                {user.full_name || "N/A"}
+              <Table.Cell w="20%" color={!user.fullName ? "gray" : "inherit"}>
+                {user.fullName || "N/A"}
                 {currentUser?.id === user.id && (
                   <Badge ml="1" colorScheme="teal">
                     You
@@ -83,7 +90,7 @@ function UsersTable() {
                 {user.roles?.includes("superuser") ? "Superuser" : "User"}
               </Table.Cell>
               <Table.Cell w="20%">
-                {user.is_active ? "Active" : "Inactive"}
+                {user.isActive ? "Active" : "Inactive"}
               </Table.Cell>
               <Table.Cell w="20%">
                 <UserActionsMenu

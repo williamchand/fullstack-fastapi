@@ -20,8 +20,8 @@ import { LuChevronDown } from "react-icons/lu"
 import { useState, useRef } from "react"
 import { FaExchangeAlt } from "react-icons/fa"
 
-import { type RolesPublic, type UserPublic, type UserUpdate, UsersService, RolesService } from "@/client"
-import type { ApiError } from "@/client/core/ApiError"
+import type { v1User as UserPublic, v1UpdateUserRequest as UserUpdate, ApiError } from "@/client/user"
+import { userServiceUpdateUser } from "@/client/user"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
 import { Checkbox } from "../ui/checkbox"
@@ -44,11 +44,11 @@ interface UserUpdateForm extends UserUpdate {
 }
 
 function getRolesQueryOptions() {
+  const staticRoles = [{ name: "user" }, { name: "superuser" }]
   return {
-    queryFn: () =>
-      RolesService.listRoles(),
+    queryFn: async () => ({ data: staticRoles }),
     queryKey: ["roles"],
-    staleTime: 1000 * 60 * 5, // optional: cache for 5 min
+    staleTime: 1000 * 60 * 5,
   }
 }
 
@@ -75,7 +75,7 @@ const EditUser = ({ user }: EditUserProps) => {
 
   const mutation = useMutation({
     mutationFn: (data: UserUpdateForm) =>
-      UsersService.updateUser({ userId: user.id, requestBody: data }),
+      userServiceUpdateUser({ requestBody: { fullName: data.full_name, password: data.password } }),
     onSuccess: () => {
       showSuccessToast("User updated successfully.")
       reset()

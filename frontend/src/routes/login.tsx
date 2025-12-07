@@ -1,20 +1,26 @@
-import { Container, Image, Input, Text } from "@chakra-ui/react"
+import { Container, Image, Input, Text, Tabs } from "@chakra-ui/react"
 import {
   Link as RouterLink,
   createFileRoute,
   redirect,
+  useNavigate,
 } from "@tanstack/react-router"
+import { useMutation } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
-import { FiLock, FiMail } from "react-icons/fi"
+import { FiLock, FiMail, FiPhone } from "react-icons/fi"
+import { useState } from "react"
 
-import type { Body_login_login_access_token as AccessToken } from "@/client"
+import type { v1LoginUserRequest as AccessToken, ApiError } from "@/client/user"
+import { userServiceLoginWithPhone, userServiceRequestPhoneOtp } from "@/client/user"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { InputGroup } from "@/components/ui/input-group"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import useCustomToast from "@/hooks/useCustomToast"
 import Logo from "/assets/images/fastapi-logo.svg"
-import { emailPattern, passwordRules } from "../utils"
+import { emailPattern, passwordRules, handleError } from "../utils"
+import type { PhoneLoginForm } from "@/types/phone"
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -28,12 +34,13 @@ export const Route = createFileRoute("/login")({
 })
 
 function Login() {
+  const navigate = useNavigate()
+  const { showSuccessToast } = useCustomToast()
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
   const { loginMutation, error, resetError } = useAuth()
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<AccessToken>({
+
+  // Email login form
+  const emailForm = useForm<AccessToken>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
@@ -42,11 +49,43 @@ function Login() {
     },
   })
 
-  const onSubmit: SubmitHandler<AccessToken> = async (data) => {
-    if (isSubmitting) return
+  // Phone login form
+  const phoneForm = useForm<PhoneLoginForm>({
+    mode: "onBlur",
+    criteriaMode: "all",
+    defaultValues: { phone_number: "", region: "", otp_code: "" },
+  })
 
+  const requestOtp = useMutation({
+    mutationFn: async (data: { phone_number: string; region: string }) => {
+      await userServiceRequestPhoneOtp({ requestBody: { phoneNumber: data.phone_number, region: data.region } })
+    },
+    onSuccess: () => {
+      showSuccessToast("OTP sent to your phone.")
+    },
+    onError: (err: ApiError) => {
+      handleError(err)
+    },
+  })
+
+  const phoneLoginMutation = useMutation({
+    mutationFn: async (data: PhoneLoginForm) => {
+      const res = await userServiceLoginWithPhone({ requestBody: { phoneNumber: data.phone_number, otpCode: data.otp_code || "", region: data.region } })
+      if (res.accessToken) {
+        localStorage.setItem("access_token", res.accessToken)
+      }
+    },
+    onSuccess: () => {
+      navigate({ to: "/" })
+    },
+    onError: (err: ApiError) => {
+      handleError(err)
+    },
+  })
+
+  const onEmailSubmit: SubmitHandler<AccessToken> = async (data) => {
+    if (emailForm.formState.isSubmitting) return
     resetError()
-
     try {
       await loginMutation.mutateAsync(data)
     } catch {
@@ -54,62 +93,143 @@ function Login() {
     }
   }
 
+  const onRequestOtp: SubmitHandler<Pick<PhoneLoginForm, "phone_number" | "region">> = async (data) => {
+    requestOtp.mutate(data)
+  }
+
+  const onPhoneLogin: SubmitHandler<PhoneLoginForm> = async (data) => {
+    phoneLoginMutation.mutate(data)
+  }
+
   return (
-    <>
-      <Container
-        as="form"
-        onSubmit={handleSubmit(onSubmit)}
-        h="100vh"
-        maxW="sm"
-        alignItems="stretch"
-        justifyContent="center"
-        gap={4}
-        centerContent
+    <Container
+      h="100vh"
+      maxW="sm"
+      alignItems="stretch"
+      justifyContent="center"
+      gap={4}
+      centerContent
+    >
+      <Image
+        src={Logo}
+        alt="FastAPI logo"
+        height="auto"
+        maxW="2xs"
+        alignSelf="center"
+        mb={4}
+      />
+      <Tabs.Root
+        defaultValue={loginMethod}
+        onValueChange={(e) => {
+          setLoginMethod(e.value as "email" | "phone")
+          resetError()
+        }}
+        w="100%"
       >
-        <Image
-          src={Logo}
-          alt="FastAPI logo"
-          height="auto"
-          maxW="2xs"
-          alignSelf="center"
-          mb={4}
-        />
-        <Field
-          invalid={!!errors.username}
-          errorText={errors.username?.message || !!error}
-        >
-          <InputGroup w="100%" startElement={<FiMail />}>
-            <Input
-              id="username"
-              {...register("username", {
-                required: "Username is required",
-                pattern: emailPattern,
-              })}
-              placeholder="Email"
-              type="email"
+        <Tabs.List>
+          <Tabs.Trigger value="email">Email</Tabs.Trigger>
+          <Tabs.Trigger value="phone">Phone</Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Content value="email">
+          <Container
+            as="form"
+            onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+            p={0}
+            gap={4}
+            display="flex"
+            flexDirection="column"
+          >
+            <Field
+              invalid={!!emailForm.formState.errors.username}
+              errorText={emailForm.formState.errors.username?.message || (error || undefined)}
+            >
+              <InputGroup w="100%" startElement={<FiMail />}>
+                <Input
+                  id="username"
+                  {...emailForm.register("username", {
+                    required: "Email is required",
+                    pattern: emailPattern,
+                  })}
+                  placeholder="Email"
+                  type="email"
+                />
+              </InputGroup>
+            </Field>
+            <PasswordInput
+              type="password"
+              startElement={<FiLock />}
+              {...emailForm.register("password", passwordRules())}
+              placeholder="Password"
+              errors={emailForm.formState.errors}
             />
-          </InputGroup>
-        </Field>
-        <PasswordInput
-          type="password"
-          startElement={<FiLock />}
-          {...register("password", passwordRules())}
-          placeholder="Password"
-          errors={errors}
-        />
-        <RouterLink to="/recover-password" className="main-link">
-          Forgot Password?
+            <RouterLink to="/recover-password" className="main-link">
+              Forgot Password?
+            </RouterLink>
+            <Button variant="solid" type="submit" loading={emailForm.formState.isSubmitting} size="md">
+              Log In
+            </Button>
+          </Container>
+        </Tabs.Content>
+        <Tabs.Content value="phone">
+          <Container
+            p={0}
+            gap={4}
+            display="flex"
+            flexDirection="column"
+          >
+            <Field required invalid={!!phoneForm.formState.errors.phone_number} errorText={phoneForm.formState.errors.phone_number?.message}>
+              <InputGroup w="100%" startElement={<FiPhone />}>
+                <Input
+                  id="phone_number"
+                  {...phoneForm.register("phone_number", { required: "Phone number is required" })}
+                  placeholder="Phone Number"
+                  type="tel"
+                />
+              </InputGroup>
+            </Field>
+            <Field required invalid={!!phoneForm.formState.errors.region} errorText={phoneForm.formState.errors.region?.message}>
+              <InputGroup w="100%">
+                <Input
+                  id="region"
+                  {...phoneForm.register("region", { required: "Region is required" })}
+                  placeholder="Region (e.g., ID)"
+                  type="text"
+                />
+              </InputGroup>
+            </Field>
+            <Button
+              variant="solid"
+              onClick={phoneForm.handleSubmit(onRequestOtp)}
+              loading={requestOtp.isPending}
+            >
+              Request OTP
+            </Button>
+            <Field invalid={!!phoneForm.formState.errors.otp_code} errorText={phoneForm.formState.errors.otp_code?.message}>
+              <InputGroup w="100%">
+                <Input
+                  id="otp_code"
+                  {...phoneForm.register("otp_code")}
+                  placeholder="OTP Code"
+                  type="text"
+                />
+              </InputGroup>
+            </Field>
+            <Button
+              variant="solid"
+              onClick={phoneForm.handleSubmit(onPhoneLogin)}
+              loading={phoneForm.formState.isSubmitting || phoneLoginMutation.isPending}
+            >
+              Login
+            </Button>
+          </Container>
+        </Tabs.Content>
+      </Tabs.Root>
+      <Text>
+        Don't have an account?{" "}
+        <RouterLink to="/signup" className="main-link">
+          Sign Up
         </RouterLink>
-        <Button variant="solid" type="submit" loading={isSubmitting} size="md">
-          Log In
-        </Button>
-        <Text>
-          Don't have an account?{" "}
-          <RouterLink to="/signup" className="main-link">
-            Sign Up
-          </RouterLink>
-        </Text>
-      </Container>
-    </>
+      </Text>
+    </Container>
   )
 }

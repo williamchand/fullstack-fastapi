@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { FiTrash2 } from "react-icons/fi"
 
-import { UsersService } from "@/client"
+// Delete user is not available in generated user client; keeping UI but stubbing action
 import {
   DialogActionTrigger,
   DialogBody,
@@ -26,8 +26,8 @@ const DeleteUser = ({ id }: { id: string }) => {
     formState: { isSubmitting },
   } = useForm()
 
-  const deleteUser = async (id: string) => {
-    await UsersService.deleteUser({ userId: id })
+  const deleteUser = async (_id: string) => {
+    throw new Error("Delete user is not supported")
   }
 
   const mutation = useMutation({

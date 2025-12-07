@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
-import { type ApiError, UsersService } from "@/client"
+import type { ApiError } from "@/client/user"
 import {
   DialogActionTrigger,
   DialogBody,
@@ -30,7 +30,7 @@ const DeleteConfirmation = () => {
   const { logout } = useAuth()
 
   const mutation = useMutation({
-    mutationFn: () => UsersService.deleteUserMe(),
+    mutationFn: async () => { throw new Error("Delete account not supported") },
     onSuccess: () => {
       showSuccessToast("Your account has been successfully deleted")
       setIsOpen(false)

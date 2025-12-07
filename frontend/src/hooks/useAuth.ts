@@ -2,14 +2,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 
+import type { v1LoginUserRequest as AccessToken } from "@/client/user"
+import type { v1User as UserPublic } from "@/client/user"
+import type { UserRegister } from "@/types/user"
+import type { ApiError } from "@/client/user"
 import {
-  type Body_login_login_access_token as AccessToken,
-  type ApiError,
-  LoginService,
-  type UserPublic,
-  type UserRegister,
-  UsersService,
-} from "@/client"
+  userServiceLoginUser,
+  userServiceGetUser,
+  userServiceCreateUser,
+} from "@/client/user"
 import { handleError } from "@/utils"
 
 const isLoggedIn = () => {
@@ -22,16 +23,20 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { data: user } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
-    queryFn: UsersService.readUserMe,
+    queryFn: async () => {
+      const res = await userServiceGetUser()
+      return res.user ?? null
+    },
     enabled: isLoggedIn(),
   })
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
-      UsersService.registerUser({ requestBody: data }),
+      userServiceCreateUser({ requestBody: { email: data.email, fullName: data.full_name, password: data.password } }),
 
-    onSuccess: () => {
-      navigate({ to: "/login" })
+    onSuccess: (_data, variables) => {
+      const search = new URLSearchParams({ email: variables.email }).toString()
+      navigate({ to: `/verify-email?${search}` })
     },
     onError: (err: ApiError) => {
       handleError(err)
@@ -42,10 +47,10 @@ const useAuth = () => {
   })
 
   const login = async (data: AccessToken) => {
-    const response = await LoginService.loginAccessToken({
-      formData: data,
-    })
-    localStorage.setItem("access_token", response.access_token)
+    const response = await userServiceLoginUser({ requestBody: data })
+    if (response.accessToken) {
+      localStorage.setItem("access_token", response.accessToken)
+    }
   }
 
   const loginMutation = useMutation({

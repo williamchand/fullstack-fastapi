@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 
-import { type RolesPublic, type UserCreate, UsersService, RolesService } from "@/client"
-import type { ApiError } from "@/client/core/ApiError"
+import type { ApiError } from "@/client/user"
+import { userServiceCreateUser } from "@/client/user"
+import type { UserRegister } from "@/types/user"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
 import {
@@ -34,17 +35,17 @@ import {
 } from "../ui/dialog"
 import { Field } from "../ui/field"
 
-interface UserCreateForm extends UserCreate {
+interface UserCreateForm extends UserRegister {
   confirm_password: string
-}
+  }
 
 
 function getRolesQueryOptions() {
+  const staticRoles = [{ name: "user" }, { name: "superuser" }]
   return {
-    queryFn: () =>
-      RolesService.listRoles(),
+    queryFn: async () => ({ data: staticRoles }),
     queryKey: ["roles"],
-    staleTime: 1000 * 60 * 5, // optional: cache for 5 min
+    staleTime: 1000 * 60 * 5,
   }
 }
 
@@ -77,8 +78,8 @@ const AddUser = () => {
   })
 
   const mutation = useMutation({
-    mutationFn: (data: UserCreate) =>
-      UsersService.createUser({ requestBody: data }),
+    mutationFn: (data: UserRegister) =>
+      userServiceCreateUser({ requestBody: { email: data.email, fullName: data.full_name, password: data.password } }),
     onSuccess: () => {
       showSuccessToast("User created successfully.")
       reset()
@@ -195,7 +196,7 @@ const AddUser = () => {
                 name="roles"
                 render={({ field }) => {
                   const queryClient = useQueryClient()
-                  const rolesData = queryClient.getQueryData<RolesPublic>(["roles"])
+                  const rolesData = queryClient.getQueryData<{ data: { name: string }[] }>(["roles"])
 
                   const [open, setOpen] = useState(false)
                   const selectedRoles = field.value || []

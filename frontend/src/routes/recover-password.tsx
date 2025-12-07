@@ -1,10 +1,12 @@
-import { Container, Heading, Input, Text } from "@chakra-ui/react"
+import { Container, Heading, Input, Text, Alert } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute, redirect, useSearch } from "@tanstack/react-router"
 import { type SubmitHandler, useForm } from "react-hook-form"
-import { FiMail } from "react-icons/fi"
+import { FiMail, FiAlertCircle } from "react-icons/fi"
+import { useEffect, useState } from "react"
 
-import { type ApiError, LoginService } from "@/client"
+import { type ApiError } from "@/client/user"
+import { userServiceRecoverPassword } from "@/client/user"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { InputGroup } from "@/components/ui/input-group"
@@ -16,8 +18,17 @@ interface FormData {
   email: string
 }
 
+interface RecoverPasswordSearch {
+  error?: string
+}
+
 export const Route = createFileRoute("/recover-password")({
   component: RecoverPassword,
+  validateSearch: (search: Record<string, unknown>): RecoverPasswordSearch => {
+    return {
+      error: (search.error as string) || undefined,
+    }
+  },
   beforeLoad: async () => {
     if (isLoggedIn()) {
       throw redirect({
@@ -28,6 +39,8 @@ export const Route = createFileRoute("/recover-password")({
 })
 
 function RecoverPassword() {
+  const search = useSearch({ from: "/recover-password" })
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
@@ -36,10 +49,14 @@ function RecoverPassword() {
   } = useForm<FormData>()
   const { showSuccessToast } = useCustomToast()
 
+  useEffect(() => {
+    if (search.error) {
+      setErrorMessage(search.error)
+    }
+  }, [search.error])
+
   const recoverPassword = async (data: FormData) => {
-    await LoginService.recoverPassword({
-      email: data.email,
-    })
+    await userServiceRecoverPassword({ requestBody: { email: data.email } })
   }
 
   const mutation = useMutation({
@@ -47,6 +64,7 @@ function RecoverPassword() {
     onSuccess: () => {
       showSuccessToast("Password recovery email sent successfully.")
       reset()
+      setErrorMessage(null)
     },
     onError: (err: ApiError) => {
       handleError(err)
@@ -54,6 +72,7 @@ function RecoverPassword() {
   })
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
+    setErrorMessage(null)
     mutation.mutate(data)
   }
 
@@ -74,6 +93,14 @@ function RecoverPassword() {
       <Text textAlign="center">
         A password recovery email will be sent to the registered account.
       </Text>
+      {errorMessage && (
+        <Alert.Root status="error">
+          <Alert.Icon>
+            <FiAlertCircle />
+          </Alert.Icon>
+          <Alert.Description>{errorMessage}</Alert.Description>
+        </Alert.Root>
+      )}
       <Field invalid={!!errors.email} errorText={errors.email?.message}>
         <InputGroup w="100%" startElement={<FiMail />}>
           <Input

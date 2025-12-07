@@ -17,18 +17,6 @@ INSERT INTO "user" (
     $1, $2, $3, $4, $5, $6
 ) RETURNING *;
 
--- name: UpdateUser :one
-UPDATE "user"
-SET 
-    email = COALESCE($2, email),
-    phone_number = COALESCE($3, phone_number),
-    full_name = COALESCE($4, full_name),
-    hashed_password = COALESCE($5, hashed_password),
-    is_active = COALESCE($6, is_active),
-    updated_at = now()
-WHERE id = $1
-RETURNING *;
-
 -- name: UpdateUserProfile :one
 UPDATE "user"
 SET

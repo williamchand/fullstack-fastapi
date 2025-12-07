@@ -75,7 +75,8 @@ func (s *userServer) RefreshToken(ctx context.Context, req *salonappv1.RefreshTo
 }
 
 func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserRequest) (*salonappv1.UpdateUserResponse, error) {
-	user, err := s.userService.UpdateProfile(ctx, req.Id, req.FullName, req.Password)
+	user := auth.UserFromContext(ctx)
+	user, err := s.userService.UpdateProfile(ctx, user.ID.String(), req.FullName, req.Password)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
@@ -216,37 +217,37 @@ func (s *userServer) ResendEmailVerification(ctx context.Context, req *salonappv
 }
 
 func (s *userServer) RecoverPassword(ctx context.Context, req *salonappv1.RecoverPasswordRequest) (*salonappv1.RecoverPasswordResponse, error) {
-    if req.Email == "" {
-        return nil, status.Error(codes.InvalidArgument, "email is required")
-    }
-    if err := s.userService.RequestPasswordReset(ctx, req.Email); err != nil {
-        switch {
-        case errors.Is(err, services.ErrUserNotFound):
-            return nil, status.Error(codes.NotFound, "user not found")
-        default:
-            return nil, status.Error(codes.Internal, "failed to send recovery email")
-        }
-    }
-    return &salonappv1.RecoverPasswordResponse{Success: true, Message: "password recovery email sent"}, nil
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
+	if err := s.userService.RequestPasswordReset(ctx, req.Email); err != nil {
+		switch {
+		case errors.Is(err, services.ErrUserNotFound):
+			return nil, status.Error(codes.NotFound, "user not found")
+		default:
+			return nil, status.Error(codes.Internal, "failed to send recovery email")
+		}
+	}
+	return &salonappv1.RecoverPasswordResponse{Success: true, Message: "password recovery email sent"}, nil
 }
 
 func (s *userServer) ResetPassword(ctx context.Context, req *salonappv1.ResetPasswordRequest) (*salonappv1.ResetPasswordResponse, error) {
-    if req.Token == "" || req.NewPassword == "" {
-        return nil, status.Error(codes.InvalidArgument, "token and new_password are required")
-    }
-    if err := s.userService.ResetPassword(ctx, req.Token, req.NewPassword); err != nil {
-        switch {
-        case errors.Is(err, services.ErrWeakPassword):
-            return nil, status.Error(codes.InvalidArgument, "Password must be at least 8 characters")
-        case errors.Is(err, services.ErrInvalidOrExpiredCode), errors.Is(err, services.ErrInvalidToken):
-            return nil, status.Error(codes.InvalidArgument, "Invalid token")
-        case errors.Is(err, services.ErrUserNotFound):
-            return nil, status.Error(codes.NotFound, "user not found")
-        default:
-            return nil, status.Error(codes.Internal, "failed to reset password")
-        }
-    }
-    return &salonappv1.ResetPasswordResponse{Success: true, Message: "password reset successful"}, nil
+	if req.Token == "" || req.NewPassword == "" {
+		return nil, status.Error(codes.InvalidArgument, "token and new_password are required")
+	}
+	if err := s.userService.ResetPassword(ctx, req.Token, req.NewPassword); err != nil {
+		switch {
+		case errors.Is(err, services.ErrWeakPassword):
+			return nil, status.Error(codes.InvalidArgument, "Password must be at least 8 characters")
+		case errors.Is(err, services.ErrInvalidOrExpiredCode), errors.Is(err, services.ErrInvalidToken):
+			return nil, status.Error(codes.InvalidArgument, "Invalid token")
+		case errors.Is(err, services.ErrUserNotFound):
+			return nil, status.Error(codes.NotFound, "user not found")
+		default:
+			return nil, status.Error(codes.Internal, "failed to reset password")
+		}
+	}
+	return &salonappv1.ResetPasswordResponse{Success: true, Message: "password reset successful"}, nil
 }
 
 func (s *userServer) RequestPhoneOTP(ctx context.Context, req *salonappv1.RequestPhoneOTPRequest) (*salonappv1.RequestPhoneOTPResponse, error) {

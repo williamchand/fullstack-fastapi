@@ -637,7 +637,7 @@ func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName, re
 		Email:           "",
 		PhoneNumber:     &normalized,
 		FullName:        &fullName,
-		IsActive:        true,
+		IsActive:        false,
 		IsEmailVerified: false,
 		IsPhoneVerified: false,
 	}

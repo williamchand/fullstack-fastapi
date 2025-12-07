@@ -40,9 +40,7 @@ func (c *Client) SendText(ctx context.Context, phone string, text string) error 
 	if err != nil {
 		return fmt.Errorf("waha: marshal payload failed: %w", err)
 	}
-	fmt.Println(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url+"/api/sendText", bytes.NewReader(b))
-	fmt.Println(req)
 	if err != nil {
 		return fmt.Errorf("waha: request build failed: %w", err)
 	}

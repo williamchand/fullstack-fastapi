@@ -29,7 +29,7 @@ func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) 
 	stripeClient := stripeinfra.New(cfg.Stripe.SecretKey)
 	dokuClient := dokunfra.New(cfg.Doku.BaseURL, cfg.Doku.ClientID, cfg.Doku.SecretKey)
 	return &AppServices{
-		UserService:       services.NewUserService(repo.UserRepo, repo.OAuthRepo, repo.TransactionManager, jwtService, repo.EmailTemplateRepo, repo.VerificationRepo, smtpSender, wahaClient),
+		UserService:       services.NewUserService(cfg, repo.UserRepo, repo.OAuthRepo, repo.TransactionManager, jwtService, repo.EmailTemplateRepo, repo.VerificationRepo, smtpSender, wahaClient),
 		OauthService:      services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager, jwtService),
 		DataSourceService: services.NewDataSourceService(cfg, repo.DataSourceRepo, repo.AICredRepo, repo.TransactionManager),
 		BillingService:    services.NewBillingService(cfg, repo.SubscriptionRepo, repo.PaymentRepo, stripeClient, dokuClient),

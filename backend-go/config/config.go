@@ -12,7 +12,7 @@ type Config struct {
 	HTTPPort string `envconfig:"HTTP_PORT" default:"8080"`
 	GRPCPort string `envconfig:"GRPC_PORT" default:"9090"`
 	Env      string `envconfig:"ENV" default:"development"`
-
+	BaseURL  string `envconfig:"BASE_URL" default:"https://amenosigny.com"`
 	// Database Configuration
 	DatabaseURL string `envconfig:"DB_URL" default:""`
 	DBMaxConns  int    `envconfig:"DB_MAX_CONNS" default:"25"`
@@ -83,26 +83,26 @@ type Config struct {
 		Groupname string `envconfig:"SUPERUSER_GROUP" default:"superuser"`
 		Password  string `envconfig:"SUPERUSER_PASSWORD"`
 	}
-    // Stripe Configuration
-    Stripe struct {
-        SecretKey       string `envconfig:"STRIPE_SECRET_KEY"`
-        WebhookSecret   string `envconfig:"STRIPE_WEBHOOK_SECRET"`
-        PriceID         string `envconfig:"STRIPE_PRICE_ID"`
-    }
+	// Stripe Configuration
+	Stripe struct {
+		SecretKey     string `envconfig:"STRIPE_SECRET_KEY"`
+		WebhookSecret string `envconfig:"STRIPE_WEBHOOK_SECRET"`
+		PriceID       string `envconfig:"STRIPE_PRICE_ID"`
+	}
 
-    // WAHA (WhatsApp Gateway) Configuration
-    WAHA struct {
-        URL     string `envconfig:"WAHA_URL" default:"http://localhost:3000"`
-        APIKey  string `envconfig:"WAHA_API_KEY"`
-        Session string `envconfig:"WAHA_SESSION" default:"default"`
-    }
+	// WAHA (WhatsApp Gateway) Configuration
+	WAHA struct {
+		URL     string `envconfig:"WAHA_URL" default:"http://localhost:3000"`
+		APIKey  string `envconfig:"WAHA_API_KEY"`
+		Session string `envconfig:"WAHA_SESSION" default:"default"`
+	}
 
-    // DOKU (Jokul Checkout) Configuration
-    Doku struct {
-        BaseURL  string `envconfig:"DOKU_BASE_URL" default:"https://api-sandbox.doku.com"`
-        ClientID string `envconfig:"DOKU_CLIENT_ID"`
-        SecretKey string `envconfig:"DOKU_SECRET_KEY"`
-    }
+	// DOKU (Jokul Checkout) Configuration
+	Doku struct {
+		BaseURL   string `envconfig:"DOKU_BASE_URL" default:"https://api-sandbox.doku.com"`
+		ClientID  string `envconfig:"DOKU_CLIENT_ID"`
+		SecretKey string `envconfig:"DOKU_SECRET_KEY"`
+	}
 }
 
 // Load loads configuration from environment variables and .env file

@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/williamchand/fullstack-fastapi/backend-go/config"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/util"
@@ -19,6 +20,7 @@ import (
 )
 
 type UserService struct {
+	cfg              *config.Config
 	userRepo         repositories.UserRepository
 	oauthRepo        repositories.OAuthRepository
 	txManager        repositories.TransactionManager
@@ -30,6 +32,7 @@ type UserService struct {
 }
 
 func NewUserService(
+	cfg *config.Config,
 	userRepo repositories.UserRepository,
 	oauthRepo repositories.OAuthRepository,
 	txManager repositories.TransactionManager,
@@ -40,6 +43,7 @@ func NewUserService(
 	wahaClient repositories.WahaClient,
 ) *UserService {
 	return &UserService{
+		cfg:              cfg,
 		userRepo:         userRepo,
 		oauthRepo:        oauthRepo,
 		txManager:        txManager,
@@ -450,7 +454,7 @@ func (s *UserService) RequestPasswordReset(ctx context.Context, email string) er
 	if err != nil {
 		return fmt.Errorf("failed to load email template: %w", err)
 	}
-	link := fmt.Sprintf("http://localhost/reset-password?token=%s", token)
+	link := fmt.Sprintf("%s/reset-password?token=%s", s.cfg.BaseURL, token)
 	body, err := util.FillTextTemplate(tpl.Body, map[string]string{"link": link})
 	if err != nil {
 		return fmt.Errorf("failed to render email template: %w", err)

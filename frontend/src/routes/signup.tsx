@@ -50,7 +50,7 @@ function SignUp() {
     criteriaMode: "all",
     defaultValues: {
       email: "",
-      full_name: "",
+      fullName: "",
       password: "",
       confirm_password: "",
     },
@@ -60,12 +60,12 @@ function SignUp() {
   const phoneForm = useForm<PhoneRegisterForm>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: { phone_number: "", full_name: "", region: "" },
+    defaultValues: { phone_number: "", fullName: "", region: "" },
   })
 
   const phoneRegisterMutation = useMutation({
     mutationFn: async (data: PhoneRegisterForm) => {
-      await userServiceRegisterPhoneUser({ requestBody: { phoneNumber: data.phone_number, fullName: data.full_name, region: data.region } })
+      await userServiceRegisterPhoneUser({ requestBody: { phoneNumber: data.phone_number, fullName: data.fullName, region: data.region } })
     },
     onSuccess: (_data, variables) => {
       showSuccessToast("Registration successful. Please verify your phone.")
@@ -86,22 +86,22 @@ function SignUp() {
   }
 
   return (
-    <Container
-      h="100vh"
-      maxW="sm"
-      alignItems="stretch"
-      justifyContent="center"
-      gap={4}
-      centerContent
-    >
-      <Image
-        src={Logo}
-        alt="FastAPI logo"
-        height="auto"
-        maxW="2xs"
-        alignSelf="center"
-        mb={4}
-      />
+        <Container
+          h="100vh"
+          maxW="sm"
+          alignItems="stretch"
+          justifyContent="center"
+          gap={4}
+          centerContent
+        >
+          <Image
+            src={Logo}
+            alt="FastAPI logo"
+            height="auto"
+            maxW="2xs"
+            alignSelf="center"
+            mb={4}
+          />
       <Tabs.Root
         defaultValue={signupMethod}
         onValueChange={(e) => setSignupMethod(e.value as "email" | "phone")}
@@ -121,14 +121,14 @@ function SignUp() {
             flexDirection="column"
           >
             <Field
-              invalid={!!emailForm.formState.errors.full_name}
-              errorText={emailForm.formState.errors.full_name?.message}
+              invalid={!!emailForm.formState.errors.fullName}
+              errorText={emailForm.formState.errors.fullName?.message}
             >
               <InputGroup w="100%" startElement={<FiUser />}>
                 <Input
-                  id="full_name"
+                  id="fullName"
                   minLength={3}
-                  {...emailForm.register("full_name", {
+                  {...emailForm.register("fullName", {
                     required: "Full Name is required",
                   })}
                   placeholder="Full Name"
@@ -137,35 +137,35 @@ function SignUp() {
               </InputGroup>
             </Field>
             <Field invalid={!!emailForm.formState.errors.email} errorText={emailForm.formState.errors.email?.message}>
-              <InputGroup w="100%" startElement={<FiUser />}>
-                <Input
-                  id="email"
+            <InputGroup w="100%" startElement={<FiUser />}>
+              <Input
+                id="email"
                   {...emailForm.register("email", {
-                    required: "Email is required",
-                    pattern: emailPattern,
-                  })}
-                  placeholder="Email"
-                  type="email"
-                />
-              </InputGroup>
-            </Field>
-            <PasswordInput
-              type="password"
-              startElement={<FiLock />}
+                  required: "Email is required",
+                  pattern: emailPattern,
+                })}
+                placeholder="Email"
+                type="email"
+              />
+            </InputGroup>
+          </Field>
+          <PasswordInput
+            type="password"
+            startElement={<FiLock />}
               {...emailForm.register("password", passwordRules())}
-              placeholder="Password"
+            placeholder="Password"
               errors={emailForm.formState.errors}
-            />
-            <PasswordInput
-              type="confirm_password"
-              startElement={<FiLock />}
+          />
+          <PasswordInput
+            type="confirm_password"
+            startElement={<FiLock />}
               {...emailForm.register("confirm_password", confirmPasswordRules(emailForm.getValues))}
-              placeholder="Confirm Password"
+            placeholder="Confirm Password"
               errors={emailForm.formState.errors}
-            />
+          />
             <Button variant="solid" type="submit" loading={emailForm.formState.isSubmitting}>
-              Sign Up
-            </Button>
+            Sign Up
+          </Button>
           </Container>
         </Tabs.Content>
         <Tabs.Content value="phone">
@@ -177,11 +177,11 @@ function SignUp() {
             display="flex"
             flexDirection="column"
           >
-            <Field required invalid={!!phoneForm.formState.errors.full_name} errorText={phoneForm.formState.errors.full_name?.message}>
+            <Field required invalid={!!phoneForm.formState.errors.fullName} errorText={phoneForm.formState.errors.fullName?.message}>
               <InputGroup w="100%" startElement={<FiUser />}>
                 <Input
-                  id="full_name"
-                  {...phoneForm.register("full_name", { required: "Full Name is required" })}
+                  id="fullName"
+                  {...phoneForm.register("fullName", { required: "Full Name is required" })}
                   placeholder="Full Name"
                   type="text"
                 />
@@ -213,13 +213,13 @@ function SignUp() {
           </Container>
         </Tabs.Content>
       </Tabs.Root>
-      <Text>
-        Already have an account?{" "}
-        <RouterLink to="/login" className="main-link">
-          Log In
-        </RouterLink>
-      </Text>
-    </Container>
+          <Text>
+            Already have an account?{" "}
+            <RouterLink to="/login" className="main-link">
+              Log In
+            </RouterLink>
+          </Text>
+        </Container>
   )
 }
 

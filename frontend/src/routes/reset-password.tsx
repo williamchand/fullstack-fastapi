@@ -94,7 +94,7 @@ function ResetPassword() {
       if (errDetail?.includes("Invalid token") || errDetail?.includes("expired")) {
         setTokenError("This reset link is invalid or has expired. Please request a new password reset link.")
       } else {
-        handleError(err)
+      handleError(err)
       }
     },
   })

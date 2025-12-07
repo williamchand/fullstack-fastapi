@@ -6,7 +6,7 @@ export type PhoneLoginForm = {
 
 export type PhoneRegisterForm = {
   phone_number: string
-  full_name: string
+  fullName: string
   region: string
 }
 

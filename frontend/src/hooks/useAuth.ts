@@ -32,7 +32,7 @@ const useAuth = () => {
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
-      userServiceCreateUser({ requestBody: { email: data.email, fullName: data.full_name, password: data.password } }),
+      userServiceCreateUser({ requestBody: { email: data.email, fullName: data.fullName, password: data.password } }),
 
     onSuccess: (_data, variables) => {
       const search = new URLSearchParams({ email: variables.email }).toString()

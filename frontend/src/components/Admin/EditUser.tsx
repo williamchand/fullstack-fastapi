@@ -23,7 +23,7 @@ import { FaExchangeAlt } from "react-icons/fa"
 import type { v1User as UserPublic, v1UpdateUserRequest as UserUpdate, ApiError } from "@/client/user"
 import { userServiceUpdateUser } from "@/client/user"
 import useCustomToast from "@/hooks/useCustomToast"
-import { emailPattern, handleError } from "@/utils"
+import { handleError } from "@/utils"
 import { Checkbox } from "../ui/checkbox"
 import {
   DialogBody,
@@ -39,8 +39,13 @@ interface EditUserProps {
   user: UserPublic
 }
 
-interface UserUpdateForm extends UserUpdate {
+interface UserUpdateForm {
+  email?: string
+  fullName?: string
+  password?: string
   confirm_password?: string
+  roles?: string[]
+  is_active?: boolean
 }
 
 function getRolesQueryOptions() {
@@ -70,12 +75,19 @@ const EditUser = ({ user }: EditUserProps) => {
   } = useForm<UserUpdateForm>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: user,
+    defaultValues: {
+      email: user.email,
+      fullName: user.fullName,
+      password: "",
+      confirm_password: "",
+      roles: user.roles || [],
+      is_active: user.isActive,
+    },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: UserUpdateForm) =>
-      userServiceUpdateUser({ requestBody: { fullName: data.full_name, password: data.password } }),
+    mutationFn: (data: UserUpdate) =>
+      userServiceUpdateUser({ requestBody: data }),
     onSuccess: () => {
       showSuccessToast("User updated successfully.")
       reset()
@@ -90,10 +102,11 @@ const EditUser = ({ user }: EditUserProps) => {
   })
 
   const onSubmit: SubmitHandler<UserUpdateForm> = async (data) => {
-    if (data.password === "") {
-      data.password = undefined
+    const updateData: UserUpdate = {
+      fullName: data.fullName,
+      password: data.password === "" ? undefined : data.password,
     }
-    mutation.mutate(data)
+    mutation.mutate(updateData)
   }
 
   return (
@@ -117,31 +130,25 @@ const EditUser = ({ user }: EditUserProps) => {
           <DialogBody>
             <Text mb={4}>Update the user details below.</Text>
             <VStack gap={4}>
-              <Field
-                required
-                invalid={!!errors.email}
-                errorText={errors.email?.message}
-                label="Email"
-              >
+              <Field label="Email">
                 <Input
                   id="email"
-                  {...register("email", {
-                    required: "Email is required",
-                    pattern: emailPattern,
-                  })}
+                  value={user.email || ""}
                   placeholder="Email"
                   type="email"
+                  readOnly
+                  disabled
                 />
               </Field>
 
               <Field
-                invalid={!!errors.full_name}
-                errorText={errors.full_name?.message}
+                invalid={!!errors.fullName}
+                errorText={errors.fullName?.message}
                 label="Full Name"
               >
                 <Input
                   id="name"
-                  {...register("full_name")}
+                  {...register("fullName")}
                   placeholder="Full name"
                   type="text"
                 />
@@ -191,25 +198,25 @@ const EditUser = ({ user }: EditUserProps) => {
                 name="roles"
                 render={({ field }) => {
                   const queryClient = useQueryClient()
-                  const rolesData = queryClient.getQueryData<RolesPublic>(["roles"])
+                  const rolesData = queryClient.getQueryData<{ data: { name: string }[] }>(["roles"])
 
                   const [open, setOpen] = useState(false)
-                  const selectedRoles = field.value || []
+                  const selectedRoles = (field.value || []) as string[]
                   const triggerRef = useRef<HTMLButtonElement | null>(null)
 
                   const collection = createListCollection({
                     items:
-                      rolesData?.data.map((r) => ({ value: r.name, label: r.name })) || [],
+                      rolesData?.data.map((r: { name: string }) => ({ value: r.name, label: r.name })) || [],
                   })
-                  const isAllSelected = field.value?.length === collection.items.length
+                  const isAllSelected = selectedRoles.length === collection.items.length
                   const isSomeSelected =
-                    field.value && field.value.length > 0 && field.value.length < collection.items.length
+                    selectedRoles.length > 0 && selectedRoles.length < collection.items.length
 
                   const handleSelectAll = () => {
                     if (isAllSelected) {
                       field.onChange([])
                     } else {
-                      field.onChange(collection.items.map((item) => item.value))
+                      field.onChange(collection.items.map((item) => item.value as string))
                     }
                   }
                   return (
@@ -218,7 +225,7 @@ const EditUser = ({ user }: EditUserProps) => {
                         collection={collection}
                         selectionMode="multiple"
                         value={selectedRoles}
-                        onValueChange={(details) => field.onChange(details.value)}
+                        onValueChange={(details) => field.onChange(details.value as string[])}
                         maxW="320px"
                       >
                         <Popover.Root open={open} onOpenChange={(e) => setOpen(e.open)}>
@@ -229,7 +236,7 @@ const EditUser = ({ user }: EditUserProps) => {
                                 filled
                                 size="sm"
                                 checked={isAllSelected}
-                                indeterminate={isSomeSelected}
+                                indeterminate={isSomeSelected || undefined}
                               />
                               <Listbox.Label>Select Role</Listbox.Label> 
                               <LuChevronDown style={{ marginLeft: "auto" }} />
@@ -241,8 +248,8 @@ const EditUser = ({ user }: EditUserProps) => {
                                 <Popover.Body p="0">
                                   <Listbox.Content maxH="300px" roundedTop="0">
                                     {collection.items.map((item) => (
-                                      <Listbox.Item key={item.value} item={item}>
-                                        <Listbox.ItemText>{item.label}</Listbox.ItemText>
+                                      <Listbox.Item key={item.value as string} item={item}>
+                                        <Listbox.ItemText>{item.label as string}</Listbox.ItemText>
                                         <Listbox.ItemIndicator />
                                       </Listbox.Item>
                                     ))}
@@ -263,7 +270,7 @@ const EditUser = ({ user }: EditUserProps) => {
                 render={({ field }) => (
                   <Field disabled={field.disabled} colorPalette="teal">
                     <Checkbox
-                      checked={field.value}
+                      checked={field.value || false}
                       onCheckedChange={({ checked }) => field.onChange(checked)}
                     >
                       Is active?

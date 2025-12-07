@@ -42,7 +42,7 @@ const UserInformation = () => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      full_name: currentUser?.full_name,
+      fullName: currentUser?.fullName,
     },
   })
 
@@ -72,7 +72,7 @@ const UserInformation = () => {
 
   const updateNameMutation = useMutation({
     mutationFn: (data: UserUpdateMe) =>
-      userServiceUpdateUser({ requestBody: { fullName: data.full_name } }),
+      userServiceUpdateUser({ requestBody: { fullName: data.fullName } }),
     onSuccess: () => {
       showSuccessToast("Name updated successfully.")
       setEditMode(false)
@@ -175,17 +175,17 @@ const UserInformation = () => {
   }
 
   return (
-    <Container maxW="full">
-      <Heading size="sm" py={4}>
-        User Information
-      </Heading>
+      <Container maxW="full">
+        <Heading size="sm" py={4}>
+          User Information
+        </Heading>
       <Box w={{ sm: "full", md: "50%" }}>
         {/* Full Name */}
         <Box as="form" onSubmit={nameForm.handleSubmit(onNameSubmit)} mb={6}>
           <Field label="Full name">
             {editMode ? (
               <Input
-                {...nameForm.register("full_name", { maxLength: 30 })}
+                {...nameForm.register("fullName", { maxLength: 30 })}
                 type="text"
                 size="md"
                 w="auto"
@@ -194,11 +194,11 @@ const UserInformation = () => {
               <Text
                 fontSize="md"
                 py={2}
-                color={!currentUser?.full_name ? "gray" : "inherit"}
+                color={!currentUser?.fullName ? "gray" : "inherit"}
                 truncate
                 maxWidth="250px"
               >
-                {currentUser?.full_name || "N/A"}
+                {currentUser?.fullName || "N/A"}
               </Text>
             )}
           </Field>
@@ -436,8 +436,8 @@ const UserInformation = () => {
             </>
           )}
         </Box>
-      </Box>
-    </Container>
+        </Box>
+      </Container>
   )
 }
 

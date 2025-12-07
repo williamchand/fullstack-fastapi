@@ -69,7 +69,7 @@ const AddUser = () => {
     criteriaMode: "all",
     defaultValues: {
       email: "",
-      full_name: "",
+      fullName: "",
       password: "",
       confirm_password: "",
       roles: [],
@@ -79,7 +79,7 @@ const AddUser = () => {
 
   const mutation = useMutation({
     mutationFn: (data: UserRegister) =>
-      userServiceCreateUser({ requestBody: { email: data.email, fullName: data.full_name, password: data.password } }),
+      userServiceCreateUser({ requestBody: { email: data.email, fullName: data.fullName, password: data.password } }),
     onSuccess: () => {
       showSuccessToast("User created successfully.")
       reset()
@@ -138,13 +138,13 @@ const AddUser = () => {
               </Field>
 
               <Field
-                invalid={!!errors.full_name}
-                errorText={errors.full_name?.message}
+                invalid={!!errors.fullName}
+                errorText={errors.fullName?.message}
                 label="Full Name"
               >
                 <Input
                   id="name"
-                  {...register("full_name")}
+                  {...register("fullName")}
                   placeholder="Full name"
                   type="text"
                 />

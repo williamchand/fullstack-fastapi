@@ -8,6 +8,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	genprotov1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -89,9 +90,12 @@ func (a *App) runHTTP(ctx context.Context) error {
 	// All other routes go through auth + grpc-gateway
 	rootMux.Handle("/", handler)
 
+	// Apply CORS middleware to all routes
+	corsHandler := cors.Middleware(a.cfg.Security.CORSAllowedOrigins)(rootMux)
+
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", a.cfg.HTTPPort),
-		Handler: rootMux,
+		Handler: corsHandler,
 	}
 
 	// Serve

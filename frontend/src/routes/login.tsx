@@ -1,4 +1,4 @@
-import { Container, Image, Input, Text, Tabs } from "@chakra-ui/react"
+import { Container, Image, Input, Text, Tabs, Flex } from "@chakra-ui/react"
 import {
   Link as RouterLink,
   createFileRoute,
@@ -6,7 +6,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router"
 import { useMutation } from "@tanstack/react-query"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { FiLock, FiMail, FiPhone } from "react-icons/fi"
 import { useState } from "react"
 
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { InputGroup } from "@/components/ui/input-group"
 import { PasswordInput } from "@/components/ui/password-input"
+import { RegionSelector } from "@/components/Common/RegionSelector"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import Logo from "/assets/images/fastapi-logo.svg"
@@ -53,7 +54,7 @@ function Login() {
   const phoneForm = useForm<PhoneLoginForm>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: { phone_number: "", region: "", otp_code: "" },
+    defaultValues: { phone_number: "", region: "ID", otp_code: "" },
   })
 
   const requestOtp = useMutation({
@@ -102,22 +103,22 @@ function Login() {
   }
 
   return (
-    <Container
-      h="100vh"
-      maxW="sm"
-      alignItems="stretch"
-      justifyContent="center"
-      gap={4}
-      centerContent
-    >
-      <Image
-        src={Logo}
-        alt="FastAPI logo"
-        height="auto"
-        maxW="2xs"
-        alignSelf="center"
-        mb={4}
-      />
+      <Container
+        h="100vh"
+        maxW="sm"
+        alignItems="stretch"
+        justifyContent="center"
+        gap={4}
+        centerContent
+      >
+        <Image
+          src={Logo}
+          alt="FastAPI logo"
+          height="auto"
+          maxW="2xs"
+          alignSelf="center"
+          mb={4}
+        />
       <Tabs.Root
         defaultValue={loginMethod}
         onValueChange={(e) => {
@@ -139,35 +140,35 @@ function Login() {
             display="flex"
             flexDirection="column"
           >
-            <Field
+        <Field
               invalid={!!emailForm.formState.errors.username}
               errorText={emailForm.formState.errors.username?.message || (error || undefined)}
-            >
-              <InputGroup w="100%" startElement={<FiMail />}>
-                <Input
-                  id="username"
+        >
+          <InputGroup w="100%" startElement={<FiMail />}>
+            <Input
+              id="username"
                   {...emailForm.register("username", {
                     required: "Email is required",
-                    pattern: emailPattern,
-                  })}
-                  placeholder="Email"
-                  type="email"
-                />
-              </InputGroup>
-            </Field>
-            <PasswordInput
-              type="password"
-              startElement={<FiLock />}
-              {...emailForm.register("password", passwordRules())}
-              placeholder="Password"
-              errors={emailForm.formState.errors}
+                pattern: emailPattern,
+              })}
+              placeholder="Email"
+              type="email"
             />
-            <RouterLink to="/recover-password" className="main-link">
-              Forgot Password?
-            </RouterLink>
+          </InputGroup>
+        </Field>
+        <PasswordInput
+          type="password"
+          startElement={<FiLock />}
+              {...emailForm.register("password", passwordRules())}
+          placeholder="Password"
+              errors={emailForm.formState.errors}
+        />
+        <RouterLink to="/recover-password" className="main-link">
+          Forgot Password?
+        </RouterLink>
             <Button variant="solid" type="submit" loading={emailForm.formState.isSubmitting} size="md">
-              Log In
-            </Button>
+          Log In
+        </Button>
           </Container>
         </Tabs.Content>
         <Tabs.Content value="phone">
@@ -177,26 +178,32 @@ function Login() {
             display="flex"
             flexDirection="column"
           >
-            <Field required invalid={!!phoneForm.formState.errors.phone_number} errorText={phoneForm.formState.errors.phone_number?.message}>
-              <InputGroup w="100%" startElement={<FiPhone />}>
-                <Input
-                  id="phone_number"
-                  {...phoneForm.register("phone_number", { required: "Phone number is required" })}
-                  placeholder="Phone Number"
-                  type="tel"
+            <Flex gap={2} alignItems="flex-start">
+              <Field required invalid={!!phoneForm.formState.errors.phone_number} errorText={phoneForm.formState.errors.phone_number?.message} flex="1">
+                <InputGroup w="100%" startElement={<FiPhone />}>
+                  <Input
+                    id="phone_number"
+                    {...phoneForm.register("phone_number", { required: "Phone number is required" })}
+                    placeholder="Phone Number"
+                    type="tel"
+                  />
+                </InputGroup>
+              </Field>
+              <Field required invalid={!!phoneForm.formState.errors.region} errorText={phoneForm.formState.errors.region?.message} w="200px">
+                <Controller
+                  control={phoneForm.control}
+                  name="region"
+                  rules={{ required: "Region is required" }}
+                  render={({ field }) => (
+                    <RegionSelector
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={field.disabled}
+                    />
+                  )}
                 />
-              </InputGroup>
-            </Field>
-            <Field required invalid={!!phoneForm.formState.errors.region} errorText={phoneForm.formState.errors.region?.message}>
-              <InputGroup w="100%">
-                <Input
-                  id="region"
-                  {...phoneForm.register("region", { required: "Region is required" })}
-                  placeholder="Region (e.g., ID)"
-                  type="text"
-                />
-              </InputGroup>
-            </Field>
+              </Field>
+            </Flex>
             <Button
               variant="solid"
               onClick={phoneForm.handleSubmit(onRequestOtp)}
@@ -224,12 +231,12 @@ function Login() {
           </Container>
         </Tabs.Content>
       </Tabs.Root>
-      <Text>
-        Don't have an account?{" "}
-        <RouterLink to="/signup" className="main-link">
-          Sign Up
-        </RouterLink>
-      </Text>
-    </Container>
+        <Text>
+          Don't have an account?{" "}
+          <RouterLink to="/signup" className="main-link">
+            Sign Up
+          </RouterLink>
+        </Text>
+      </Container>
   )
 }

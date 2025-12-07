@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { FiMail, FiPhone } from "react-icons/fi"
 
 import type { ApiError, v1User as UserPublic, v1UpdateUserRequest as UserUpdateMe } from "@/client/user"
@@ -25,6 +25,7 @@ import {
 import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
+import { RegionSelector } from "@/components/Common/RegionSelector"
 import { Field } from "../ui/field"
 import { InputGroup } from "../ui/input-group"
 
@@ -61,7 +62,7 @@ const UserInformation = () => {
   const addPhoneForm = useForm<{ phone_number: string; region: string }>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: { phone_number: "", region: "" },
+    defaultValues: { phone_number: "", region: "ID" },
   })
 
   const verifyPhoneForm = useForm<{ otp_code: string }>({
@@ -365,26 +366,32 @@ const UserInformation = () => {
               )}
               {addPhoneMode && (
                 <Box as="form" onSubmit={addPhoneForm.handleSubmit(onAddPhoneSubmit)}>
-                  <Field invalid={!!addPhoneForm.formState.errors.phone_number} errorText={addPhoneForm.formState.errors.phone_number?.message}>
-                    <InputGroup w="100%" startElement={<FiPhone />}>
-                      <Input
-                        {...addPhoneForm.register("phone_number", { required: "Phone number is required" })}
-                        placeholder="Phone Number"
-                        type="tel"
-                        size="md"
+                  <Flex gap={2} alignItems="flex-start">
+                    <Field invalid={!!addPhoneForm.formState.errors.phone_number} errorText={addPhoneForm.formState.errors.phone_number?.message} flex="1">
+                      <InputGroup w="100%" startElement={<FiPhone />}>
+                        <Input
+                          {...addPhoneForm.register("phone_number", { required: "Phone number is required" })}
+                          placeholder="Phone Number"
+                          type="tel"
+                          size="md"
+                        />
+                      </InputGroup>
+                    </Field>
+                    <Field invalid={!!addPhoneForm.formState.errors.region} errorText={addPhoneForm.formState.errors.region?.message} w="200px">
+                      <Controller
+                        control={addPhoneForm.control}
+                        name="region"
+                        rules={{ required: "Region is required" }}
+                        render={({ field }) => (
+                          <RegionSelector
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={field.disabled}
+                          />
+                        )}
                       />
-                    </InputGroup>
-                  </Field>
-                  <Field mt={2} invalid={!!addPhoneForm.formState.errors.region} errorText={addPhoneForm.formState.errors.region?.message}>
-                    <InputGroup w="100%">
-                      <Input
-                        {...addPhoneForm.register("region", { required: "Region is required" })}
-                        placeholder="Region (e.g., ID)"
-                        type="text"
-                        size="md"
-                      />
-                    </InputGroup>
-                  </Field>
+                    </Field>
+                  </Flex>
                   <Flex mt={2} gap={2}>
                     <Button variant="solid" type="submit" loading={addPhoneMutation.isPending} size="sm">
                       Send Verification

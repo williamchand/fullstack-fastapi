@@ -1,13 +1,15 @@
-import { Container, Heading, Input } from "@chakra-ui/react"
+import { Container, Heading, Input, Flex } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { Controller, type SubmitHandler, useForm } from "react-hook-form"
+import { FiPhone } from "react-icons/fi"
 
 import type { ApiError } from "@/client/user"
 import { userServiceVerifyPhoneOtp } from "@/client/user"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { InputGroup } from "@/components/ui/input-group"
+import { RegionSelector } from "@/components/Common/RegionSelector"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
@@ -25,12 +27,12 @@ export const Route = createFileRoute("/verify-phone")({
 function VerifyPhone() {
   const navigate = useNavigate()
   const { showSuccessToast } = useCustomToast()
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<PhoneVerifyForm>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<PhoneVerifyForm>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
       phone_number: new URLSearchParams(window.location.search).get("phone_number") || "",
-      region: new URLSearchParams(window.location.search).get("region") || "",
+      region: new URLSearchParams(window.location.search).get("region") || "ID",
       otp_code: "",
     },
   })
@@ -55,16 +57,27 @@ function VerifyPhone() {
   return (
     <Container as="form" onSubmit={handleSubmit(onSubmit)} h="100vh" maxW="sm" alignItems="stretch" justifyContent="center" gap={4} centerContent>
       <Heading size="xl" color="ui.main" textAlign="center" mb={2}>Verify Phone</Heading>
-      <Field required invalid={!!errors.phone_number} errorText={errors.phone_number?.message}>
-        <InputGroup w="100%">
-          <Input id="phone_number" {...register("phone_number", { required: "Phone number is required" })} placeholder="Phone Number" type="tel" />
-        </InputGroup>
-      </Field>
-      <Field required invalid={!!errors.region} errorText={errors.region?.message}>
-        <InputGroup w="100%">
-          <Input id="region" {...register("region", { required: "Region is required" })} placeholder="Region (e.g., IDR)" type="text" />
-        </InputGroup>
-      </Field>
+      <Flex gap={2} alignItems="flex-start">
+        <Field required invalid={!!errors.phone_number} errorText={errors.phone_number?.message} flex="1">
+          <InputGroup w="100%" startElement={<FiPhone />}>
+            <Input id="phone_number" {...register("phone_number", { required: "Phone number is required" })} placeholder="Phone Number" type="tel" />
+          </InputGroup>
+        </Field>
+        <Field required invalid={!!errors.region} errorText={errors.region?.message} w="200px">
+          <Controller
+            control={control}
+            name="region"
+            rules={{ required: "Region is required" }}
+            render={({ field }) => (
+              <RegionSelector
+                value={field.value}
+                onChange={field.onChange}
+                disabled={field.disabled}
+              />
+            )}
+          />
+        </Field>
+      </Flex>
       <Field required invalid={!!errors.otp_code} errorText={errors.otp_code?.message}>
         <InputGroup w="100%">
           <Input id="otp_code" {...register("otp_code", { required: "OTP is required" })} placeholder="OTP Code" type="text" />

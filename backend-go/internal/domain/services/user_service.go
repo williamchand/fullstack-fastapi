@@ -183,7 +183,7 @@ func (s *UserService) AddPhoneNumber(ctx context.Context, id string, phone strin
 		if tplErr == nil {
 			body, _ := util.FillTextTemplate(tpl.Body, map[string]string{"code": code})
 			go func() {
-				if err := s.wahaClient.SendText(ctx, normalized, body); err != nil {
+				if err := s.wahaClient.SendText(context.Background(), normalized, body); err != nil {
 					log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
 				}
 			}()
@@ -192,7 +192,7 @@ func (s *UserService) AddPhoneNumber(ctx context.Context, id string, phone strin
 	return nil
 }
 
-func (s *UserService) VerifyAddPhone(ctx context.Context, id string, code string, region string) error {
+func (s *UserService) VerifyAddPhone(ctx context.Context, id string, code string) error {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		return ErrUserNotFound
@@ -212,18 +212,13 @@ func (s *UserService) VerifyAddPhone(ctx context.Context, id string, code string
 	if newPhone == "" {
 		return ErrInvalidState
 	}
-	newPhone = strings.TrimSpace(newPhone)
-	normalized, ok := util.NormalizeE164(newPhone, region)
-	if !ok {
-		return ErrInvalidState
-	}
-	if existing, _ := s.userRepo.GetByPhone(ctx, normalized); existing != nil && existing.ID != user.ID {
+	if existing, _ := s.userRepo.GetByPhone(ctx, newPhone); existing != nil && existing.ID != user.ID {
 		return ErrUserExists
 	}
 	if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
 		return err
 	}
-	if _, err := s.userRepo.UpdatePhone(ctx, user.ID, normalized); err != nil {
+	if _, err := s.userRepo.UpdatePhone(ctx, user.ID, newPhone); err != nil {
 		return err
 	}
 	return s.userRepo.SetPhoneVerified(ctx, user.ID)
@@ -530,7 +525,7 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string, region 
 		if tplErr == nil {
 			body, _ := util.FillTextTemplate(tpl.Body, map[string]string{"code": code})
 			go func() {
-				if err := s.wahaClient.SendText(ctx, normalized, body); err != nil {
+				if err := s.wahaClient.SendText(context.Background(), normalized, body); err != nil {
 					log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
 				}
 			}()

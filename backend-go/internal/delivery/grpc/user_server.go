@@ -115,10 +115,7 @@ func (s *userServer) VerifyAddPhoneOTP(ctx context.Context, req *salonappv1.Veri
 	if req.OtpCode == "" {
 		return nil, status.Error(codes.InvalidArgument, "otp_code is required")
 	}
-	if req.Region == "" {
-		return nil, status.Error(codes.InvalidArgument, "region is required")
-	}
-	if err := s.userService.VerifyAddPhone(ctx, user.ID.String(), req.OtpCode, req.Region); err != nil {
+	if err := s.userService.VerifyAddPhone(ctx, user.ID.String(), req.OtpCode); err != nil {
 		switch {
 		case errors.Is(err, services.ErrInvalidOrExpiredCode):
 			return nil, status.Error(codes.InvalidArgument, "invalid or expired code")

@@ -15,13 +15,17 @@ import (
 // Exact public paths that are always allowed
 var (
 	publicExactPaths = map[string]map[string]bool{
-		"/v1/login/access-token":  {"POST": true},
-		"/v1/login/refresh-token": {"POST": true},
-		"/v1/user/verify-email":   {"POST": true},
-		"/v1/user/resend-email":   {"POST": true},
-		"/v1/user":                {"POST": true},
-		"/v1/password-recovery":   {"POST": true},
-		"/v1/reset-password":       {"POST": true},
+		"/v1/login/access-token":     {"POST": true},
+		"/v1/login/refresh-token":    {"POST": true},
+		"/v1/user/verify-email":      {"POST": true},
+		"/v1/user/resend-email":      {"POST": true},
+		"/v1/user":                   {"POST": true},
+		"/v1/password-recovery":      {"POST": true},
+		"/v1/reset-password":         {"POST": true},
+		"/v1/login/phone":            {"POST": true},
+		"/v1/user/register-phone":    {"POST": true},
+		"/v1/user/request-phone-otp": {"POST": true},
+		"/v1/user/verify-phone-otp":  {"POST": true},
 	}
 
 	// Public URL prefixes allowed without auth
@@ -29,13 +33,17 @@ var (
 		"/v1/public/",
 	}
 	publicGRPCExact = map[string]bool{
-		"/salonapp.v1.UserService/CreateUser":              true,
 		"/salonapp.v1.UserService/LoginUser":               true,
 		"/salonapp.v1.UserService/RefreshToken":            true,
 		"/salonapp.v1.UserService/VerifyEmailOTP":          true,
 		"/salonapp.v1.UserService/ResendEmailVerification": true,
+		"/salonapp.v1.UserService/CreateUser":              true,
 		"/salonapp.v1.UserService/RecoverPassword":         true,
 		"/salonapp.v1.UserService/ResetPassword":           true,
+		"/salonapp.v1.UserService/LoginWithPhone":          true,
+		"/salonapp.v1.UserService/RegisterPhoneUser":       true,
+		"/salonapp.v1.UserService/RequestPhoneOTP":         true,
+		"/salonapp.v1.UserService/VerifyPhoneOTP":          true,
 	}
 	publicGRPCPrefixes = []string{
 		"/salonapp.v1.PublicService/",

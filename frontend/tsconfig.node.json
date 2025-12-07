@@ -9,6 +9,6 @@
   "include": [
     "vite.config.ts",
     "openapi/**/*.json",
-    "scripts/generate-openapi.ts"
+    "scripts/**/*.ts"
   ]
 }

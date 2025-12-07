@@ -21,6 +21,9 @@ TOOLS = \
 # Project structure
 PROTO_DIR=api/proto
 GEN_PROTO_DIR=gen/proto
+GEN_OPENAPI_DIR := gen/openapi/v1
+SWAGGER_FILES := $(wildcard $(GEN_OPENAPI_DIR)/*.swagger.json)
+FRONTEND_OPENAPI_DIR := ../frontend/openapi
 DB_QUERIES_DIR=db/queries
 DB_MIGRATIONS_DIR=db/migrations/
 SQLC_OUT_DIR=internal/infrastructure/database/dbgen
@@ -61,7 +64,18 @@ test-coverage:
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 
 ## Generate all code (protobuf, sqlc, etc.)
-generate: proto sqlc
+generate: proto sqlc openapi-v3
+
+
+# 2. Convert OpenAPI v2 → OpenAPI v3
+openapi-v3: 
+	@echo "🔄 Converting Swagger v2 → OpenAPI v3..."
+	mkdir -p $(FRONTEND_OPENAPI_DIR)
+	@for f in $(SWAGGER_FILES); do \
+		name=$$(basename $$f .swagger.json); \
+		echo "Converting $$f → $(FRONTEND_OPENAPI_DIR)/$$name.json"; \
+		npx swagger2openapi $$f -o $(FRONTEND_OPENAPI_DIR)/$$name.json; \
+	done
 
 ## Generate protobuf code
 proto:

@@ -1,4 +1,4 @@
-import { Container, Heading, Input, Flex } from "@chakra-ui/react"
+import { Container, Heading, Input, Flex, Text } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
@@ -56,14 +56,10 @@ function VerifyPhone() {
 
   return (
     <Container as="form" onSubmit={handleSubmit(onSubmit)} h="100vh" maxW="sm" alignItems="stretch" justifyContent="center" gap={4} centerContent>
-      <Heading size="xl" color="ui.main" textAlign="center" mb={2}>Verify Phone</Heading>
+      <Text fontSize="lg" color="brand.darkKhaki">ameno signy</Text>
+      <Heading size="xl" color="ui.main" textAlign="center" mb={2}>Ameno Signy Super App</Heading>
       <Flex gap={2} alignItems="flex-start">
-        <Field required invalid={!!errors.phone_number} errorText={errors.phone_number?.message} flex="1">
-          <InputGroup w="100%" startElement={<FiPhone />}>
-            <Input id="phone_number" {...register("phone_number", { required: "Phone number is required" })} placeholder="Phone Number" type="tel" />
-          </InputGroup>
-        </Field>
-        <Field required invalid={!!errors.region} errorText={errors.region?.message} w="200px">
+        <Field required invalid={!!errors.region} errorText={errors.region?.message} w="140px">
           <Controller
             control={control}
             name="region"
@@ -73,9 +69,15 @@ function VerifyPhone() {
                 value={field.value}
                 onChange={field.onChange}
                 disabled={field.disabled}
+                size="sm"
               />
             )}
           />
+        </Field>
+        <Field required invalid={!!errors.phone_number} errorText={errors.phone_number?.message} flex="1">
+          <InputGroup w="100%" startElement={<FiPhone />}>
+            <Input id="phone_number" {...register("phone_number", { required: "Phone number is required" })} placeholder="Phone Number" type="tel" />
+          </InputGroup>
         </Field>
       </Flex>
       <Field required invalid={!!errors.otp_code} errorText={errors.otp_code?.message}>

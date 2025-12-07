@@ -41,9 +41,10 @@ interface RegionSelectorProps {
   onChange: (value: string) => void
   disabled?: boolean
   placeholder?: string
+  size?: "sm" | "md"
 }
 
-export const RegionSelector = ({ value, onChange, disabled, placeholder = "Select Region" }: RegionSelectorProps) => {
+export const RegionSelector = ({ value, onChange, disabled, placeholder = "Select Region", size = "md" }: RegionSelectorProps) => {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
 
@@ -70,7 +71,7 @@ export const RegionSelector = ({ value, onChange, disabled, placeholder = "Selec
           <Button
             ref={triggerRef}
             variant="outline"
-            size="md"
+            size={size}
             w="100%"
             justifyContent="space-between"
             disabled={disabled}
@@ -99,4 +100,3 @@ export const RegionSelector = ({ value, onChange, disabled, placeholder = "Selec
     </Listbox.Root>
   )
 }
-

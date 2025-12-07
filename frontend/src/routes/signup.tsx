@@ -1,4 +1,4 @@
-import { Container, Image, Input, Text, Tabs, Flex } from "@chakra-ui/react"
+import { Container, Input, Text, Tabs, Flex, Heading } from "@chakra-ui/react"
 import {
   Link as RouterLink,
   createFileRoute,
@@ -22,7 +22,6 @@ import { RegionSelector } from "@/components/Common/RegionSelector"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { confirmPasswordRules, emailPattern, passwordRules, handleError } from "@/utils"
-import Logo from "/assets/images/fastapi-logo.svg"
 
 export const Route = createFileRoute("/signup")({
   component: SignUp,
@@ -95,14 +94,8 @@ function SignUp() {
           gap={4}
           centerContent
         >
-          <Image
-            src={Logo}
-            alt="FastAPI logo"
-            height="auto"
-            maxW="2xs"
-            alignSelf="center"
-            mb={4}
-          />
+          <Text fontSize="lg" color="brand.darkKhaki">ameno signy</Text>
+          <Heading size="xl" color="ui.main" textAlign="center" mb={2}>Ameno Signy Super App</Heading>
       <Tabs.Root
         defaultValue={signupMethod}
         onValueChange={(e) => setSignupMethod(e.value as "email" | "phone")}
@@ -189,17 +182,7 @@ function SignUp() {
               </InputGroup>
             </Field>
             <Flex gap={2} alignItems="flex-start">
-              <Field required invalid={!!phoneForm.formState.errors.phone_number} errorText={phoneForm.formState.errors.phone_number?.message} flex="1">
-                <InputGroup w="100%" startElement={<FiPhone />}>
-                  <Input
-                    id="phone_number"
-                    {...phoneForm.register("phone_number", { required: "Phone number is required" })}
-                    placeholder="Phone Number"
-                    type="tel"
-                  />
-                </InputGroup>
-              </Field>
-              <Field required invalid={!!phoneForm.formState.errors.region} errorText={phoneForm.formState.errors.region?.message} w="200px">
+              <Field required invalid={!!phoneForm.formState.errors.region} errorText={phoneForm.formState.errors.region?.message} w="140px">
                 <Controller
                   control={phoneForm.control}
                   name="region"
@@ -209,9 +192,20 @@ function SignUp() {
                       value={field.value}
                       onChange={field.onChange}
                       disabled={field.disabled}
+                      size="sm"
                     />
                   )}
                 />
+              </Field>
+              <Field required invalid={!!phoneForm.formState.errors.phone_number} errorText={phoneForm.formState.errors.phone_number?.message} flex="1">
+                <InputGroup w="100%" startElement={<FiPhone />}>
+                  <Input
+                    id="phone_number"
+                    {...phoneForm.register("phone_number", { required: "Phone number is required" })}
+                    placeholder="Phone Number"
+                    type="tel"
+                  />
+                </InputGroup>
               </Field>
             </Flex>
             <Button variant="solid" type="submit" loading={phoneForm.formState.isSubmitting || phoneRegisterMutation.isPending}>

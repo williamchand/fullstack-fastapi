@@ -143,7 +143,7 @@ const AddUser = () => {
                 label="Full Name"
               >
                 <Input
-                  id="name"
+                  id="fullName"
                   {...register("fullName")}
                   placeholder="Full name"
                   type="text"

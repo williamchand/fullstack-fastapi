@@ -207,9 +207,17 @@ function SignUp() {
                 <InputGroup w="100%" startElement={<FiPhone />}>
                   <Input
                     id="phone_number"
-                    {...phoneForm.register("phone_number", { required: "Phone number is required" })}
+                    {...phoneForm.register("phone_number", {
+                      required: "Phone number is required",
+                      setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                      validate: {
+                        digitsOnly: (v) => (/^\d+$/.test(v) ? true : "Phone must contain digits only"),
+                        length: (v) => (v.length >= 6 && v.length <= 15 ? true : "Phone length must be 6–15 digits"),
+                      },
+                    })}
                     placeholder="Phone Number"
                     type="tel"
+                    inputMode="numeric"
                   />
                 </InputGroup>
               </Field>

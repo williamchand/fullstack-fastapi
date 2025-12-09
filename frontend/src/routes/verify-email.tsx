@@ -92,6 +92,7 @@ function VerifyEmail() {
             })}
             placeholder="Email"
             type="email"
+            readOnly
           />
         </InputGroup>
       </Field>
@@ -99,9 +100,16 @@ function VerifyEmail() {
         <InputGroup w="100%">
           <Input
             id="otp_code"
-            {...register("otp_code", { required: "OTP code is required" })}
+            {...register("otp_code", {
+              required: "OTP code is required",
+              setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+              validate: {
+                digitsOnly: (v) => (/^\d+$/.test(v) ? true : "OTP must be digits only"),
+              },
+            })}
             placeholder="OTP Code"
             type="text"
+            inputMode="numeric"
           />
         </InputGroup>
       </Field>
@@ -111,7 +119,7 @@ function VerifyEmail() {
       <Text textAlign="center">
         Didn't receive the code?{" "}
         <Button
-          variant="link"
+          variant="solid"
           onClick={onResend}
           loading={resendMutation.isPending}
           disabled={!email}

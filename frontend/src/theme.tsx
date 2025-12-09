@@ -10,8 +10,6 @@ export const system = createSystem(defaultConfig, {
       fontSize: "0.875rem",
       margin: 0,
       padding: 0,
-      backgroundColor: "#d8ffdd",
-      color: "#524632",
     },
     ".main-link": {
       color: "ui.main",
@@ -22,14 +20,7 @@ export const system = createSystem(defaultConfig, {
     tokens: {
       colors: {
         ui: {
-          main: { value: "#8f7e4f" },
-        },
-        brand: {
-          darkKhaki: { value: "#524632" },
-          fadedCopper: { value: "#8f7e4f" },
-          drySage: { value: "#c3c49e" },
-          frostedMint: { value: "#d8ffdd" },
-          dustGrey: { value: "#dedbd8" },
+          main: { value: "#009688" },
         },
       },
     },

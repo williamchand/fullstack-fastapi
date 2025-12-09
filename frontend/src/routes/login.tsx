@@ -198,9 +198,17 @@ function Login() {
                 <InputGroup w="100%" startElement={<FiPhone />}>
                   <Input
                     id="phone_number"
-                    {...phoneForm.register("phone_number", { required: "Phone number is required" })}
+                    {...phoneForm.register("phone_number", {
+                      required: "Phone number is required",
+                      setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                      validate: {
+                        digitsOnly: (v) => (/^\d+$/.test(v) ? true : "Phone must contain digits only"),
+                        length: (v) => (v.length >= 6 && v.length <= 15 ? true : "Phone length must be 6–15 digits"),
+                      },
+                    })}
                     placeholder="Phone Number"
                     type="tel"
+                    inputMode="numeric"
                   />
                 </InputGroup>
               </Field>
@@ -216,9 +224,15 @@ function Login() {
               <InputGroup w="100%">
                 <Input
                   id="otp_code"
-                  {...phoneForm.register("otp_code")}
+                  {...phoneForm.register("otp_code", {
+                    setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                    validate: {
+                      digitsOnly: (v) => (v === undefined || v === "" || /^\d+$/.test(v) ? true : "OTP must be digits only"),
+                    },
+                  })}
                   placeholder="OTP Code"
                   type="text"
+                  inputMode="numeric"
                 />
               </InputGroup>
             </Field>

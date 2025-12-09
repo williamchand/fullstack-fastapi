@@ -68,7 +68,7 @@ function VerifyPhone() {
               <RegionSelector
                 value={field.value}
                 onChange={field.onChange}
-                disabled={field.disabled}
+                disabled
                 size="sm"
               />
             )}
@@ -76,13 +76,31 @@ function VerifyPhone() {
         </Field>
         <Field required invalid={!!errors.phone_number} errorText={errors.phone_number?.message} flex="1">
           <InputGroup w="100%" startElement={<FiPhone />}>
-            <Input id="phone_number" {...register("phone_number", { required: "Phone number is required" })} placeholder="Phone Number" type="tel" />
+            <Input
+              id="phone_number"
+              {...register("phone_number", { required: "Phone number is required" })}
+              placeholder="Phone Number"
+              type="tel"
+              readOnly
+            />
           </InputGroup>
         </Field>
       </Flex>
       <Field required invalid={!!errors.otp_code} errorText={errors.otp_code?.message}>
         <InputGroup w="100%">
-          <Input id="otp_code" {...register("otp_code", { required: "OTP is required" })} placeholder="OTP Code" type="text" />
+          <Input
+            id="otp_code"
+            {...register("otp_code", {
+              required: "OTP is required",
+              setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+              validate: {
+                digitsOnly: (v) => (/^\d+$/.test(v) ? true : "OTP must be digits only"),
+              },
+            })}
+            placeholder="OTP Code"
+            type="text"
+            inputMode="numeric"
+          />
         </InputGroup>
       </Field>
       <Button variant="solid" type="submit" loading={isSubmitting || mutation.isPending}>Verify</Button>

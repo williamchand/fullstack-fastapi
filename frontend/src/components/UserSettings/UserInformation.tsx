@@ -370,9 +370,17 @@ const UserInformation = () => {
                     <Field invalid={!!addPhoneForm.formState.errors.phone_number} errorText={addPhoneForm.formState.errors.phone_number?.message} flex="1">
                       <InputGroup w="100%" startElement={<FiPhone />}>
                         <Input
-                          {...addPhoneForm.register("phone_number", { required: "Phone number is required" })}
+                          {...addPhoneForm.register("phone_number", {
+                            required: "Phone number is required",
+                            setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                            validate: {
+                              digitsOnly: (v) => (/^\d+$/.test(v) ? true : "Phone must contain digits only"),
+                              length: (v) => (v.length >= 6 && v.length <= 15 ? true : "Phone length must be 6–15 digits"),
+                            },
+                          })}
                           placeholder="Phone Number"
                           type="tel"
+                          inputMode="numeric"
                           size="md"
                         />
                       </InputGroup>
@@ -415,9 +423,16 @@ const UserInformation = () => {
                   <Field invalid={!!verifyPhoneForm.formState.errors.otp_code} errorText={verifyPhoneForm.formState.errors.otp_code?.message}>
                     <InputGroup w="100%">
                       <Input
-                        {...verifyPhoneForm.register("otp_code", { required: "OTP code is required" })}
+                        {...verifyPhoneForm.register("otp_code", {
+                          required: "OTP code is required",
+                          setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                          validate: {
+                            digitsOnly: (v) => (/^\d+$/.test(v) ? true : "OTP must be digits only"),
+                          },
+                        })}
                         placeholder="OTP Code"
                         type="text"
+                        inputMode="numeric"
                         size="md"
                       />
                     </InputGroup>

@@ -35,8 +35,7 @@ const useAuth = () => {
       userServiceCreateUser({ requestBody: { email: data.email, fullName: data.fullName, password: data.password } }),
 
     onSuccess: (_data, variables) => {
-      const search = new URLSearchParams({ email: variables.email }).toString()
-      navigate({ to: `/verify-email?${search}` })
+      navigate({ to: "/verify-email", search: { email: variables.email } })
     },
     onError: (err: ApiError) => {
       handleError(err)

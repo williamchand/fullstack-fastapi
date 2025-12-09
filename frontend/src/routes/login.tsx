@@ -21,6 +21,7 @@ import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, passwordRules, handleError } from "../utils"
 import type { PhoneLoginForm } from "@/types/phone"
+import Logo from "/assets/images/fastapi-logo.svg"
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -110,8 +111,14 @@ function Login() {
         gap={4}
         centerContent
       >
-        <Text fontSize="lg" color="brand.darkKhaki">ameno signy</Text>
-        <Heading size="xl" color="ui.main" textAlign="center" mb={2}>Ameno Signy Super App</Heading>
+          <Image
+            src={Logo}
+            alt="FastAPI logo"
+            height="auto"
+            maxW="2xs"
+            alignSelf="center"
+            mb={4}
+          />
       <Tabs.Root
         defaultValue={loginMethod}
         onValueChange={(e) => {

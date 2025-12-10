@@ -46,9 +46,16 @@ const useAuth = () => {
   })
 
   const login = async (data: AccessToken) => {
+    console.debug("useAuth.login called with:", data)
     const response = await userServiceLoginUser({ requestBody: data })
     if (response.accessToken) {
       localStorage.setItem("access_token", response.accessToken)
+    }
+    if (response.refreshToken) {
+      localStorage.setItem("refresh_token", response.refreshToken)
+    }
+    if (response.refreshExpiresAt) {
+      localStorage.setItem("refresh_expires_at", response.refreshExpiresAt)
     }
   }
 

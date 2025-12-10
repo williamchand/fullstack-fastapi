@@ -85,8 +85,8 @@ function Login() {
   })
 
   const onEmailSubmit: SubmitHandler<AccessToken> = async (data) => {
-    if (emailForm.formState.isSubmitting) return
     resetError()
+    console.debug("onEmailSubmit called with:", data)
     try {
       await loginMutation.mutateAsync(data)
     } catch {
@@ -166,7 +166,7 @@ function Login() {
         <RouterLink to="/recover-password" className="main-link">
           Forgot Password?
         </RouterLink>
-            <Button variant="solid" type="submit" loading={emailForm.formState.isSubmitting} size="md">
+        <Button variant="solid" type="submit" loading={emailForm.formState.isSubmitting} size="md">
           Log In
         </Button>
           </Container>

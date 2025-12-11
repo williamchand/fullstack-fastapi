@@ -43,8 +43,12 @@ OpenAPI.TOKEN = async () => {
       }
       // retry original request
       try {
+        // Update Authorization header with the new access token before retrying
+        const newToken = localStorage.getItem("access_token") || ""
         // @ts-ignore
-        return await axios.request(response.config)
+        const retryConfig = { ...response.config, headers: { ...(response.config?.headers || {}), Authorization: newToken ? `Bearer ${newToken}` : undefined } }
+        // @ts-ignore
+        return await axios.request(retryConfig)
       } catch (e) {
         localStorage.removeItem("access_token")
         localStorage.removeItem("refresh_token")
@@ -86,8 +90,11 @@ OpenAPI.TOKEN = async () => {
 
     // retry original request
     try {
+      const newToken = localStorage.getItem("access_token") || ""
       // @ts-ignore
-      return await axios.request(response.config)
+      const retryConfig = { ...response.config, headers: { ...(response.config?.headers || {}), Authorization: newToken ? `Bearer ${newToken}` : undefined } }
+      // @ts-ignore
+      return await axios.request(retryConfig)
     } catch (e) {
       localStorage.removeItem("access_token")
       localStorage.removeItem("refresh_token")

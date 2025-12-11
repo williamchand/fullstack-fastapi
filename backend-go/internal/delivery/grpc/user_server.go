@@ -76,10 +76,14 @@ func (s *userServer) RefreshToken(ctx context.Context, req *salonappv1.RefreshTo
 
 func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserRequest) (*salonappv1.UpdateUserResponse, error) {
 	user := auth.UserFromContext(ctx)
-	user, err := s.userService.UpdateProfile(ctx, user.ID.String(), req.FullName, req.Password)
+
+	user, err := s.userService.UpdateProfile(ctx, user.ID.String(), req.FullName, req.Password, req.PreviousPassword)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		if errors.Is(err, services.ErrInvalidPreviousPassword) {
+			return nil, status.Error(codes.Unauthenticated, "invalid previous password")
 		}
 		return nil, status.Error(codes.Internal, "failed to get user")
 	}

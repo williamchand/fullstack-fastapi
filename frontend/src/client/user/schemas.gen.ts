@@ -323,6 +323,9 @@ export const v1UpdateUserRequestSchema = {
         fullName: {
             type: 'string'
         },
+        previousPassword: {
+            type: 'string'
+        },
         password: {
             type: 'string'
         }

@@ -58,6 +58,7 @@ func NewUserService(
 var ErrInvalidState = fmt.Errorf("invalid state")
 var ErrInvalidToken = fmt.Errorf("invalid token")
 var ErrWeakPassword = fmt.Errorf("weak password")
+var ErrInvalidPreviousPassword = fmt.Errorf("invalid previous password")
 
 func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.User, error) {
 	userID, err := uuid.Parse(id)
@@ -114,7 +115,7 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName 
 	return user, nil
 }
 
-func (s *UserService) UpdateProfile(ctx context.Context, id string, fullName *string, password *string) (*entities.User, error) {
+func (s *UserService) UpdateProfile(ctx context.Context, id string, fullName *string, password *string, previousPassword *string) (*entities.User, error) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, ErrUserNotFound
@@ -125,6 +126,14 @@ func (s *UserService) UpdateProfile(ctx context.Context, id string, fullName *st
 	}
 	var hashed *string
 	if password != nil && *password != "" {
+		// require and validate previous password before changing
+		if previousPassword == nil || *previousPassword == "" {
+			return nil, ErrInvalidPreviousPassword
+		}
+		if _, err := s.ValidatePassword(ctx, existingUser.Email, *previousPassword); err != nil {
+			return nil, ErrInvalidPreviousPassword
+		}
+
 		hp, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
 		if err != nil {
 			return nil, err

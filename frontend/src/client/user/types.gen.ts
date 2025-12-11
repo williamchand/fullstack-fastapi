@@ -130,6 +130,7 @@ export type v1ResetPasswordResponse = {
 
 export type v1UpdateUserRequest = {
     fullName?: string;
+    previousPassword?: string;
     password?: string;
 };
 

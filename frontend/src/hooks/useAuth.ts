@@ -11,7 +11,7 @@ import {
   userServiceGetUser,
   userServiceCreateUser,
 } from "@/client/user"
-import { handleError } from "@/utils"
+import { handleError, getAuthErrorInfo } from "@/utils"
 
 const isLoggedIn = () => {
   return localStorage.getItem("access_token") !== null
@@ -19,6 +19,7 @@ const isLoggedIn = () => {
 
 const useAuth = () => {
   const [error, setError] = useState<string | null>(null)
+  const [authErrorInfo, setAuthErrorInfo] = useState<{ code: string; message: string } | null>(null)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: user } = useQuery<UserPublic | null, Error>({
@@ -65,6 +66,9 @@ const useAuth = () => {
       navigate({ to: "/" })
     },
     onError: (err: ApiError) => {
+      const info = getAuthErrorInfo(err)
+      setError(info.message)
+      setAuthErrorInfo(info)
       handleError(err)
     },
   })
@@ -80,7 +84,11 @@ const useAuth = () => {
     logout,
     user,
     error,
-    resetError: () => setError(null),
+    authErrorInfo,
+    resetError: () => {
+      setError(null)
+      setAuthErrorInfo(null)
+    },
   }
 }
 

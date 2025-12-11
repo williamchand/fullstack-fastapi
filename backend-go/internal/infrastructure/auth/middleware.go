@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -78,19 +79,19 @@ func (m *AuthMiddleware) HTTPMiddleware(next http.Handler) http.Handler {
 
 		token := extractTokenFromHeader(r)
 		if token == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			writeJSONError(w, http.StatusUnauthorized, "authentication required")
 			return
 		}
 
 		claims, err := m.jwtRepository.ValidateToken(token)
 		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			writeJSONError(w, http.StatusUnauthorized, "invalid token")
 			return
 		}
 
 		user, err := m.userRepo.GetByID(r.Context(), claims.UserID)
 		if err != nil || !user.IsActive {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			writeJSONError(w, http.StatusUnauthorized, "user not found or inactive")
 			return
 		}
 
@@ -98,6 +99,15 @@ func (m *AuthMiddleware) HTTPMiddleware(next http.Handler) http.Handler {
 		ctx := WithUser(r.Context(), user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// writeJSONError writes a standard JSON error body recognizable by the frontend.
+func writeJSONError(w http.ResponseWriter, statusCode int, message string) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(statusCode)
+    _ = json.NewEncoder(w).Encode(map[string]string{
+        "message": message,
+    })
 }
 
 // GRPC interceptor for authentication

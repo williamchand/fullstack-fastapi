@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -11,10 +12,14 @@ import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
 )
 
 func (a *App) runHTTP(ctx context.Context) error {
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithErrorHandler(gatewayErrorHandler),
+	)
 
 	// Register handlers for gRPC services
 	err := genprotov1.RegisterUserServiceHandlerFromEndpoint(
@@ -105,4 +110,32 @@ func (a *App) runHTTP(ctx context.Context) error {
 	}()
 
 	return srv.ListenAndServe()
+}
+
+// gatewayErrorHandler ensures gRPC-Gateway sends JSON errors with a consistent shape.
+// It includes at least a "message" field so the frontend can display backend-provided messages.
+func gatewayErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
+    st := status.Convert(err)
+    httpStatus := runtime.HTTPStatusFromCode(st.Code())
+
+    // Build a simple JSON error payload recognized by the frontend
+    type errorResponse struct {
+        Code    int         `json:"code,omitempty"`
+        Message string      `json:"message"`
+        Details interface{} `json:"details,omitempty"`
+    }
+
+    resp := errorResponse{
+        Message: st.Message(),
+    }
+    if st.Code() != codes.OK {
+        resp.Code = int(st.Code())
+    }
+    if len(st.Details()) > 0 {
+        resp.Details = st.Details()
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(httpStatus)
+    _ = json.NewEncoder(w).Encode(resp)
 }

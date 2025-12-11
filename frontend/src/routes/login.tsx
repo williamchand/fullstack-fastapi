@@ -11,7 +11,7 @@ import { FiLock, FiMail, FiPhone } from "react-icons/fi"
 import { useEffect, useRef, useState } from "react"
 
 import type { v1LoginUserRequest as AccessToken, ApiError } from "@/client/user"
-import { userServiceLoginWithPhone, userServiceRequestPhoneOtp } from "@/client/user"
+import { userServiceLoginWithPhone, userServiceRequestPhoneOtp, userServiceResendEmailVerification } from "@/client/user"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { InputGroup } from "@/components/ui/input-group"
@@ -38,7 +38,7 @@ function Login() {
   const navigate = useNavigate()
   const { showSuccessToast } = useCustomToast()
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
-  const { loginMutation, error, resetError } = useAuth()
+  const { loginMutation, error, resetError, authErrorInfo } = useAuth()
   const [otpRequested, setOtpRequested] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const otpInputRef = useRef<HTMLInputElement | null>(null)
@@ -69,6 +69,18 @@ function Login() {
       setOtpRequested(true)
       setSecondsLeft(60)
       setTimeout(() => otpInputRef.current?.focus(), 0)
+    },
+    onError: (err: ApiError) => {
+      handleError(err)
+    },
+  })
+
+  const resendEmailMutation = useMutation({
+    mutationFn: async (email: string) => {
+      await userServiceResendEmailVerification({ requestBody: { email } })
+    },
+    onSuccess: () => {
+      showSuccessToast("Verification email sent successfully.")
     },
     onError: (err: ApiError) => {
       handleError(err)
@@ -187,6 +199,42 @@ function Login() {
         <Button variant="solid" type="submit" loading={emailForm.formState.isSubmitting} size="md">
           Log In
         </Button>
+        {authErrorInfo?.code === "USER_NOT_FOUND" && (
+          <Text color="red.500" fontSize="sm">
+            User not found. <RouterLink to="/signup" className="main-link">Sign up</RouterLink>
+          </Text>
+        )}
+        {(authErrorInfo?.code === "EMAIL_NOT_VERIFIED" || authErrorInfo?.code === "USER_INACTIVE") && (
+          <Flex direction="column" gap={2}>
+            <Text color="red.500" fontSize="sm">
+              {authErrorInfo.message || "You need to verify your email before logging in."}
+            </Text>
+            <Flex gap={2} wrap="wrap">
+              <RouterLink
+                to="/verify-email"
+                search={{ email: emailForm.getValues().username }}
+                className="main-link"
+              >
+                Verify Email
+              </RouterLink>
+              <Button
+                variant="solid"
+                onClick={() => {
+                  const email = emailForm.getValues().username
+                  if (email) resendEmailMutation.mutate(email)
+                }}
+                loading={resendEmailMutation.isPending}
+                size="sm"
+              >
+                Resend Email Verification
+              </Button>
+            </Flex>
+            <Text color="gray.600" fontSize="sm">
+              If you registered with phone, you can verify your phone as well.
+              <RouterLink to="/verify-phone" className="main-link"> Verify Phone</RouterLink>
+            </Text>
+          </Flex>
+        )}
           </Container>
         </Tabs.Content>
         <Tabs.Content value="phone">
@@ -289,6 +337,23 @@ function Login() {
               >
                 Login
               </Button>
+            )}
+            {(authErrorInfo?.code === "PHONE_NOT_VERIFIED" || authErrorInfo?.code === "USER_INACTIVE") && (
+              <Flex direction="column" gap={2}>
+                <Text color="red.500" fontSize="sm">
+                  {authErrorInfo.message || "You need to verify your phone before logging in."}
+                </Text>
+                <RouterLink
+                  to="/verify-phone"
+                  search={{
+                    phone_number: phoneForm.getValues("phone_number"),
+                    region: phoneForm.getValues("region"),
+                  }}
+                  className="main-link"
+                >
+                  Verify Phone
+                </RouterLink>
+              </Flex>
             )}
           </Container>
         </Tabs.Content>

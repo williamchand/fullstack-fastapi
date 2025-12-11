@@ -54,6 +54,8 @@ export const RegionSelector = ({ value, onChange, disabled, placeholder = "Selec
 
   const selectedRegion = REGIONS.find((r) => r.value === value)
 
+  const shortLabel = selectedRegion?.label.match(/\(([^)]+)\)/)?.[1]
+
   return (
     <Listbox.Root
       collection={collection}
@@ -76,18 +78,23 @@ export const RegionSelector = ({ value, onChange, disabled, placeholder = "Selec
             justifyContent="space-between"
             disabled={disabled}
           >
-            <span>{selectedRegion ? selectedRegion.label : placeholder}</span>
+            <span>{selectedRegion ? (open ? selectedRegion.label : shortLabel ?? selectedRegion.label) : placeholder}</span>
             <LuChevronDown />
           </Button>
         </Popover.Trigger>
         <Portal>
           <Popover.Positioner>
-            <Popover.Content maxH="300px" overflowY="auto">
+            <Popover.Content
+              maxH="300px"
+              overflowY="auto"
+              // ensure popover width matches trigger to avoid wrapping issues
+              minW={triggerRef.current ? `${triggerRef.current.offsetWidth}px` : undefined}
+            >
               <Popover.Body p="0">
                 <Listbox.Content>
                   {collection.items.map((item) => (
                     <Listbox.Item key={item.value as string} item={item}>
-                      <Listbox.ItemText>{item.label as string}</Listbox.ItemText>
+                      <Listbox.ItemText whiteSpace="normal" pr={4}>{item.label as string}</Listbox.ItemText>
                       <Listbox.ItemIndicator />
                     </Listbox.Item>
                   ))}

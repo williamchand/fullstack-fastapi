@@ -8,7 +8,7 @@ import {
 import { useMutation } from "@tanstack/react-query"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { FiLock, FiMail, FiPhone } from "react-icons/fi"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import type { v1LoginUserRequest as AccessToken, ApiError } from "@/client/user"
 import { userServiceLoginWithPhone, userServiceRequestPhoneOtp } from "@/client/user"
@@ -39,6 +39,9 @@ function Login() {
   const { showSuccessToast } = useCustomToast()
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
   const { loginMutation, error, resetError } = useAuth()
+  const [otpRequested, setOtpRequested] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const otpInputRef = useRef<HTMLInputElement | null>(null)
 
   // Email login form
   const emailForm = useForm<AccessToken>({
@@ -63,6 +66,9 @@ function Login() {
     },
     onSuccess: () => {
       showSuccessToast("OTP sent to your phone.")
+      setOtpRequested(true)
+      setSecondsLeft(60)
+      setTimeout(() => otpInputRef.current?.focus(), 0)
     },
     onError: (err: ApiError) => {
       handleError(err)
@@ -101,6 +107,18 @@ function Login() {
   const onPhoneLogin: SubmitHandler<PhoneLoginForm> = async (data) => {
     phoneLoginMutation.mutate(data)
   }
+
+  // Countdown timer for resend OTP availability
+  useEffect(() => {
+    if (!otpRequested || secondsLeft <= 0) return
+    const id = setInterval(() => {
+      setSecondsLeft((s) => (s > 0 ? s - 1 : 0))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [otpRequested, secondsLeft])
+
+  // Watch OTP value for enabling login button
+  const otpVal = phoneForm.watch("otp_code")
 
   return (
       <Container
@@ -173,6 +191,7 @@ function Login() {
         </Tabs.Content>
         <Tabs.Content value="phone">
           <Container
+            as="form"
             p={0}
             gap={4}
             display="flex"
@@ -188,7 +207,7 @@ function Login() {
                     <RegionSelector
                       value={field.value}
                       onChange={field.onChange}
-                      disabled={field.disabled}
+                      disabled={otpRequested || field.disabled}
                       size="sm"
                     />
                   )}
@@ -209,6 +228,7 @@ function Login() {
                     placeholder="Phone Number"
                     type="tel"
                     inputMode="numeric"
+                    readOnly={otpRequested}
                   />
                 </InputGroup>
               </Field>
@@ -217,32 +237,59 @@ function Login() {
               variant="solid"
               onClick={phoneForm.handleSubmit(onRequestOtp)}
               loading={requestOtp.isPending}
+              disabled={requestOtp.isPending || (otpRequested && secondsLeft > 0)}
             >
-              Request OTP
+              {otpRequested ? (secondsLeft > 0 ? `Resend OTP (${secondsLeft}s)` : "Resend OTP") : "Request OTP"}
             </Button>
-            <Field invalid={!!phoneForm.formState.errors.otp_code} errorText={phoneForm.formState.errors.otp_code?.message}>
-              <InputGroup w="100%">
-                <Input
-                  id="otp_code"
-                  {...phoneForm.register("otp_code", {
-                    setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
-                    validate: {
-                      digitsOnly: (v) => (v === undefined || v === "" || /^\d+$/.test(v) ? true : "OTP must be digits only"),
-                    },
-                  })}
-                  placeholder="OTP Code"
-                  type="text"
-                  inputMode="numeric"
-                />
-              </InputGroup>
-            </Field>
-            <Button
-              variant="solid"
-              onClick={phoneForm.handleSubmit(onPhoneLogin)}
-              loading={phoneForm.formState.isSubmitting || phoneLoginMutation.isPending}
-            >
-              Login
-            </Button>
+            {otpRequested && (
+              <>
+                <Field invalid={!!phoneForm.formState.errors.otp_code} errorText={phoneForm.formState.errors.otp_code?.message}>
+                  <InputGroup w="100%">
+                    {(() => {
+                      const otpReg = phoneForm.register("otp_code", {
+                        setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                        required: "OTP code is required",
+                        validate: {
+                          digitsOnly: (v) => (v === undefined || v === "" || /^\d+$/.test(v as string) ? true : "OTP must be digits only"),
+                        },
+                      })
+                      return (
+                        <Input
+                          id="otp_code"
+                          {...otpReg}
+                          onChange={(e) => {
+                            // call react-hook-form original onChange
+                            otpReg.onChange(e)
+                            // clear error as user types so message disappears
+                            phoneForm.clearErrors("otp_code")
+                          }}
+                          placeholder="OTP Code"
+                          type="text"
+                          inputMode="numeric"
+                          ref={(el) => {
+                            otpReg.ref(el)
+                            otpInputRef.current = el
+                          }}
+                        />
+                      )
+                    })()}
+                  </InputGroup>
+                </Field>
+              <Text color="gray.500" fontSize="sm">
+                Waiting for OTP… {secondsLeft > 0 ? `Resend available in ${secondsLeft}s` : "You can resend now."}
+              </Text>
+              </>
+            )}
+            {otpRequested && (
+              <Button
+                variant="solid"
+                onClick={phoneForm.handleSubmit(onPhoneLogin)}
+                loading={phoneForm.formState.isSubmitting || phoneLoginMutation.isPending}
+                disabled={!otpVal || phoneLoginMutation.isPending}
+              >
+                Login
+              </Button>
+            )}
           </Container>
         </Tabs.Content>
       </Tabs.Root>

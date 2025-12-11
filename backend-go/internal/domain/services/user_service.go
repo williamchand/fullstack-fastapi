@@ -650,9 +650,9 @@ func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName, re
 		Email:           "",
 		PhoneNumber:     &normalized,
 		FullName:        &fullName,
-		IsActive:        false,
+		IsActive:        true,
 		IsEmailVerified: false,
-		IsPhoneVerified: false,
+		IsPhoneVerified: true,
 	}
 
 	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {

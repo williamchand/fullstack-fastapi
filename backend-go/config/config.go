@@ -44,7 +44,7 @@ type Config struct {
 	OAuth struct {
 		GoogleClientID     string `envconfig:"GOOGLE_CLIENT_ID"`
 		GoogleClientSecret string `envconfig:"GOOGLE_CLIENT_SECRET"`
-		GoogleRedirectURL  string `envconfig:"GOOGLE_REDIRECT_URL" default:"http://localhost:8080/auth/google/callback"`
+		GoogleRedirectURL  string `envconfig:"GOOGLE_REDIRECT_URL" default:"http://localhost:5173/oauth-callback"`
 	}
 
 	// Security Configuration

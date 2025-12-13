@@ -193,6 +193,17 @@ function Login() {
     const provider = (search?.provider || "google") as string
     if (!code) return
     ;(async () => {
+      const processedKey = search?.state
+        ? `oauth_processed:${search.state}`
+        : null
+      try {
+        if (processedKey && sessionStorage.getItem(processedKey)) {
+          const { code: _c, state: _s, provider: _p, ...rest } =
+            (search || {}) as Record<string, unknown>
+          navigate({ to: "/login", search: rest as any, replace: true })
+          return
+        }
+      } catch {}
       try {
         const res = await oauthServiceHandleOauthCallback({
           provider,
@@ -218,6 +229,9 @@ function Login() {
         // Clean up query params to avoid re-processing
         const { code: _c, state: _s, provider: _p, ...rest } =
           (search || {}) as Record<string, unknown>
+        try {
+          if (processedKey) sessionStorage.setItem(processedKey, "1")
+        } catch {}
         navigate({ to: "/login", search: rest as any, replace: true })
       }
     })()
@@ -346,6 +360,20 @@ function Login() {
                     if (e.origin !== window.location.origin) return
                     const data = e.data || {}
                     if (data.type !== "oauth-callback") return
+                    const processedKey = data.state
+                      ? `oauth_processed:${data.state}`
+                      : null
+                    try {
+                      if (processedKey && sessionStorage.getItem(processedKey)) {
+                        window.removeEventListener("message", handler)
+                        setOauthLoading(false)
+                        try {
+                          oauthPopup?.close()
+                        } catch {}
+                        setOauthPopup(null)
+                        return
+                      }
+                    } catch {}
                     try {
                       const r = await oauthServiceHandleOauthCallback({
                         provider: data.provider || "google",
@@ -370,6 +398,7 @@ function Login() {
                           : "oauth_redirect_popup"
                         finalDest = sessionStorage.getItem(k) || finalDest
                         sessionStorage.removeItem(k)
+                        if (processedKey) sessionStorage.setItem(processedKey, "1")
                       } catch {}
                       navigate({ to: finalDest })
                     } catch {

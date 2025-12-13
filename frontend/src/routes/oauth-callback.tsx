@@ -32,6 +32,22 @@ function OAuthCallback() {
   if (!window.opener && search.code) {
     ;(async () => {
       try {
+        const processedKey = search.state
+          ? `oauth_processed:${search.state}`
+          : null
+        try {
+          if (processedKey && sessionStorage.getItem(processedKey)) {
+            let target = "/"
+            try {
+              const k = search.state
+                ? `oauth_redirect_tab:${search.state}`
+                : "oauth_redirect_tab"
+              target = sessionStorage.getItem(k) || "/"
+            } catch {}
+            navigate({ to: target })
+            return
+          }
+        } catch {}
         const res = await oauthServiceHandleOauthCallback({
           provider: search.provider || "google",
           requestBody: { code: search.code },
@@ -52,6 +68,7 @@ function OAuthCallback() {
             : "oauth_redirect_tab"
           target = sessionStorage.getItem(k) || "/"
           sessionStorage.removeItem(k)
+          if (processedKey) sessionStorage.setItem(processedKey, "1")
         } catch {}
         navigate({ to: target })
       } catch {

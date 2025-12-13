@@ -23,7 +23,7 @@ export function CustomProvider(props: PropsWithChildren) {
         localStorage.removeItem("persisted_toast")
       }
     } catch {}
-  }, [])
+  }, [showErrorToast, showSuccessToast])
 
   return (
     <ChakraProvider value={system}>

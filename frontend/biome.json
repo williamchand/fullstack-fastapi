@@ -5,8 +5,12 @@
   },
   "files": {
     "ignore": [
+      "dist",
+      "blob-report",
+      "test-results",
       "node_modules",
       "src/routeTree.gen.ts",
+      "src/client",
       "playwright.config.ts",
       "playwright-report"
     ]

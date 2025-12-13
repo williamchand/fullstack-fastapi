@@ -5,6 +5,7 @@ import {
   createFileRoute,
   redirect,
   useNavigate,
+  useSearch,
 } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/login")({
 
 function Login() {
   const navigate = useNavigate()
+  const search = useSearch({ from: "/login" }) as { method?: "email" | "phone"; redirect?: string }
   const { showSuccessToast } = useCustomToast()
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
   const { loginMutation, error, resetError, authErrorInfo } = useAuth()
@@ -87,6 +89,8 @@ function Login() {
     },
     onSuccess: () => {
       showSuccessToast("Verification email sent successfully.")
+      setEmailResendRequested(true)
+      setEmailResendSecondsLeft(60)
     },
     onError: (err: ApiError) => {
       handleError(err)
@@ -107,7 +111,8 @@ function Login() {
       }
     },
     onSuccess: () => {
-      navigate({ to: "/" })
+      const dest = search?.redirect || "/"
+      navigate({ to: dest })
     },
     onError: (err: ApiError) => {
       handleError(err)
@@ -119,6 +124,8 @@ function Login() {
     console.debug("onEmailSubmit called with:", data)
     try {
       await loginMutation.mutateAsync(data)
+      const dest = search?.redirect || "/"
+      navigate({ to: dest })
     } catch {
       // error is handled by useAuth hook
     }
@@ -134,6 +141,22 @@ function Login() {
     phoneLoginMutation.mutate(data)
   }
 
+  const [emailResendRequested, setEmailResendRequested] = useState(false)
+  const [emailResendSecondsLeft, setEmailResendSecondsLeft] = useState(0)
+
+  // Sync tab with search param (e.g., /login?method=phone). Clear only the `method` param, keep current tab
+  useEffect(() => {
+    const m = search?.method
+    const { method: _method, ...rest } = (search || {}) as Record<string, unknown>
+    if (m === "phone") {
+      setLoginMethod("phone")
+      navigate({ to: "/login", search: rest as any, replace: true })
+    } else if (m === "email") {
+      setLoginMethod("email")
+      navigate({ to: "/login", search: rest as any, replace: true })
+    } // if no method param, do nothing so current tab stays
+  }, [search?.method, navigate])
+
   // Countdown timer for resend OTP availability
   useEffect(() => {
     if (!otpRequested || secondsLeft <= 0) return
@@ -142,6 +165,14 @@ function Login() {
     }, 1000)
     return () => clearInterval(id)
   }, [otpRequested, secondsLeft])
+
+  useEffect(() => {
+    if (!emailResendRequested || emailResendSecondsLeft <= 0) return
+    const id = setInterval(() => {
+      setEmailResendSecondsLeft((s) => (s > 0 ? s - 1 : 0))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [emailResendRequested, emailResendSecondsLeft])
 
   // Watch OTP value for enabling login button
   const otpVal = phoneForm.watch("otp_code")
@@ -164,7 +195,7 @@ function Login() {
         mb={4}
       />
       <Tabs.Root
-        defaultValue={loginMethod}
+        value={loginMethod}
         onValueChange={(e) => {
           setLoginMethod(e.value as "email" | "phone")
           resetError()
@@ -232,37 +263,52 @@ function Login() {
             )}
             {(authErrorInfo?.code === "EMAIL_NOT_VERIFIED" ||
               authErrorInfo?.code === "USER_INACTIVE") && (
-              <Flex direction="column" gap={2}>
+              <Flex direction="column" gap={2} align="stretch">
                 <Text color="red.500" fontSize="sm">
                   {authErrorInfo.message ||
                     "You need to verify your email before logging in."}
                 </Text>
-                <Flex gap={2} wrap="wrap">
-                  <RouterLink
-                    to="/verify-email"
-                    search={{ email: emailForm.getValues().username }}
-                    className="main-link"
-                  >
-                    Verify Email
-                  </RouterLink>
+                <Flex direction="column" gap={2} width="100%">
                   <Button
                     variant="solid"
+                    size="sm"
+                    width="100%"
+                    onClick={() => {
+                      const email = emailForm.getValues().username
+                      if (email)
+                        navigate({ to: "/verify-email", search: { email } })
+                    }}
+                  >
+                    Verify Email
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       const email = emailForm.getValues().username
                       if (email) resendEmailMutation.mutate(email)
                     }}
                     loading={resendEmailMutation.isPending}
                     size="sm"
+                    width="100%"
+                    disabled={
+                      !emailForm.getValues().username ||
+                      resendEmailMutation.isPending ||
+                      (emailResendRequested && emailResendSecondsLeft > 0)
+                    }
                   >
-                    Resend Email Verification
+                    {emailResendRequested && emailResendSecondsLeft > 0
+                      ? `Resend Email Verification (${emailResendSecondsLeft}s)`
+                      : "Resend Email Verification"}
                   </Button>
                 </Flex>
                 <Text color="gray.600" fontSize="sm">
-                  If you registered with phone, you can verify your phone as
-                  well.
-                  <RouterLink to="/verify-phone" className="main-link">
-                    {" "}
-                    Verify Phone
+                  If you registered with phone, you can log in using phone.
+                  <RouterLink
+                    to="/login"
+                    search={{ method: "phone" }}
+                    className="main-link"
+                  >
+                    Login
                   </RouterLink>
                 </Text>
               </Flex>

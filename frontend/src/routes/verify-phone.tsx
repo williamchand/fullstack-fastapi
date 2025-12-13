@@ -1,4 +1,4 @@
-import { Container, Flex, Heading, Input, Text } from "@chakra-ui/react"
+import { Container, Flex, Image, Input } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
@@ -14,6 +14,7 @@ import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import type { PhoneVerifyForm } from "@/types/phone"
 import { handleError } from "@/utils"
+import Logo from "/assets/images/fastapi-logo.svg"
 
 export const Route = createFileRoute("/verify-phone")({
   component: VerifyPhone,
@@ -77,12 +78,14 @@ function VerifyPhone() {
       gap={4}
       centerContent
     >
-      <Text fontSize="lg" color="brand.darkKhaki">
-        ameno signy
-      </Text>
-      <Heading size="xl" color="ui.main" textAlign="center" mb={2}>
-        Ameno Signy Super App
-      </Heading>
+      <Image
+        src={Logo}
+        alt="FastAPI logo"
+        height="auto"
+        maxW="2xs"
+        alignSelf="center"
+        mb={4}
+      />
       <Flex gap={2} alignItems="flex-start">
         <Field
           required

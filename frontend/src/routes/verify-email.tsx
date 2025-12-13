@@ -2,6 +2,7 @@ import { Container, Flex, Heading, Input, Text } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { type SubmitHandler, useForm } from "react-hook-form"
+import { useEffect, useState } from "react"
 import { FiMail } from "react-icons/fi"
 
 import type { ApiError } from "@/client/user"
@@ -48,6 +49,8 @@ function VerifyEmail() {
   })
 
   const email = watch("email")
+  const [resendRequested, setResendRequested] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(0)
 
   const verifyMutation = useMutation({
     mutationFn: async (data: EmailVerifyForm) => {
@@ -70,11 +73,21 @@ function VerifyEmail() {
     },
     onSuccess: () => {
       showSuccessToast("Verification email sent successfully.")
+      setResendRequested(true)
+      setSecondsLeft(60)
     },
     onError: (err: ApiError) => {
       handleError(err)
     },
   })
+
+  useEffect(() => {
+    if (!resendRequested || secondsLeft <= 0) return
+    const id = setInterval(() => {
+      setSecondsLeft((s) => (s > 0 ? s - 1 : 0))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [resendRequested, secondsLeft])
 
   const onSubmit: SubmitHandler<EmailVerifyForm> = async (data) => {
     verifyMutation.mutate(data)
@@ -95,7 +108,8 @@ function VerifyEmail() {
       alignItems="stretch"
       justifyContent="center"
       gap={4}
-      centerContent
+      display="flex"
+      flexDirection="column"
     >
       <Heading size="xl" color="ui.main" textAlign="center" mb={2}>
         Verify Email
@@ -103,64 +117,77 @@ function VerifyEmail() {
       <Text textAlign="center" mb={4}>
         Please enter the verification code sent to your email address.
       </Text>
-      <Field
-        required
-        invalid={!!errors.email}
-        errorText={errors.email?.message}
-      >
-        <InputGroup w="100%" startElement={<FiMail />}>
-          <Input
-            id="email"
-            {...register("email", {
-              required: "Email is required",
-              pattern: emailPattern,
-            })}
-            placeholder="Email"
-            type="email"
-            readOnly
-          />
-        </InputGroup>
-      </Field>
-      <Field
-        required
-        invalid={!!errors.otp_code}
-        errorText={errors.otp_code?.message}
-      >
-        <InputGroup w="100%">
-          <Input
-            id="otp_code"
-            {...register("otp_code", {
-              required: "OTP code is required",
-              setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
-              validate: {
-                digitsOnly: (v) =>
-                  /^\d+$/.test(v) ? true : "OTP must be digits only",
-              },
-            })}
-            placeholder="OTP Code"
-            type="text"
-            inputMode="numeric"
-          />
-        </InputGroup>
-      </Field>
+      <Flex direction="column" gap={3} width="100%">
+        <Field
+          required
+          invalid={!!errors.email}
+          errorText={errors.email?.message}
+        >
+          <InputGroup w="100%" startElement={<FiMail />}>
+            <Input
+              id="email"
+              {...register("email", {
+                required: "Email is required",
+                pattern: emailPattern,
+              })}
+              placeholder="Email"
+              type="email"
+              readOnly
+            />
+          </InputGroup>
+        </Field>
+        <Field
+          required
+          invalid={!!errors.otp_code}
+          errorText={errors.otp_code?.message}
+        >
+          <InputGroup w="100%">
+            <Input
+              id="otp_code"
+              {...register("otp_code", {
+                required: "OTP code is required",
+                setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                validate: {
+                  digitsOnly: (v) =>
+                    /^\d+$/.test(v) ? true : "OTP must be digits only",
+                },
+              })}
+              placeholder="OTP Code"
+              type="text"
+              inputMode="numeric"
+            />
+          </InputGroup>
+        </Field>
+      </Flex>
       <Button
         variant="solid"
         type="submit"
         loading={isSubmitting || verifyMutation.isPending}
+        width="100%"
       >
         Verify Email
       </Button>
-      <Flex direction="column" align="center" gap={2}>
-        <Text color="gray.600">Didn't receive the code?</Text>
+      <Flex direction="column" align="stretch" gap={2} width="100%">
+        <Text color="gray.600" textAlign="left">Didn't receive the code?</Text>
         <Button
           variant="outline"
           onClick={onResend}
           loading={resendMutation.isPending}
-          disabled={!email}
+          disabled={!email || resendMutation.isPending || (resendRequested && secondsLeft > 0)}
           size="sm"
+          width="100%"
         >
-          Resend Verification Email
+          {resendRequested && secondsLeft > 0
+            ? `Resend Verification Email (${secondsLeft}s)`
+            : "Resend Verification Email"}
         </Button>
+        {resendRequested && (
+          <Text color="gray.500" fontSize="sm">
+            {secondsLeft > 0
+              ? `You can resend in ${secondsLeft}s`
+              : "You can resend now."}
+          </Text>
+        )}
       </Flex>
     </Container>
   )

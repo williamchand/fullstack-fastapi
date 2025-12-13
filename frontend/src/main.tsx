@@ -11,12 +11,15 @@ import { routeTree } from "./routeTree.gen"
 
 import axios from "axios"
 import { ApiError, OpenAPI } from "./client/user"
+import { OpenAPI as OAuthOpenAPI } from "./client/oauth"
 import { CustomProvider } from "./components/ui/provider"
 import { getAuthErrorInfo } from "./utils"
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL
+OAuthOpenAPI.BASE = import.meta.env.VITE_API_URL
 // Debug: confirm API base at startup
 console.debug("OpenAPI.BASE:", OpenAPI.BASE)
+console.debug("OAuthOpenAPI.BASE:", OAuthOpenAPI.BASE)
 OpenAPI.TOKEN = async () => {
   return localStorage.getItem("access_token") || ""
 }

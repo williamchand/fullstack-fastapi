@@ -32,6 +32,7 @@ var (
 	// Public URL prefixes allowed without auth
 	publicPrefixes = []string{
 		"/v1/public/",
+		"/v1/oauth/",
 	}
 	publicGRPCExact = map[string]bool{
 		"/salonapp.v1.UserService/LoginUser":               true,
@@ -45,6 +46,7 @@ var (
 		"/salonapp.v1.UserService/RegisterPhoneUser":       true,
 		"/salonapp.v1.UserService/RequestPhoneOTP":         true,
 		"/salonapp.v1.UserService/VerifyPhoneOTP":          true,
+		"/salonapp.v1.OAuthService/GetOAuthURL":            true,
 	}
 	publicGRPCPrefixes = []string{
 		"/salonapp.v1.PublicService/",
@@ -103,11 +105,11 @@ func (m *AuthMiddleware) HTTPMiddleware(next http.Handler) http.Handler {
 
 // writeJSONError writes a standard JSON error body recognizable by the frontend.
 func writeJSONError(w http.ResponseWriter, statusCode int, message string) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(statusCode)
-    _ = json.NewEncoder(w).Encode(map[string]string{
-        "message": message,
-    })
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"message": message,
+	})
 }
 
 // GRPC interceptor for authentication

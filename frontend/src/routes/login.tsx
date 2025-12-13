@@ -10,6 +10,7 @@ import {
 import { useEffect, useRef, useState } from "react"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { FiLock, FiMail, FiPhone } from "react-icons/fi"
+import { FcGoogle } from "react-icons/fc"
 
 import type { v1LoginUserRequest as AccessToken, ApiError } from "@/client/user"
 import {
@@ -27,6 +28,10 @@ import useCustomToast from "@/hooks/useCustomToast"
 import type { PhoneLoginForm } from "@/types/phone"
 import Logo from "/assets/images/fastapi-logo.svg"
 import { emailPattern, handleError, passwordRules } from "../utils"
+import {
+  oauthServiceGetOauthUrl,
+  oauthServiceHandleOauthCallback,
+} from "@/client/oauth"
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -41,13 +46,21 @@ export const Route = createFileRoute("/login")({
 
 function Login() {
   const navigate = useNavigate()
-  const search = useSearch({ from: "/login" }) as { method?: "email" | "phone"; redirect?: string }
-  const { showSuccessToast } = useCustomToast()
+  const search = useSearch({ from: "/login" }) as {
+    method?: "email" | "phone"
+    redirect?: string
+    code?: string
+    state?: string
+    provider?: string
+  }
+  const { showSuccessToast, showErrorToast } = useCustomToast()
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
   const { loginMutation, error, resetError, authErrorInfo } = useAuth()
   const [otpRequested, setOtpRequested] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const otpInputRef = useRef<HTMLInputElement | null>(null)
+  const [oauthLoading, setOauthLoading] = useState(false)
+  const [oauthPopup, setOauthPopup] = useState<Window | null>(null)
 
   // Email login form
   const emailForm = useForm<AccessToken>({
@@ -174,6 +187,42 @@ function Login() {
     return () => clearInterval(id)
   }, [emailResendRequested, emailResendSecondsLeft])
 
+  // Handle OAuth callback if present in URL (e.g., /login?provider=google&code=...)
+  useEffect(() => {
+    const code = search?.code
+    const provider = (search?.provider || "google") as string
+    if (!code) return
+    ;(async () => {
+      try {
+        const res = await oauthServiceHandleOauthCallback({
+          provider,
+          requestBody: { code },
+        })
+        if (res.accessToken) {
+          localStorage.setItem("access_token", res.accessToken)
+        }
+        if (res.refreshToken) {
+          localStorage.setItem("refresh_token", res.refreshToken)
+        }
+        if (res.refreshExpiresAt) {
+          localStorage.setItem(
+            "refresh_expires_at",
+            res.refreshExpiresAt,
+          )
+        }
+        const dest = search?.redirect || "/"
+        navigate({ to: dest })
+      } catch (err: any) {
+        showErrorToast("OAuth login failed. Please try again.")
+      } finally {
+        // Clean up query params to avoid re-processing
+        const { code: _c, state: _s, provider: _p, ...rest } =
+          (search || {}) as Record<string, unknown>
+        navigate({ to: "/login", search: rest as any, replace: true })
+      }
+    })()
+  }, [search?.code, search?.provider])
+
   // Watch OTP value for enabling login button
   const otpVal = phoneForm.watch("otp_code")
 
@@ -252,6 +301,97 @@ function Login() {
               size="md"
             >
               Log In
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={async () => {
+                setOauthLoading(true)
+                try {
+                  const res = await oauthServiceGetOauthUrl({ provider: "google" })
+                  if (!res.url) {
+                    showErrorToast("Failed to get Google login URL.")
+                    setOauthLoading(false)
+                    return
+                  }
+                  const dest = search?.redirect || "/"
+                  const w = 500
+                  const h = 700
+                  const y = window.top ? (window.top.outerHeight - h) / 2 : 0
+                  const x = window.top ? (window.top.outerWidth - w) / 2 : 0
+                  const popup = window.open(
+                    res.url,
+                    "google-oauth",
+                    `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${w},height=${h},top=${y},left=${x}`,
+                  )
+                  if (!popup) {
+                    try {
+                      const key = res.state
+                        ? `oauth_redirect_tab:${res.state}`
+                        : "oauth_redirect_tab"
+                      sessionStorage.setItem(key, dest)
+                    } catch {}
+                    window.location.href = res.url
+                    setOauthLoading(false)
+                    return
+                  }
+                  try {
+                    const key = res.state
+                      ? `oauth_redirect_popup:${res.state}`
+                      : "oauth_redirect_popup"
+                    sessionStorage.setItem(key, dest)
+                  } catch {}
+                  setOauthPopup(popup)
+                  const handler = async (e: MessageEvent) => {
+                    if (e.origin !== window.location.origin) return
+                    const data = e.data || {}
+                    if (data.type !== "oauth-callback") return
+                    try {
+                      const r = await oauthServiceHandleOauthCallback({
+                        provider: data.provider || "google",
+                        requestBody: { code: data.code },
+                      })
+                      if (r.accessToken) {
+                        localStorage.setItem("access_token", r.accessToken)
+                      }
+                      if (r.refreshToken) {
+                        localStorage.setItem("refresh_token", r.refreshToken)
+                      }
+                      if (r.refreshExpiresAt) {
+                        localStorage.setItem(
+                          "refresh_expires_at",
+                          r.refreshExpiresAt,
+                        )
+                      }
+                      let finalDest = search?.redirect || "/"
+                      try {
+                        const k = data.state
+                          ? `oauth_redirect_popup:${data.state}`
+                          : "oauth_redirect_popup"
+                        finalDest = sessionStorage.getItem(k) || finalDest
+                        sessionStorage.removeItem(k)
+                      } catch {}
+                      navigate({ to: finalDest })
+                    } catch {
+                      showErrorToast("OAuth login failed. Please try again.")
+                    } finally {
+                      window.removeEventListener("message", handler)
+                      setOauthLoading(false)
+                      try {
+                        oauthPopup?.close()
+                      } catch {}
+                      setOauthPopup(null)
+                    }
+                  }
+                  window.addEventListener("message", handler)
+                } catch {
+                  showErrorToast("Failed to start Google login.")
+                  setOauthLoading(false)
+                }
+              }}
+              loading={oauthLoading}
+            >
+              <FcGoogle /> Login with Google
             </Button>
             {authErrorInfo?.code === "USER_NOT_FOUND" && (
               <Text color="red.500" fontSize="sm">

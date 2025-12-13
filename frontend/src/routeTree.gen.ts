@@ -16,6 +16,7 @@ import { Route as VerifyEmailImport } from './routes/verify-email'
 import { Route as SignupImport } from './routes/signup'
 import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RecoverPasswordImport } from './routes/recover-password'
+import { Route as OauthCallbackImport } from './routes/oauth-callback'
 import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
@@ -46,6 +47,11 @@ const ResetPasswordRoute = ResetPasswordImport.update({
 
 const RecoverPasswordRoute = RecoverPasswordImport.update({
   path: '/recover-password',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const OauthCallbackRoute = OauthCallbackImport.update({
+  path: '/oauth-callback',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -84,6 +90,10 @@ declare module '@tanstack/react-router' {
     }
     '/login': {
       preLoaderRoute: typeof LoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/oauth-callback': {
+      preLoaderRoute: typeof OauthCallbackImport
       parentRoute: typeof rootRoute
     }
     '/recover-password': {
@@ -130,6 +140,7 @@ export const routeTree = rootRoute.addChildren([
     LayoutIndexRoute,
   ]),
   LoginRoute,
+  OauthCallbackRoute,
   RecoverPasswordRoute,
   ResetPasswordRoute,
   SignupRoute,

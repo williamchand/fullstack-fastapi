@@ -4,14 +4,14 @@ import { useState } from "react"
 
 import type { v1LoginUserRequest as AccessToken } from "@/client/user"
 import type { v1User as UserPublic } from "@/client/user"
-import type { UserRegister } from "@/types/user"
 import type { ApiError } from "@/client/user"
 import {
-  userServiceLoginUser,
-  userServiceGetUser,
   userServiceCreateUser,
+  userServiceGetUser,
+  userServiceLoginUser,
 } from "@/client/user"
-import { handleError, getAuthErrorInfo } from "@/utils"
+import type { UserRegister } from "@/types/user"
+import { getAuthErrorInfo, handleError } from "@/utils"
 
 const isLoggedIn = () => {
   return localStorage.getItem("access_token") !== null
@@ -19,7 +19,10 @@ const isLoggedIn = () => {
 
 const useAuth = () => {
   const [error, setError] = useState<string | null>(null)
-  const [authErrorInfo, setAuthErrorInfo] = useState<{ code: string; message: string } | null>(null)
+  const [authErrorInfo, setAuthErrorInfo] = useState<{
+    code: string
+    message: string
+  } | null>(null)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: user } = useQuery<UserPublic | null, Error>({
@@ -33,7 +36,13 @@ const useAuth = () => {
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
-      userServiceCreateUser({ requestBody: { email: data.email, fullName: data.fullName, password: data.password } }),
+      userServiceCreateUser({
+        requestBody: {
+          email: data.email,
+          fullName: data.fullName,
+          password: data.password,
+        },
+      }),
 
     onSuccess: (_data, variables) => {
       navigate({ to: "/verify-email", search: { email: variables.email } })

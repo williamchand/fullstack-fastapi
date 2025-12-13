@@ -1,6 +1,12 @@
-import { Button, Listbox, Popover, Portal, createListCollection } from "@chakra-ui/react"
+import {
+  Button,
+  Listbox,
+  Popover,
+  Portal,
+  createListCollection,
+} from "@chakra-ui/react"
+import { useRef, useState } from "react"
 import { LuChevronDown } from "react-icons/lu"
-import { useState, useRef } from "react"
 
 // Common regions with their display names
 const REGIONS = [
@@ -44,7 +50,13 @@ interface RegionSelectorProps {
   size?: "sm" | "md"
 }
 
-export const RegionSelector = ({ value, onChange, disabled, placeholder = "Select Region", size = "md" }: RegionSelectorProps) => {
+export const RegionSelector = ({
+  value,
+  onChange,
+  disabled,
+  placeholder = "Select Region",
+  size = "md",
+}: RegionSelectorProps) => {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
 
@@ -78,7 +90,13 @@ export const RegionSelector = ({ value, onChange, disabled, placeholder = "Selec
             justifyContent="space-between"
             disabled={disabled}
           >
-            <span>{selectedRegion ? (open ? selectedRegion.label : shortLabel ?? selectedRegion.label) : placeholder}</span>
+            <span>
+              {selectedRegion
+                ? open
+                  ? selectedRegion.label
+                  : shortLabel ?? selectedRegion.label
+                : placeholder}
+            </span>
             <LuChevronDown />
           </Button>
         </Popover.Trigger>
@@ -88,13 +106,19 @@ export const RegionSelector = ({ value, onChange, disabled, placeholder = "Selec
               maxH="300px"
               overflowY="auto"
               // ensure popover width matches trigger to avoid wrapping issues
-              minW={triggerRef.current ? `${triggerRef.current.offsetWidth}px` : undefined}
+              minW={
+                triggerRef.current
+                  ? `${triggerRef.current.offsetWidth}px`
+                  : undefined
+              }
             >
               <Popover.Body p="0">
                 <Listbox.Content>
                   {collection.items.map((item) => (
                     <Listbox.Item key={item.value as string} item={item}>
-                      <Listbox.ItemText whiteSpace="normal" pr={4}>{item.label as string}</Listbox.ItemText>
+                      <Listbox.ItemText whiteSpace="normal" pr={4}>
+                        {item.label as string}
+                      </Listbox.ItemText>
                       <Listbox.ItemIndicator />
                     </Listbox.Item>
                   ))}

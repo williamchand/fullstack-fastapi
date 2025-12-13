@@ -1,27 +1,31 @@
-import { Container, Input, Text, Tabs, Flex, Image } from "@chakra-ui/react"
+import { Container, Flex, Image, Input, Tabs, Text } from "@chakra-ui/react"
+import { useMutation } from "@tanstack/react-query"
 import {
   Link as RouterLink,
   createFileRoute,
   redirect,
   useNavigate,
 } from "@tanstack/react-router"
-import { useMutation } from "@tanstack/react-query"
+import { useEffect, useRef, useState } from "react"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { FiLock, FiMail, FiPhone } from "react-icons/fi"
-import { useEffect, useRef, useState } from "react"
 
 import type { v1LoginUserRequest as AccessToken, ApiError } from "@/client/user"
-import { userServiceLoginWithPhone, userServiceRequestPhoneOtp, userServiceResendEmailVerification } from "@/client/user"
+import {
+  userServiceLoginWithPhone,
+  userServiceRequestPhoneOtp,
+  userServiceResendEmailVerification,
+} from "@/client/user"
+import { RegionSelector } from "@/components/Common/RegionSelector"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { InputGroup } from "@/components/ui/input-group"
 import { PasswordInput } from "@/components/ui/password-input"
-import { RegionSelector } from "@/components/Common/RegionSelector"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
-import { emailPattern, passwordRules, handleError } from "../utils"
 import type { PhoneLoginForm } from "@/types/phone"
 import Logo from "/assets/images/fastapi-logo.svg"
+import { emailPattern, handleError, passwordRules } from "../utils"
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -62,7 +66,9 @@ function Login() {
 
   const requestOtp = useMutation({
     mutationFn: async (data: { phone_number: string; region: string }) => {
-      await userServiceRequestPhoneOtp({ requestBody: { phoneNumber: data.phone_number, region: data.region } })
+      await userServiceRequestPhoneOtp({
+        requestBody: { phoneNumber: data.phone_number, region: data.region },
+      })
     },
     onSuccess: () => {
       showSuccessToast("OTP sent to your phone.")
@@ -89,7 +95,13 @@ function Login() {
 
   const phoneLoginMutation = useMutation({
     mutationFn: async (data: PhoneLoginForm) => {
-      const res = await userServiceLoginWithPhone({ requestBody: { phoneNumber: data.phone_number, otpCode: data.otp_code || "", region: data.region } })
+      const res = await userServiceLoginWithPhone({
+        requestBody: {
+          phoneNumber: data.phone_number,
+          otpCode: data.otp_code || "",
+          region: data.region,
+        },
+      })
       if (res.accessToken) {
         localStorage.setItem("access_token", res.accessToken)
       }
@@ -112,7 +124,9 @@ function Login() {
     }
   }
 
-  const onRequestOtp: SubmitHandler<Pick<PhoneLoginForm, "phone_number" | "region">> = async (data) => {
+  const onRequestOtp: SubmitHandler<
+    Pick<PhoneLoginForm, "phone_number" | "region">
+  > = async (data) => {
     requestOtp.mutate(data)
   }
 
@@ -133,22 +147,22 @@ function Login() {
   const otpVal = phoneForm.watch("otp_code")
 
   return (
-      <Container
-        h="100vh"
-        maxW="sm"
-        alignItems="stretch"
-        justifyContent="center"
-        gap={4}
-        centerContent
-      >
-          <Image
-            src={Logo}
-            alt="FastAPI logo"
-            height="auto"
-            maxW="2xs"
-            alignSelf="center"
-            mb={4}
-          />
+    <Container
+      h="100vh"
+      maxW="sm"
+      alignItems="stretch"
+      justifyContent="center"
+      gap={4}
+      centerContent
+    >
+      <Image
+        src={Logo}
+        alt="FastAPI logo"
+        height="auto"
+        maxW="2xs"
+        alignSelf="center"
+        mb={4}
+      />
       <Tabs.Root
         defaultValue={loginMethod}
         onValueChange={(e) => {
@@ -170,71 +184,89 @@ function Login() {
             display="flex"
             flexDirection="column"
           >
-        <Field
+            <Field
               invalid={!!emailForm.formState.errors.username}
-              errorText={emailForm.formState.errors.username?.message || (error || undefined)}
-        >
-          <InputGroup w="100%" startElement={<FiMail />}>
-            <Input
-              id="username"
+              errorText={
+                emailForm.formState.errors.username?.message ||
+                error ||
+                undefined
+              }
+            >
+              <InputGroup w="100%" startElement={<FiMail />}>
+                <Input
+                  id="username"
                   {...emailForm.register("username", {
                     required: "Email is required",
-                pattern: emailPattern,
-              })}
-              placeholder="Email"
-              type="email"
-            />
-          </InputGroup>
-        </Field>
-        <PasswordInput
-          type="password"
-          startElement={<FiLock />}
+                    pattern: emailPattern,
+                  })}
+                  placeholder="Email"
+                  type="email"
+                />
+              </InputGroup>
+            </Field>
+            <PasswordInput
+              type="password"
+              startElement={<FiLock />}
               {...emailForm.register("password", passwordRules())}
-          placeholder="Password"
+              placeholder="Password"
               errors={emailForm.formState.errors}
-        />
-        <RouterLink to="/recover-password" className="main-link">
-          Forgot Password?
-        </RouterLink>
-        <Button variant="solid" type="submit" loading={emailForm.formState.isSubmitting} size="md">
-          Log In
-        </Button>
-        {authErrorInfo?.code === "USER_NOT_FOUND" && (
-          <Text color="red.500" fontSize="sm">
-            User not found. <RouterLink to="/signup" className="main-link">Sign up</RouterLink>
-          </Text>
-        )}
-        {(authErrorInfo?.code === "EMAIL_NOT_VERIFIED" || authErrorInfo?.code === "USER_INACTIVE") && (
-          <Flex direction="column" gap={2}>
-            <Text color="red.500" fontSize="sm">
-              {authErrorInfo.message || "You need to verify your email before logging in."}
-            </Text>
-            <Flex gap={2} wrap="wrap">
-              <RouterLink
-                to="/verify-email"
-                search={{ email: emailForm.getValues().username }}
-                className="main-link"
-              >
-                Verify Email
-              </RouterLink>
-              <Button
-                variant="solid"
-                onClick={() => {
-                  const email = emailForm.getValues().username
-                  if (email) resendEmailMutation.mutate(email)
-                }}
-                loading={resendEmailMutation.isPending}
-                size="sm"
-              >
-                Resend Email Verification
-              </Button>
-            </Flex>
-            <Text color="gray.600" fontSize="sm">
-              If you registered with phone, you can verify your phone as well.
-              <RouterLink to="/verify-phone" className="main-link"> Verify Phone</RouterLink>
-            </Text>
-          </Flex>
-        )}
+            />
+            <RouterLink to="/recover-password" className="main-link">
+              Forgot Password?
+            </RouterLink>
+            <Button
+              variant="solid"
+              type="submit"
+              loading={emailForm.formState.isSubmitting}
+              size="md"
+            >
+              Log In
+            </Button>
+            {authErrorInfo?.code === "USER_NOT_FOUND" && (
+              <Text color="red.500" fontSize="sm">
+                User not found.{" "}
+                <RouterLink to="/signup" className="main-link">
+                  Sign up
+                </RouterLink>
+              </Text>
+            )}
+            {(authErrorInfo?.code === "EMAIL_NOT_VERIFIED" ||
+              authErrorInfo?.code === "USER_INACTIVE") && (
+              <Flex direction="column" gap={2}>
+                <Text color="red.500" fontSize="sm">
+                  {authErrorInfo.message ||
+                    "You need to verify your email before logging in."}
+                </Text>
+                <Flex gap={2} wrap="wrap">
+                  <RouterLink
+                    to="/verify-email"
+                    search={{ email: emailForm.getValues().username }}
+                    className="main-link"
+                  >
+                    Verify Email
+                  </RouterLink>
+                  <Button
+                    variant="solid"
+                    onClick={() => {
+                      const email = emailForm.getValues().username
+                      if (email) resendEmailMutation.mutate(email)
+                    }}
+                    loading={resendEmailMutation.isPending}
+                    size="sm"
+                  >
+                    Resend Email Verification
+                  </Button>
+                </Flex>
+                <Text color="gray.600" fontSize="sm">
+                  If you registered with phone, you can verify your phone as
+                  well.
+                  <RouterLink to="/verify-phone" className="main-link">
+                    {" "}
+                    Verify Phone
+                  </RouterLink>
+                </Text>
+              </Flex>
+            )}
           </Container>
         </Tabs.Content>
         <Tabs.Content value="phone">
@@ -246,7 +278,12 @@ function Login() {
             flexDirection="column"
           >
             <Flex gap={2} alignItems="flex-start">
-              <Field required invalid={!!phoneForm.formState.errors.region} errorText={phoneForm.formState.errors.region?.message} w="140px">
+              <Field
+                required
+                invalid={!!phoneForm.formState.errors.region}
+                errorText={phoneForm.formState.errors.region?.message}
+                w="140px"
+              >
                 <Controller
                   control={phoneForm.control}
                   name="region"
@@ -261,7 +298,12 @@ function Login() {
                   )}
                 />
               </Field>
-              <Field required invalid={!!phoneForm.formState.errors.phone_number} errorText={phoneForm.formState.errors.phone_number?.message} flex="1">
+              <Field
+                required
+                invalid={!!phoneForm.formState.errors.phone_number}
+                errorText={phoneForm.formState.errors.phone_number?.message}
+                flex="1"
+              >
                 <InputGroup w="100%" startElement={<FiPhone />}>
                   <Input
                     id="phone_number"
@@ -269,8 +311,14 @@ function Login() {
                       required: "Phone number is required",
                       setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
                       validate: {
-                        digitsOnly: (v) => (/^\d+$/.test(v) ? true : "Phone must contain digits only"),
-                        length: (v) => (v.length >= 6 && v.length <= 15 ? true : "Phone length must be 6–15 digits"),
+                        digitsOnly: (v) =>
+                          /^\d+$/.test(v)
+                            ? true
+                            : "Phone must contain digits only",
+                        length: (v) =>
+                          v.length >= 6 && v.length <= 15
+                            ? true
+                            : "Phone length must be 6–15 digits",
                       },
                     })}
                     placeholder="Phone Number"
@@ -285,20 +333,35 @@ function Login() {
               variant="solid"
               onClick={phoneForm.handleSubmit(onRequestOtp)}
               loading={requestOtp.isPending}
-              disabled={requestOtp.isPending || (otpRequested && secondsLeft > 0)}
+              disabled={
+                requestOtp.isPending || (otpRequested && secondsLeft > 0)
+              }
             >
-              {otpRequested ? (secondsLeft > 0 ? `Resend OTP (${secondsLeft}s)` : "Resend OTP") : "Request OTP"}
+              {otpRequested
+                ? secondsLeft > 0
+                  ? `Resend OTP (${secondsLeft}s)`
+                  : "Resend OTP"
+                : "Request OTP"}
             </Button>
             {otpRequested && (
               <>
-                <Field invalid={!!phoneForm.formState.errors.otp_code} errorText={phoneForm.formState.errors.otp_code?.message}>
+                <Field
+                  invalid={!!phoneForm.formState.errors.otp_code}
+                  errorText={phoneForm.formState.errors.otp_code?.message}
+                >
                   <InputGroup w="100%">
                     {(() => {
                       const otpReg = phoneForm.register("otp_code", {
-                        setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                        setValueAs: (v: string) =>
+                          v ? v.replace(/\D/g, "") : v,
                         required: "OTP code is required",
                         validate: {
-                          digitsOnly: (v) => (v === undefined || v === "" || /^\d+$/.test(v as string) ? true : "OTP must be digits only"),
+                          digitsOnly: (v) =>
+                            v === undefined ||
+                            v === "" ||
+                            /^\d+$/.test(v as string)
+                              ? true
+                              : "OTP must be digits only",
                         },
                       })
                       return (
@@ -323,25 +386,33 @@ function Login() {
                     })()}
                   </InputGroup>
                 </Field>
-              <Text color="gray.500" fontSize="sm">
-                Waiting for OTP… {secondsLeft > 0 ? `Resend available in ${secondsLeft}s` : "You can resend now."}
-              </Text>
+                <Text color="gray.500" fontSize="sm">
+                  Waiting for OTP…{" "}
+                  {secondsLeft > 0
+                    ? `Resend available in ${secondsLeft}s`
+                    : "You can resend now."}
+                </Text>
               </>
             )}
             {otpRequested && (
               <Button
                 variant="solid"
                 onClick={phoneForm.handleSubmit(onPhoneLogin)}
-                loading={phoneForm.formState.isSubmitting || phoneLoginMutation.isPending}
+                loading={
+                  phoneForm.formState.isSubmitting ||
+                  phoneLoginMutation.isPending
+                }
                 disabled={!otpVal || phoneLoginMutation.isPending}
               >
                 Login
               </Button>
             )}
-            {(authErrorInfo?.code === "PHONE_NOT_VERIFIED" || authErrorInfo?.code === "USER_INACTIVE") && (
+            {(authErrorInfo?.code === "PHONE_NOT_VERIFIED" ||
+              authErrorInfo?.code === "USER_INACTIVE") && (
               <Flex direction="column" gap={2}>
                 <Text color="red.500" fontSize="sm">
-                  {authErrorInfo.message || "You need to verify your phone before logging in."}
+                  {authErrorInfo.message ||
+                    "You need to verify your phone before logging in."}
                 </Text>
                 <RouterLink
                   to="/verify-phone"
@@ -358,12 +429,12 @@ function Login() {
           </Container>
         </Tabs.Content>
       </Tabs.Root>
-        <Text>
-          Don't have an account?{" "}
-          <RouterLink to="/signup" className="main-link">
-            Sign Up
-          </RouterLink>
-        </Text>
-      </Container>
+      <Text>
+        Don't have an account?{" "}
+        <RouterLink to="/signup" className="main-link">
+          Sign Up
+        </RouterLink>
+      </Text>
+    </Container>
   )
 }

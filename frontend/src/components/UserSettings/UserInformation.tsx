@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Button,
   Container,
@@ -6,26 +7,29 @@ import {
   Heading,
   Input,
   Text,
-  Badge,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { FiMail, FiPhone } from "react-icons/fi"
 
-import type { ApiError, v1User as UserPublic, v1UpdateUserRequest as UserUpdateMe } from "@/client/user"
+import type {
+  ApiError,
+  v1User as UserPublic,
+  v1UpdateUserRequest as UserUpdateMe,
+} from "@/client/user"
 import {
-  userServiceUpdateUser,
   userServiceAddEmail,
   userServiceAddPhoneNumber,
   userServiceResendEmailVerification,
+  userServiceUpdateUser,
   userServiceVerifyAddEmailOtp,
   userServiceVerifyAddPhoneOtp,
 } from "@/client/user"
+import { RegionSelector } from "@/components/Common/RegionSelector"
 import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { emailPattern, handleError } from "@/utils"
-import { RegionSelector } from "@/components/Common/RegionSelector"
 import { Field } from "../ui/field"
 import { InputGroup } from "../ui/input-group"
 
@@ -124,7 +128,9 @@ const UserInformation = () => {
 
   const addPhoneMutation = useMutation({
     mutationFn: (data: { phone_number: string; region: string }) =>
-      userServiceAddPhoneNumber({ requestBody: { phoneNumber: data.phone_number, region: data.region } }),
+      userServiceAddPhoneNumber({
+        requestBody: { phoneNumber: data.phone_number, region: data.region },
+      }),
     onSuccess: () => {
       showSuccessToast("Verification code sent to your phone.")
       setAddPhoneMode(false)
@@ -157,15 +163,22 @@ const UserInformation = () => {
     addEmailMutation.mutate(data)
   }
 
-  const onVerifyEmailSubmit: SubmitHandler<{ otp_code: string }> = async (data) => {
+  const onVerifyEmailSubmit: SubmitHandler<{ otp_code: string }> = async (
+    data,
+  ) => {
     verifyEmailMutation.mutate(data)
   }
 
-  const onAddPhoneSubmit: SubmitHandler<{ phone_number: string; region: string }> = async (data) => {
+  const onAddPhoneSubmit: SubmitHandler<{
+    phone_number: string
+    region: string
+  }> = async (data) => {
     addPhoneMutation.mutate(data)
   }
 
-  const onVerifyPhoneSubmit: SubmitHandler<{ otp_code: string }> = async (data) => {
+  const onVerifyPhoneSubmit: SubmitHandler<{ otp_code: string }> = async (
+    data,
+  ) => {
     verifyPhoneMutation.mutate(data)
   }
 
@@ -176,10 +189,10 @@ const UserInformation = () => {
   }
 
   return (
-      <Container maxW="full">
-        <Heading size="sm" py={4}>
-          User Information
-        </Heading>
+    <Container maxW="full">
+      <Heading size="sm" py={4}>
+        User Information
+      </Heading>
       <Box w={{ sm: "full", md: "50%" }}>
         {/* Full Name */}
         <Box as="form" onSubmit={nameForm.handleSubmit(onNameSubmit)} mb={6}>
@@ -234,7 +247,9 @@ const UserInformation = () => {
           <Flex alignItems="center" gap={2} mb={2}>
             <Text fontWeight="medium">Email</Text>
             {currentUser?.email && (
-              <Badge colorPalette={currentUser?.isEmailVerified ? "green" : "orange"}>
+              <Badge
+                colorPalette={currentUser?.isEmailVerified ? "green" : "orange"}
+              >
                 {currentUser.isEmailVerified ? "Verified" : "Unverified"}
               </Badge>
             )}
@@ -270,8 +285,14 @@ const UserInformation = () => {
                 </Button>
               )}
               {addEmailMode && (
-                <Box as="form" onSubmit={addEmailForm.handleSubmit(onAddEmailSubmit)}>
-                  <Field invalid={!!addEmailForm.formState.errors.email} errorText={addEmailForm.formState.errors.email?.message}>
+                <Box
+                  as="form"
+                  onSubmit={addEmailForm.handleSubmit(onAddEmailSubmit)}
+                >
+                  <Field
+                    invalid={!!addEmailForm.formState.errors.email}
+                    errorText={addEmailForm.formState.errors.email?.message}
+                  >
                     <InputGroup w="100%" startElement={<FiMail />}>
                       <Input
                         {...addEmailForm.register("email", {
@@ -285,7 +306,12 @@ const UserInformation = () => {
                     </InputGroup>
                   </Field>
                   <Flex mt={2} gap={2}>
-                    <Button variant="solid" type="submit" loading={addEmailMutation.isPending} size="sm">
+                    <Button
+                      variant="solid"
+                      type="submit"
+                      loading={addEmailMutation.isPending}
+                      size="sm"
+                    >
                       Send Verification
                     </Button>
                     <Button
@@ -303,11 +329,21 @@ const UserInformation = () => {
                 </Box>
               )}
               {verifyEmailMode && (
-                <Box as="form" onSubmit={verifyEmailForm.handleSubmit(onVerifyEmailSubmit)}>
-                  <Field invalid={!!verifyEmailForm.formState.errors.otp_code} errorText={verifyEmailForm.formState.errors.otp_code?.message}>
+                <Box
+                  as="form"
+                  onSubmit={verifyEmailForm.handleSubmit(onVerifyEmailSubmit)}
+                >
+                  <Field
+                    invalid={!!verifyEmailForm.formState.errors.otp_code}
+                    errorText={
+                      verifyEmailForm.formState.errors.otp_code?.message
+                    }
+                  >
                     <InputGroup w="100%">
                       <Input
-                        {...verifyEmailForm.register("otp_code", { required: "OTP code is required" })}
+                        {...verifyEmailForm.register("otp_code", {
+                          required: "OTP code is required",
+                        })}
                         placeholder="OTP Code"
                         type="text"
                         size="md"
@@ -315,7 +351,12 @@ const UserInformation = () => {
                     </InputGroup>
                   </Field>
                   <Flex mt={2} gap={2}>
-                    <Button variant="solid" type="submit" loading={verifyEmailMutation.isPending} size="sm">
+                    <Button
+                      variant="solid"
+                      type="submit"
+                      loading={verifyEmailMutation.isPending}
+                      size="sm"
+                    >
                       Verify
                     </Button>
                     <Button
@@ -341,7 +382,9 @@ const UserInformation = () => {
           <Flex alignItems="center" gap={2} mb={2}>
             <Text fontWeight="medium">Phone Number</Text>
             {currentUser?.phoneNumber && (
-              <Badge colorPalette={currentUser?.isPhoneVerified ? "green" : "orange"}>
+              <Badge
+                colorPalette={currentUser?.isPhoneVerified ? "green" : "orange"}
+              >
                 {currentUser.isPhoneVerified ? "Verified" : "Unverified"}
               </Badge>
             )}
@@ -365,17 +408,33 @@ const UserInformation = () => {
                 </Button>
               )}
               {addPhoneMode && (
-                <Box as="form" onSubmit={addPhoneForm.handleSubmit(onAddPhoneSubmit)}>
+                <Box
+                  as="form"
+                  onSubmit={addPhoneForm.handleSubmit(onAddPhoneSubmit)}
+                >
                   <Flex gap={2} alignItems="flex-start">
-                    <Field invalid={!!addPhoneForm.formState.errors.phone_number} errorText={addPhoneForm.formState.errors.phone_number?.message} flex="1">
+                    <Field
+                      invalid={!!addPhoneForm.formState.errors.phone_number}
+                      errorText={
+                        addPhoneForm.formState.errors.phone_number?.message
+                      }
+                      flex="1"
+                    >
                       <InputGroup w="100%" startElement={<FiPhone />}>
                         <Input
                           {...addPhoneForm.register("phone_number", {
                             required: "Phone number is required",
-                            setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                            setValueAs: (v: string) =>
+                              v ? v.replace(/\D/g, "") : v,
                             validate: {
-                              digitsOnly: (v) => (/^\d+$/.test(v) ? true : "Phone must contain digits only"),
-                              length: (v) => (v.length >= 6 && v.length <= 15 ? true : "Phone length must be 6–15 digits"),
+                              digitsOnly: (v) =>
+                                /^\d+$/.test(v)
+                                  ? true
+                                  : "Phone must contain digits only",
+                              length: (v) =>
+                                v.length >= 6 && v.length <= 15
+                                  ? true
+                                  : "Phone length must be 6–15 digits",
                             },
                           })}
                           placeholder="Phone Number"
@@ -385,7 +444,11 @@ const UserInformation = () => {
                         />
                       </InputGroup>
                     </Field>
-                    <Field invalid={!!addPhoneForm.formState.errors.region} errorText={addPhoneForm.formState.errors.region?.message} w="200px">
+                    <Field
+                      invalid={!!addPhoneForm.formState.errors.region}
+                      errorText={addPhoneForm.formState.errors.region?.message}
+                      w="200px"
+                    >
                       <Controller
                         control={addPhoneForm.control}
                         name="region"
@@ -401,7 +464,12 @@ const UserInformation = () => {
                     </Field>
                   </Flex>
                   <Flex mt={2} gap={2}>
-                    <Button variant="solid" type="submit" loading={addPhoneMutation.isPending} size="sm">
+                    <Button
+                      variant="solid"
+                      type="submit"
+                      loading={addPhoneMutation.isPending}
+                      size="sm"
+                    >
                       Send Verification
                     </Button>
                     <Button
@@ -419,15 +487,27 @@ const UserInformation = () => {
                 </Box>
               )}
               {verifyPhoneMode && (
-                <Box as="form" onSubmit={verifyPhoneForm.handleSubmit(onVerifyPhoneSubmit)}>
-                  <Field invalid={!!verifyPhoneForm.formState.errors.otp_code} errorText={verifyPhoneForm.formState.errors.otp_code?.message}>
+                <Box
+                  as="form"
+                  onSubmit={verifyPhoneForm.handleSubmit(onVerifyPhoneSubmit)}
+                >
+                  <Field
+                    invalid={!!verifyPhoneForm.formState.errors.otp_code}
+                    errorText={
+                      verifyPhoneForm.formState.errors.otp_code?.message
+                    }
+                  >
                     <InputGroup w="100%">
                       <Input
                         {...verifyPhoneForm.register("otp_code", {
                           required: "OTP code is required",
-                          setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
+                          setValueAs: (v: string) =>
+                            v ? v.replace(/\D/g, "") : v,
                           validate: {
-                            digitsOnly: (v) => (/^\d+$/.test(v) ? true : "OTP must be digits only"),
+                            digitsOnly: (v) =>
+                              /^\d+$/.test(v)
+                                ? true
+                                : "OTP must be digits only",
                           },
                         })}
                         placeholder="OTP Code"
@@ -438,7 +518,12 @@ const UserInformation = () => {
                     </InputGroup>
                   </Field>
                   <Flex mt={2} gap={2}>
-                    <Button variant="solid" type="submit" loading={verifyPhoneMutation.isPending} size="sm">
+                    <Button
+                      variant="solid"
+                      type="submit"
+                      loading={verifyPhoneMutation.isPending}
+                      size="sm"
+                    >
                       Verify
                     </Button>
                     <Button
@@ -458,8 +543,8 @@ const UserInformation = () => {
             </>
           )}
         </Box>
-        </Box>
-      </Container>
+      </Box>
+    </Container>
   )
 }
 

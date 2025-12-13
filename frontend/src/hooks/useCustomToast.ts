@@ -16,6 +16,7 @@ const useCustomToast = () => {
       title: "Something went wrong!",
       description,
       type: "error",
+      duration: 5000,
     })
   }
 

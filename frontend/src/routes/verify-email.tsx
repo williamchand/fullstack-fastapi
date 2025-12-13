@@ -1,11 +1,14 @@
-import { Container, Heading, Input, Text } from "@chakra-ui/react"
+import { Container, Flex, Heading, Input, Text } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { type SubmitHandler, useForm } from "react-hook-form"
 import { FiMail } from "react-icons/fi"
 
 import type { ApiError } from "@/client/user"
-import { userServiceVerifyEmailOtp, userServiceResendEmailVerification } from "@/client/user"
+import {
+  userServiceResendEmailVerification,
+  userServiceVerifyEmailOtp,
+} from "@/client/user"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { InputGroup } from "@/components/ui/input-group"
@@ -30,7 +33,12 @@ interface EmailVerifyForm {
 function VerifyEmail() {
   const navigate = useNavigate()
   const { showSuccessToast } = useCustomToast()
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<EmailVerifyForm>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<EmailVerifyForm>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
@@ -43,7 +51,9 @@ function VerifyEmail() {
 
   const verifyMutation = useMutation({
     mutationFn: async (data: EmailVerifyForm) => {
-      await userServiceVerifyEmailOtp({ requestBody: { email: data.email, otpCode: data.otp_code } })
+      await userServiceVerifyEmailOtp({
+        requestBody: { email: data.email, otpCode: data.otp_code },
+      })
     },
     onSuccess: () => {
       showSuccessToast("Email verified successfully.")
@@ -77,12 +87,27 @@ function VerifyEmail() {
   }
 
   return (
-    <Container as="form" onSubmit={handleSubmit(onSubmit)} h="100vh" maxW="sm" alignItems="stretch" justifyContent="center" gap={4} centerContent>
-      <Heading size="xl" color="ui.main" textAlign="center" mb={2}>Verify Email</Heading>
+    <Container
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      h="100vh"
+      maxW="sm"
+      alignItems="stretch"
+      justifyContent="center"
+      gap={4}
+      centerContent
+    >
+      <Heading size="xl" color="ui.main" textAlign="center" mb={2}>
+        Verify Email
+      </Heading>
       <Text textAlign="center" mb={4}>
         Please enter the verification code sent to your email address.
       </Text>
-      <Field required invalid={!!errors.email} errorText={errors.email?.message}>
+      <Field
+        required
+        invalid={!!errors.email}
+        errorText={errors.email?.message}
+      >
         <InputGroup w="100%" startElement={<FiMail />}>
           <Input
             id="email"
@@ -96,7 +121,11 @@ function VerifyEmail() {
           />
         </InputGroup>
       </Field>
-      <Field required invalid={!!errors.otp_code} errorText={errors.otp_code?.message}>
+      <Field
+        required
+        invalid={!!errors.otp_code}
+        errorText={errors.otp_code?.message}
+      >
         <InputGroup w="100%">
           <Input
             id="otp_code"
@@ -104,7 +133,8 @@ function VerifyEmail() {
               required: "OTP code is required",
               setValueAs: (v: string) => (v ? v.replace(/\D/g, "") : v),
               validate: {
-                digitsOnly: (v) => (/^\d+$/.test(v) ? true : "OTP must be digits only"),
+                digitsOnly: (v) =>
+                  /^\d+$/.test(v) ? true : "OTP must be digits only",
               },
             })}
             placeholder="OTP Code"
@@ -113,21 +143,25 @@ function VerifyEmail() {
           />
         </InputGroup>
       </Field>
-      <Button variant="solid" type="submit" loading={isSubmitting || verifyMutation.isPending}>
+      <Button
+        variant="solid"
+        type="submit"
+        loading={isSubmitting || verifyMutation.isPending}
+      >
         Verify Email
       </Button>
-      <Text textAlign="center">
-        Didn't receive the code?{" "}
+      <Flex direction="column" align="center" gap={2}>
+        <Text color="gray.600">Didn't receive the code?</Text>
         <Button
-          variant="solid"
+          variant="outline"
           onClick={onResend}
           loading={resendMutation.isPending}
           disabled={!email}
+          size="sm"
         >
-          Resend Email
+          Resend Verification Email
         </Button>
-      </Text>
+      </Flex>
     </Container>
   )
 }
-

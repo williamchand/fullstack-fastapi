@@ -1,11 +1,16 @@
-import { Container, Heading, Text, Alert } from "@chakra-ui/react"
+import { Alert, Container, Heading, Text } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
-import { createFileRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router"
-import { type SubmitHandler, useForm } from "react-hook-form"
-import { FiLock, FiAlertCircle } from "react-icons/fi"
+import {
+  createFileRoute,
+  redirect,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+import { type SubmitHandler, useForm } from "react-hook-form"
+import { FiAlertCircle, FiLock } from "react-icons/fi"
 
-import { type ApiError } from "@/client/user"
+import type { ApiError } from "@/client/user"
 import { userServiceResetPassword } from "@/client/user"
 import { Button } from "@/components/ui/button"
 import { PasswordInput } from "@/components/ui/password-input"
@@ -40,7 +45,8 @@ export const Route = createFileRoute("/reset-password")({
       throw redirect({
         to: "/recover-password",
         search: {
-          error: "Invalid or missing reset token. Please request a new password reset link.",
+          error:
+            "Invalid or missing reset token. Please request a new password reset link.",
         },
       })
     }
@@ -70,7 +76,9 @@ function ResetPassword() {
   useEffect(() => {
     // Validate token on mount
     if (!search.token) {
-      setTokenError("Invalid or missing reset token. Please request a new password reset link.")
+      setTokenError(
+        "Invalid or missing reset token. Please request a new password reset link.",
+      )
     }
   }, [search.token])
 
@@ -79,7 +87,9 @@ function ResetPassword() {
       setTokenError("Invalid or missing reset token.")
       return
     }
-    await userServiceResetPassword({ requestBody: { newPassword: data.new_password, token: search.token } })
+    await userServiceResetPassword({
+      requestBody: { newPassword: data.new_password, token: search.token },
+    })
   }
 
   const mutation = useMutation({
@@ -91,10 +101,15 @@ function ResetPassword() {
     },
     onError: (err: ApiError) => {
       const errDetail = (err.body as any)?.detail
-      if (errDetail?.includes("Invalid token") || errDetail?.includes("expired")) {
-        setTokenError("This reset link is invalid or has expired. Please request a new password reset link.")
+      if (
+        errDetail?.includes("Invalid token") ||
+        errDetail?.includes("expired")
+      ) {
+        setTokenError(
+          "This reset link is invalid or has expired. Please request a new password reset link.",
+        )
       } else {
-      handleError(err)
+        handleError(err)
       }
     },
   })
@@ -170,7 +185,11 @@ function ResetPassword() {
         {...register("confirm_password", confirmPasswordRules(getValues))}
         placeholder="Confirm Password"
       />
-      <Button variant="solid" type="submit" loading={isSubmitting || mutation.isPending}>
+      <Button
+        variant="solid"
+        type="submit"
+        loading={isSubmitting || mutation.isPending}
+      >
         Reset Password
       </Button>
     </Container>

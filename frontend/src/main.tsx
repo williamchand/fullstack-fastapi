@@ -1,12 +1,18 @@
-import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
 
-import { ApiError, OpenAPI } from "./client/user"
 import axios from "axios"
+import { ApiError, OpenAPI } from "./client/user"
 import { CustomProvider } from "./components/ui/provider"
+import { getAuthErrorInfo } from "./utils"
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL
 // Debug: confirm API base at startup
@@ -26,9 +32,19 @@ OpenAPI.TOKEN = async () => {
     // If no refresh token, force logout
     const refreshToken = localStorage.getItem("refresh_token")
     if (!refreshToken) {
+      try {
+        localStorage.setItem(
+          "persisted_toast",
+          JSON.stringify({
+            type: "error",
+            description: "Session expired. Please log in.",
+            duration: 15000,
+          }),
+        )
+      } catch {}
       localStorage.removeItem("access_token")
       localStorage.removeItem("refresh_token")
-      window.location.href = "/login"
+      router.navigate({ to: "/login" })
       return response
     }
 
@@ -36,9 +52,19 @@ OpenAPI.TOKEN = async () => {
     if (refreshing) {
       const ok = await refreshing
       if (!ok) {
+        try {
+          localStorage.setItem(
+            "persisted_toast",
+            JSON.stringify({
+              type: "error",
+              description: "Session expired. Please log in.",
+              duration: 15000,
+            }),
+          )
+        } catch {}
         localStorage.removeItem("access_token")
         localStorage.removeItem("refresh_token")
-        window.location.href = "/login"
+        router.navigate({ to: "/login" })
         return response
       }
       // retry original request
@@ -46,13 +72,29 @@ OpenAPI.TOKEN = async () => {
         // Update Authorization header with the new access token before retrying
         const newToken = localStorage.getItem("access_token") || ""
         // @ts-ignore
-        const retryConfig = { ...response.config, headers: { ...(response.config?.headers || {}), Authorization: newToken ? `Bearer ${newToken}` : undefined } }
+        const retryConfig = {
+          ...response.config,
+          headers: {
+            ...(response.config?.headers || {}),
+            Authorization: newToken ? `Bearer ${newToken}` : undefined,
+          },
+        }
         // @ts-ignore
         return await axios.request(retryConfig)
       } catch (e) {
+        try {
+          localStorage.setItem(
+            "persisted_toast",
+            JSON.stringify({
+              type: "error",
+              description: "Session expired. Please log in.",
+              duration: 15000,
+            }),
+          )
+        } catch {}
         localStorage.removeItem("access_token")
         localStorage.removeItem("refresh_token")
-        window.location.href = "/login"
+        router.navigate({ to: "/login" })
         return response
       }
     }
@@ -82,9 +124,19 @@ OpenAPI.TOKEN = async () => {
     refreshing = null
 
     if (!ok) {
+      try {
+        localStorage.setItem(
+          "persisted_toast",
+          JSON.stringify({
+            type: "error",
+            description: "Session expired. Please log in.",
+            duration: 15000,
+          }),
+        )
+      } catch {}
       localStorage.removeItem("access_token")
       localStorage.removeItem("refresh_token")
-      window.location.href = "/login"
+      router.navigate({ to: "/login" })
       return response
     }
 
@@ -92,13 +144,29 @@ OpenAPI.TOKEN = async () => {
     try {
       const newToken = localStorage.getItem("access_token") || ""
       // @ts-ignore
-      const retryConfig = { ...response.config, headers: { ...(response.config?.headers || {}), Authorization: newToken ? `Bearer ${newToken}` : undefined } }
+      const retryConfig = {
+        ...response.config,
+        headers: {
+          ...(response.config?.headers || {}),
+          Authorization: newToken ? `Bearer ${newToken}` : undefined,
+        },
+      }
       // @ts-ignore
       return await axios.request(retryConfig)
     } catch (e) {
+      try {
+        localStorage.setItem(
+          "persisted_toast",
+          JSON.stringify({
+            type: "error",
+            description: "Session expired. Please log in.",
+            duration: 15000,
+          }),
+        )
+      } catch {}
       localStorage.removeItem("access_token")
       localStorage.removeItem("refresh_token")
-      window.location.href = "/login"
+      router.navigate({ to: "/login" })
       return response
     }
   })
@@ -106,8 +174,23 @@ OpenAPI.TOKEN = async () => {
 
 const handleApiError = (error: Error) => {
   if (error instanceof ApiError && [401, 403].includes(error.status)) {
-    localStorage.removeItem("access_token")
-    window.location.href = "/login"
+    const info = getAuthErrorInfo(error)
+    try {
+      localStorage.setItem(
+        "persisted_toast",
+        JSON.stringify({
+          type: "error",
+          description: info.message,
+          duration: 15000,
+        }),
+      )
+    } catch {}
+
+    const token = localStorage.getItem("access_token")
+    if (token) {
+      localStorage.removeItem("access_token")
+      router.navigate({ to: "/login" })
+    }
   }
 }
 const queryClient = new QueryClient({

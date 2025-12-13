@@ -1,26 +1,30 @@
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 
 import {
   Button,
+  Checkmark,
   DialogActionTrigger,
   DialogRoot,
   DialogTrigger,
   Flex,
   Input,
-  Text,
-  VStack,
   Listbox,
   Popover,
   Portal,
-  Checkmark,
+  Text,
+  VStack,
   createListCollection,
 } from "@chakra-ui/react"
-import { LuChevronDown } from "react-icons/lu"
-import { useState, useRef } from "react"
+import { useRef, useState } from "react"
 import { FaExchangeAlt } from "react-icons/fa"
+import { LuChevronDown } from "react-icons/lu"
 
-import type { v1User as UserPublic, v1UpdateUserRequest as UserUpdate, ApiError } from "@/client/user"
+import type {
+  ApiError,
+  v1User as UserPublic,
+  v1UpdateUserRequest as UserUpdate,
+} from "@/client/user"
 import { userServiceUpdateUser } from "@/client/user"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
@@ -198,7 +202,9 @@ const EditUser = ({ user }: EditUserProps) => {
                 name="roles"
                 render={({ field }) => {
                   const queryClient = useQueryClient()
-                  const rolesData = queryClient.getQueryData<{ data: { name: string }[] }>(["roles"])
+                  const rolesData = queryClient.getQueryData<{
+                    data: { name: string }[]
+                  }>(["roles"])
 
                   const [open, setOpen] = useState(false)
                   const selectedRoles = (field.value || []) as string[]
@@ -206,31 +212,53 @@ const EditUser = ({ user }: EditUserProps) => {
 
                   const collection = createListCollection({
                     items:
-                      rolesData?.data.map((r: { name: string }) => ({ value: r.name, label: r.name })) || [],
+                      rolesData?.data.map((r: { name: string }) => ({
+                        value: r.name,
+                        label: r.name,
+                      })) || [],
                   })
-                  const isAllSelected = selectedRoles.length === collection.items.length
+                  const isAllSelected =
+                    selectedRoles.length === collection.items.length
                   const isSomeSelected =
-                    selectedRoles.length > 0 && selectedRoles.length < collection.items.length
+                    selectedRoles.length > 0 &&
+                    selectedRoles.length < collection.items.length
 
                   const handleSelectAll = () => {
                     if (isAllSelected) {
                       field.onChange([])
                     } else {
-                      field.onChange(collection.items.map((item) => item.value as string))
+                      field.onChange(
+                        collection.items.map((item) => item.value as string),
+                      )
                     }
                   }
                   return (
-                    <Field disabled={field.disabled} label="Roles" colorPalette="teal">
+                    <Field
+                      disabled={field.disabled}
+                      label="Roles"
+                      colorPalette="teal"
+                    >
                       <Listbox.Root
                         collection={collection}
                         selectionMode="multiple"
                         value={selectedRoles}
-                        onValueChange={(details) => field.onChange(details.value as string[])}
+                        onValueChange={(details) =>
+                          field.onChange(details.value as string[])
+                        }
                         maxW="320px"
                       >
-                        <Popover.Root open={open} onOpenChange={(e) => setOpen(e.open)}>
+                        <Popover.Root
+                          open={open}
+                          onOpenChange={(e) => setOpen(e.open)}
+                        >
                           <Popover.Trigger asChild>
-                            <Button size="sm" ref={triggerRef} variant="outline" alignItems="center" justifyContent="flex-start">
+                            <Button
+                              size="sm"
+                              ref={triggerRef}
+                              variant="outline"
+                              alignItems="center"
+                              justifyContent="flex-start"
+                            >
                               <Checkmark
                                 onClick={handleSelectAll}
                                 filled
@@ -238,7 +266,7 @@ const EditUser = ({ user }: EditUserProps) => {
                                 checked={isAllSelected}
                                 indeterminate={isSomeSelected || undefined}
                               />
-                              <Listbox.Label>Select Role</Listbox.Label> 
+                              <Listbox.Label>Select Role</Listbox.Label>
                               <LuChevronDown style={{ marginLeft: "auto" }} />
                             </Button>
                           </Popover.Trigger>
@@ -248,8 +276,13 @@ const EditUser = ({ user }: EditUserProps) => {
                                 <Popover.Body p="0">
                                   <Listbox.Content maxH="300px" roundedTop="0">
                                     {collection.items.map((item) => (
-                                      <Listbox.Item key={item.value as string} item={item}>
-                                        <Listbox.ItemText>{item.label as string}</Listbox.ItemText>
+                                      <Listbox.Item
+                                        key={item.value as string}
+                                        item={item}
+                                      >
+                                        <Listbox.ItemText>
+                                          {item.label as string}
+                                        </Listbox.ItemText>
                                         <Listbox.ItemIndicator />
                                       </Listbox.Item>
                                     ))}

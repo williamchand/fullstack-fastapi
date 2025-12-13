@@ -1,28 +1,28 @@
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 
 import type { ApiError } from "@/client/user"
 import { userServiceCreateUser } from "@/client/user"
-import type { UserRegister } from "@/types/user"
 import useCustomToast from "@/hooks/useCustomToast"
+import type { UserRegister } from "@/types/user"
 import { emailPattern, handleError } from "@/utils"
 import {
   Button,
+  Checkmark,
   DialogActionTrigger,
   DialogTitle,
   Flex,
   Input,
-  Text,
-  VStack,
   Listbox,
   Popover,
   Portal,
-  Checkmark,
+  Text,
+  VStack,
   createListCollection,
 } from "@chakra-ui/react"
-import { LuChevronDown } from "react-icons/lu"
 import { useRef, useState } from "react"
 import { FaPlus } from "react-icons/fa"
+import { LuChevronDown } from "react-icons/lu"
 import { Checkbox } from "../ui/checkbox"
 import {
   DialogBody,
@@ -37,8 +37,7 @@ import { Field } from "../ui/field"
 
 interface UserCreateForm extends UserRegister {
   confirm_password: string
-  }
-
+}
 
 function getRolesQueryOptions() {
   const staticRoles = [{ name: "user" }, { name: "superuser" }]
@@ -79,7 +78,13 @@ const AddUser = () => {
 
   const mutation = useMutation({
     mutationFn: (data: UserRegister) =>
-      userServiceCreateUser({ requestBody: { email: data.email, fullName: data.fullName, password: data.password } }),
+      userServiceCreateUser({
+        requestBody: {
+          email: data.email,
+          fullName: data.fullName,
+          password: data.password,
+        },
+      }),
     onSuccess: () => {
       showSuccessToast("User created successfully.")
       reset()
@@ -196,7 +201,9 @@ const AddUser = () => {
                 name="roles"
                 render={({ field }) => {
                   const queryClient = useQueryClient()
-                  const rolesData = queryClient.getQueryData<{ data: { name: string }[] }>(["roles"])
+                  const rolesData = queryClient.getQueryData<{
+                    data: { name: string }[]
+                  }>(["roles"])
 
                   const [open, setOpen] = useState(false)
                   const selectedRoles = field.value || []
@@ -204,11 +211,17 @@ const AddUser = () => {
 
                   const collection = createListCollection({
                     items:
-                      rolesData?.data.map((r) => ({ value: r.name, label: r.name })) || [],
+                      rolesData?.data.map((r) => ({
+                        value: r.name,
+                        label: r.name,
+                      })) || [],
                   })
-                  const isAllSelected = field.value?.length === collection.items.length
+                  const isAllSelected =
+                    field.value?.length === collection.items.length
                   const isSomeSelected =
-                    field.value && field.value.length > 0 && field.value.length < collection.items.length
+                    field.value &&
+                    field.value.length > 0 &&
+                    field.value.length < collection.items.length
 
                   const handleSelectAll = () => {
                     if (isAllSelected) {
@@ -218,17 +231,32 @@ const AddUser = () => {
                     }
                   }
                   return (
-                    <Field disabled={field.disabled} label="Roles" colorPalette="teal">
+                    <Field
+                      disabled={field.disabled}
+                      label="Roles"
+                      colorPalette="teal"
+                    >
                       <Listbox.Root
                         collection={collection}
                         selectionMode="multiple"
                         value={selectedRoles}
-                        onValueChange={(details) => field.onChange(details.value)}
+                        onValueChange={(details) =>
+                          field.onChange(details.value)
+                        }
                         maxW="320px"
                       >
-                        <Popover.Root open={open} onOpenChange={(e) => setOpen(e.open)}>
+                        <Popover.Root
+                          open={open}
+                          onOpenChange={(e) => setOpen(e.open)}
+                        >
                           <Popover.Trigger asChild>
-                            <Button size="sm" ref={triggerRef} variant="outline" alignItems="center" justifyContent="flex-start">
+                            <Button
+                              size="sm"
+                              ref={triggerRef}
+                              variant="outline"
+                              alignItems="center"
+                              justifyContent="flex-start"
+                            >
                               <Checkmark
                                 onClick={handleSelectAll}
                                 filled
@@ -236,7 +264,7 @@ const AddUser = () => {
                                 checked={isAllSelected}
                                 indeterminate={isSomeSelected}
                               />
-                              <Listbox.Label>Select Role</Listbox.Label> 
+                              <Listbox.Label>Select Role</Listbox.Label>
                               <LuChevronDown style={{ marginLeft: "auto" }} />
                             </Button>
                           </Popover.Trigger>
@@ -246,8 +274,13 @@ const AddUser = () => {
                                 <Popover.Body p="0">
                                   <Listbox.Content maxH="300px" roundedTop="0">
                                     {collection.items.map((item) => (
-                                      <Listbox.Item key={item.value} item={item}>
-                                        <Listbox.ItemText>{item.label}</Listbox.ItemText>
+                                      <Listbox.Item
+                                        key={item.value}
+                                        item={item}
+                                      >
+                                        <Listbox.ItemText>
+                                          {item.label}
+                                        </Listbox.ItemText>
                                         <Listbox.ItemIndicator />
                                       </Listbox.Item>
                                     ))}

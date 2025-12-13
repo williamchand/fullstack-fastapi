@@ -80,10 +80,17 @@ export const getAuthErrorInfo = (
   if (normalized.includes("incorrect email or password")) {
     return { code: "INVALID_CREDENTIALS", message }
   }
+  if (normalized.includes("invalid username or password")) {
+    return { code: "INVALID_CREDENTIALS", message }
+  }
   if (normalized.includes("not found")) {
     return { code: "USER_NOT_FOUND", message }
   }
-  if (normalized.includes("inactive") || normalized.includes("disabled")) {
+  if (
+    normalized.includes("inactive") ||
+    normalized.includes("disabled") ||
+    normalized.includes("user is not active")
+  ) {
     return { code: "USER_INACTIVE", message }
   }
   if (

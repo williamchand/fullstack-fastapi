@@ -323,12 +323,12 @@ function Login() {
             display="flex"
             flexDirection="column"
           >
-            <Flex gap={2} alignItems="flex-start">
+            <Flex gap={2} alignItems="flex-start" wrap="wrap">
               <Field
                 required
                 invalid={!!phoneForm.formState.errors.region}
                 errorText={phoneForm.formState.errors.region?.message}
-                w="140px"
+                w={{ base: "100%", md: "80px" }}
               >
                 <Controller
                   control={phoneForm.control}
@@ -339,7 +339,7 @@ function Login() {
                       value={field.value}
                       onChange={field.onChange}
                       disabled={otpRequested || field.disabled}
-                      size="sm"
+                      size="md"
                     />
                   )}
                 />
@@ -349,6 +349,7 @@ function Login() {
                 invalid={!!phoneForm.formState.errors.phone_number}
                 errorText={phoneForm.formState.errors.phone_number?.message}
                 flex="1"
+                minW={{ base: "100%", md: "auto" }}
               >
                 <InputGroup w="100%" startElement={<FiPhone />}>
                   <Input

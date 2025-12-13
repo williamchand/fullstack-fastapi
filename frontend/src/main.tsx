@@ -173,7 +173,7 @@ OpenAPI.TOKEN = async () => {
 }
 
 const handleApiError = (error: Error) => {
-  if (error instanceof ApiError && [401, 403].includes(error.status)) {
+  if (error instanceof ApiError && [401].includes(error.status)) {
     const info = getAuthErrorInfo(error)
     try {
       localStorage.setItem(

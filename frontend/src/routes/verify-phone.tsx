@@ -86,12 +86,12 @@ function VerifyPhone() {
         alignSelf="center"
         mb={4}
       />
-      <Flex gap={2} alignItems="flex-start">
+      <Flex gap={2} alignItems="flex-start" wrap="wrap">
         <Field
           required
           invalid={!!errors.region}
           errorText={errors.region?.message}
-          w="140px"
+          w={{ base: "100%", md: "80px" }}
         >
           <Controller
             control={control}
@@ -102,7 +102,7 @@ function VerifyPhone() {
                 value={field.value}
                 onChange={field.onChange}
                 disabled
-                size="sm"
+                size="md"
               />
             )}
           />
@@ -112,6 +112,7 @@ function VerifyPhone() {
           invalid={!!errors.phone_number}
           errorText={errors.phone_number?.message}
           flex="1"
+          minW={{ base: "100%", md: "auto" }}
         >
           <InputGroup w="100%" startElement={<FiPhone />}>
             <Input

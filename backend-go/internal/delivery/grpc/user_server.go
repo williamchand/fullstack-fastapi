@@ -83,7 +83,7 @@ func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserR
 			return nil, status.Error(codes.NotFound, "user not found")
 		}
 		if errors.Is(err, services.ErrInvalidPreviousPassword) {
-			return nil, status.Error(codes.Unauthenticated, "invalid previous password")
+			return nil, status.Error(codes.InvalidArgument, "invalid previous password")
 		}
 		return nil, status.Error(codes.Internal, "failed to get user")
 	}
@@ -188,7 +188,7 @@ func (s *userServer) LoginUser(ctx context.Context, req *salonappv1.LoginUserReq
 		case errors.Is(err, services.ErrInvalidCredentials):
 			return nil, status.Error(codes.Unauthenticated, "invalid username or password")
 		case errors.Is(err, services.ErrUserNotActive) || errors.Is(err, services.ErrInvalidEmailNotVerified):
-			return nil, status.Error(codes.PermissionDenied, "user is not active")
+			return nil, status.Error(codes.Unauthenticated, "user is not active")
 		default:
 			return nil, status.Error(codes.Internal, "failed to login user")
 		}

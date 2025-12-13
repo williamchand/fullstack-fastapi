@@ -7,6 +7,7 @@ import {
   Heading,
   Input,
   Text,
+  HStack,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
@@ -279,9 +280,11 @@ const UserInformation = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setAddEmailMode(true)}
-                  leftIcon={<FiMail />}
                 >
-                  Add Email
+                  <HStack gap={2}>
+                    <FiMail />
+                    <span>Add email</span>
+                  </HStack>
                 </Button>
               )}
               {addEmailMode && (
@@ -378,7 +381,7 @@ const UserInformation = () => {
         </Box>
 
         {/* Phone Section */}
-        <Box mb={6}>
+        <Box mb={6} w={{ sm: "full", md: "300px" }}>
           <Flex alignItems="center" gap={2} mb={2}>
             <Text fontWeight="medium">Phone Number</Text>
             {currentUser?.phoneNumber && (
@@ -402,9 +405,11 @@ const UserInformation = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setAddPhoneMode(true)}
-                  leftIcon={<FiPhone />}
                 >
-                  Add Phone Number
+                  <HStack gap={2}>
+                    <FiPhone />
+                    <span>Add Phone Number</span>
+                  </HStack>
                 </Button>
               )}
               {addPhoneMode && (
@@ -412,13 +417,32 @@ const UserInformation = () => {
                   as="form"
                   onSubmit={addPhoneForm.handleSubmit(onAddPhoneSubmit)}
                 >
-                  <Flex gap={2} alignItems="flex-start">
+                  <Flex gap={2} alignItems="flex-start" wrap="wrap">
+                    <Field
+                      invalid={!!addPhoneForm.formState.errors.region}
+                      errorText={addPhoneForm.formState.errors.region?.message}
+                      w={{ base: "100%", md: "80px" }}
+                    >
+                      <Controller
+                        control={addPhoneForm.control}
+                        name="region"
+                        rules={{ required: "Region is required" }}
+                        render={({ field }) => (
+                          <RegionSelector
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={field.disabled}
+                          />
+                        )}
+                      />
+                    </Field>
                     <Field
                       invalid={!!addPhoneForm.formState.errors.phone_number}
                       errorText={
                         addPhoneForm.formState.errors.phone_number?.message
                       }
                       flex="1"
+                      minW={{ base: "100%", md: "auto" }}
                     >
                       <InputGroup w="100%" startElement={<FiPhone />}>
                         <Input
@@ -443,24 +467,6 @@ const UserInformation = () => {
                           size="md"
                         />
                       </InputGroup>
-                    </Field>
-                    <Field
-                      invalid={!!addPhoneForm.formState.errors.region}
-                      errorText={addPhoneForm.formState.errors.region?.message}
-                      w="200px"
-                    >
-                      <Controller
-                        control={addPhoneForm.control}
-                        name="region"
-                        rules={{ required: "Region is required" }}
-                        render={({ field }) => (
-                          <RegionSelector
-                            value={field.value}
-                            onChange={field.onChange}
-                            disabled={field.disabled}
-                          />
-                        )}
-                      />
                     </Field>
                   </Flex>
                   <Flex mt={2} gap={2}>

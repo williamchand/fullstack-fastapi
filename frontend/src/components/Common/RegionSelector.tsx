@@ -92,9 +92,7 @@ export const RegionSelector = ({
           >
             <span>
               {selectedRegion
-                ? open
-                  ? selectedRegion.label
-                  : shortLabel ?? selectedRegion.label
+                ? shortLabel
                 : placeholder}
             </span>
             <LuChevronDown />
@@ -105,11 +103,11 @@ export const RegionSelector = ({
             <Popover.Content
               maxH="300px"
               overflowY="auto"
-              // ensure popover width matches trigger to avoid wrapping issues
+              // ensure a readable minimum width on mobile, but not smaller than trigger
               minW={
                 triggerRef.current
-                  ? `${triggerRef.current.offsetWidth}px`
-                  : undefined
+                  ? `${Math.max(240, triggerRef.current.offsetWidth)}px`
+                  : "240px"
               }
             >
               <Popover.Body p="0">

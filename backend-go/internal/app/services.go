@@ -3,7 +3,6 @@ package app
 import (
 	"github.com/williamchand/fullstack-fastapi/backend-go/config"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/auth"
 	dokunfra "github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/doku"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/jwt"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/smtp"
@@ -18,7 +17,6 @@ type AppServices struct {
 	BillingService    *services.BillingService
 	WeddingService    *services.WeddingService
 	PublicService     *services.PublicService
-	RoleValidator     *auth.RoleValidator
 }
 
 func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) {
@@ -37,6 +35,5 @@ func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) 
 		BillingService:    services.NewBillingService(cfg, repo.SubscriptionRepo, repo.PaymentRepo, stripeClient, dokuClient),
 		WeddingService:    services.NewWeddingService(repo.WeddingRepo, repo.GuestRepo, repo.TemplateRepo, repo.PaymentRepo, repo.SubscriptionRepo),
 		PublicService:     services.NewPublicService(),
-		RoleValidator:     auth.NewRoleValidator(cfg),
 	}, nil
 }

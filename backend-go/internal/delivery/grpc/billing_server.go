@@ -7,7 +7,7 @@ import (
 	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/auth"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -23,7 +23,7 @@ func NewBillingServer(svc *services.BillingService) salonappv1.BillingServiceSer
 }
 
 func (s *billingServer) CreateCheckoutSession(ctx context.Context, req *salonappv1.CreateCheckoutSessionRequest) (*salonappv1.CreateCheckoutSessionResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	url, id, err := s.svc.CreateCheckoutSession(ctx, user.ID, req.SuccessUrl, req.CancelUrl)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (s *billingServer) CreateCheckoutSession(ctx context.Context, req *salonapp
 }
 
 func (s *billingServer) GetSubscriptionStatus(ctx context.Context, _ *emptypb.Empty) (*salonappv1.GetSubscriptionStatusResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	sub, err := s.svc.GetSubscriptionStatus(ctx, user.ID)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (s *billingServer) HandleWebhook(ctx context.Context, req *salonappv1.Handl
 
 // CreateDokuPayment initiates a Jokul Checkout payment and returns payment URL
 func (s *billingServer) CreateDokuPayment(ctx context.Context, req *salonappv1.CreateDokuPaymentRequest) (*salonappv1.CreateDokuPaymentResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	amount := req.AmountIdr
 	invoice := req.InvoiceNumber
 	due := int(req.PaymentDueMinutes)
@@ -112,7 +112,7 @@ func (s *billingServer) CreateDokuPayment(ctx context.Context, req *salonappv1.C
 
 // statusError wraps a simple string into an error; reuse existing error handling
 func (s *billingServer) RefreshPaymentStatus(ctx context.Context, req *salonappv1.RefreshPaymentStatusRequest) (*salonappv1.PaymentStatusResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	if req.TransactionId == "" || req.Provider == salonappv1.Provider_PROVIDER_UNSPECIFIED {
 		return nil, status.Error(codes.InvalidArgument, "transaction_id and provider are required")
 	}

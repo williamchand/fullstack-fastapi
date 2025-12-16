@@ -17,6 +17,7 @@ type UserRepository interface {
 	ListUsers(ctx context.Context, offset, limit int32) ([]*entities.User, int, error)
 	Create(ctx context.Context, user *entities.User) (*entities.User, error)
 	UpdateProfile(ctx context.Context, userID uuid.UUID, fullName *string, hashedPassword *string) (*entities.User, error)
+	UpdateUser(ctx context.Context, user *entities.User) (*entities.User, error)
 	UpdateEmail(ctx context.Context, userID uuid.UUID, email string) (*entities.User, error)
 	UpdatePhone(ctx context.Context, userID uuid.UUID, phone string) (*entities.User, error)
 	SetUserRoles(ctx context.Context, userID uuid.UUID, roles []entities.RoleEnum) error

@@ -7,7 +7,7 @@ import (
 	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/auth"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/util"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -22,7 +22,7 @@ func NewDataSourceServer(svc *services.DataSourceService) salonappv1.DataSourceS
 }
 
 func (s *dataSourceServer) CreateDataSource(ctx context.Context, req *salonappv1.CreateDataSourceRequest) (*salonappv1.CreateDataSourceResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	ds, err := s.svc.CreateDataSource(ctx, user.ID, req.Name, req.Type, req.Host, req.Port, req.DatabaseName, req.Username, req.Password, map[string]any{})
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (s *dataSourceServer) CreateDataSource(ctx context.Context, req *salonappv1
 }
 
 func (s *dataSourceServer) TestConnection(ctx context.Context, req *salonappv1.TestConnectionRequest) (*salonappv1.TestConnectionResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	ds, err := s.svc.GetByID(ctx, uuid.MustParse(req.Id), user.ID)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (s *dataSourceServer) TestConnection(ctx context.Context, req *salonappv1.T
 }
 
 func (s *dataSourceServer) IntrospectSchema(ctx context.Context, req *salonappv1.IntrospectSchemaRequest) (*salonappv1.IntrospectSchemaResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	ds, err := s.svc.GetByID(ctx, uuid.MustParse(req.Id), user.ID)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (s *dataSourceServer) IntrospectSchema(ctx context.Context, req *salonappv1
 }
 
 func (s *dataSourceServer) SetAICredential(ctx context.Context, req *salonappv1.SetAICredentialRequest) (*emptypb.Empty, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	if err := s.svc.SetAICredential(ctx, user.ID, req.Provider, req.ApiKey); err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (s *dataSourceServer) SetAICredential(ctx context.Context, req *salonappv1.
 }
 
 func (s *dataSourceServer) AskQuestion(ctx context.Context, req *salonappv1.AskQuestionRequest) (*salonappv1.AskQuestionResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	ds, err := s.svc.GetByID(ctx, uuid.MustParse(req.DataSourceId), user.ID)
 	if err != nil {
 		return nil, err

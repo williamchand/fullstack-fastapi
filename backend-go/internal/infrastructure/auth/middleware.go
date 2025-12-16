@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/repositories"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -59,14 +60,12 @@ var (
 
 type AuthMiddleware struct {
 	jwtRepository repositories.JWTRepository
-	roleValidator *RoleValidator
 	userRepo      repositories.UserRepository // interface to get user by ID
 }
 
-func NewAuthMiddleware(jwtRepository repositories.JWTRepository, roleValidator *RoleValidator, userRepo repositories.UserRepository) *AuthMiddleware {
+func NewAuthMiddleware(jwtRepository repositories.JWTRepository, userRepo repositories.UserRepository) *AuthMiddleware {
 	return &AuthMiddleware{
 		jwtRepository: jwtRepository,
-		roleValidator: roleValidator,
 		userRepo:      userRepo,
 	}
 }
@@ -98,7 +97,7 @@ func (m *AuthMiddleware) HTTPMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Add user to context
-		ctx := WithUser(r.Context(), user)
+		ctx := util.WithUser(r.Context(), user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -136,29 +135,29 @@ func (m *AuthMiddleware) GRPCAuthInterceptor(ctx context.Context, req any, info 
 	}
 
 	// ROLE AUTHORIZATION (NEW)
-	requiredRoles := m.roleValidator.RequiredGRPCRoles(info.FullMethod)
-	if !m.roleValidator.HasRole(user, requiredRoles...) {
+	requiredRoles := RequiredGRPCRoles(info.FullMethod)
+	if !util.HasRole(user, requiredRoles...) {
 		return nil, status.Error(codes.PermissionDenied, "insufficient permissions")
 	}
 
 	// Add user to context
-	ctx = WithUser(ctx, user)
+	ctx = util.WithUser(ctx, user)
 	return handler(ctx, req)
 }
 
-func (r *RoleValidator) RequiredGRPCRoles(method string) []string {
+func RequiredGRPCRoles(method string) []string {
 	return grpcRoleRules[method]
 }
 
 // GRPC interceptor for role-based authorization
 func (m *AuthMiddleware) GRPCRoleInterceptor(requiredRoles ...string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		user := UserFromContext(ctx)
+		user := util.UserFromContext(ctx)
 		if user == nil {
 			return nil, status.Error(codes.Unauthenticated, "authentication required")
 		}
 
-		if !m.roleValidator.HasRole(user, requiredRoles...) {
+		if !util.HasRole(user, requiredRoles...) {
 			return nil, status.Error(codes.PermissionDenied, "insufficient permissions")
 		}
 

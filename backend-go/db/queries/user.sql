@@ -26,6 +26,16 @@ SET
 WHERE id = $1
 RETURNING *;
 
+-- name: UpdateUser :one
+UPDATE "user"
+SET
+    full_name = COALESCE($2, full_name),
+    hashed_password = COALESCE($3, hashed_password),
+    is_active = COALESCE($4, is_active),
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
+
 -- name: UpdateUserEmail :one
 UPDATE "user"
 SET

@@ -30,6 +30,18 @@ export type v1AddPhoneNumberResponse = {
     message?: string;
 };
 
+export type v1AdminUpdateUserRequest = {
+    userId?: string;
+    fullName?: string;
+    password?: string;
+    roles?: Array<(string)>;
+    isActive?: boolean;
+};
+
+export type v1AdminUpdateUserResponse = {
+    user?: v1User;
+};
+
 export type v1CreateUserRequest = {
     email?: string;
     fullName?: string;
@@ -197,6 +209,12 @@ export type v1VerifyPhoneOTPResponse = {
     success?: boolean;
     message?: string;
 };
+
+export type UserServiceAdminUpdateUserData = {
+    requestBody: v1AdminUpdateUserRequest;
+};
+
+export type UserServiceAdminUpdateUserResponse = (v1AdminUpdateUserResponse);
 
 export type UserServiceLoginUserData = {
     requestBody: v1LoginUserRequest;

@@ -8,7 +8,7 @@ import (
 	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/auth"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/util"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -22,7 +22,7 @@ func NewWeddingServer(svc *services.WeddingService) salonappv1.WeddingServiceSer
 }
 
 func (s *weddingServer) CreateWedding(ctx context.Context, req *salonappv1.CreateWeddingRequest) (*salonappv1.WeddingResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	var cfg map[string]any
 	if req.ConfigJson != "" {
 		_ = json.Unmarshal([]byte(req.ConfigJson), &cfg)
@@ -84,7 +84,7 @@ func (s *weddingServer) SetSlug(ctx context.Context, req *salonappv1.SetSlugRequ
 }
 
 func (s *weddingServer) Publish(ctx context.Context, req *salonappv1.PublishRequest) (*salonappv1.WeddingResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	w, err := s.svc.Publish(ctx, uuid.MustParse(req.Id), user.ID)
 	if err != nil {
 		return nil, err

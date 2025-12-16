@@ -74,6 +74,39 @@ export const v1AddPhoneNumberResponseSchema = {
     }
 } as const;
 
+export const v1AdminUpdateUserRequestSchema = {
+    type: 'object',
+    properties: {
+        userId: {
+            type: 'string'
+        },
+        fullName: {
+            type: 'string'
+        },
+        password: {
+            type: 'string'
+        },
+        roles: {
+            type: 'array',
+            items: {
+                type: 'string'
+            }
+        },
+        isActive: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const v1AdminUpdateUserResponseSchema = {
+    type: 'object',
+    properties: {
+        user: {
+            '$ref': '#/components/schemas/v1User'
+        }
+    }
+} as const;
+
 export const v1CreateUserRequestSchema = {
     type: 'object',
     properties: {

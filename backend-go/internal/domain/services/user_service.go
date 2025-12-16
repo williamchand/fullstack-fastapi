@@ -59,6 +59,7 @@ var ErrInvalidState = fmt.Errorf("invalid state")
 var ErrInvalidToken = fmt.Errorf("invalid token")
 var ErrWeakPassword = fmt.Errorf("weak password")
 var ErrInvalidPreviousPassword = fmt.Errorf("invalid previous password")
+var ErrUnauthorized = fmt.Errorf("unauthorized")
 
 func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.User, error) {
 	userID, err := uuid.Parse(id)
@@ -130,12 +131,14 @@ func (s *UserService) UpdateProfile(ctx context.Context, id string, fullName *st
 	}
 	var hashed *string
 	if password != nil && *password != "" {
-		// require and validate previous password before changing
-		if previousPassword == nil || *previousPassword == "" {
-			return nil, ErrInvalidPreviousPassword
-		}
-		if _, err := s.ValidatePassword(ctx, existingUser.Email, *previousPassword); err != nil {
-			return nil, ErrInvalidPreviousPassword
+		// require and validate previous password before changing, unless superuser
+		if !util.HasRole(existingUser, string(entities.RoleSuperuser)) {
+			if previousPassword == nil || *previousPassword == "" {
+				return nil, ErrInvalidPreviousPassword
+			}
+			if _, err := s.ValidatePassword(ctx, existingUser.Email, *previousPassword); err != nil {
+				return nil, ErrInvalidPreviousPassword
+			}
 		}
 
 		hp, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
@@ -155,6 +158,57 @@ func (s *UserService) UpdateProfile(ctx context.Context, id string, fullName *st
 		return nil, err
 	}
 	updated.Roles = existingUser.Roles
+	return updated, nil
+}
+
+func (s *UserService) AdminUpdateUser(ctx context.Context, adminID string, targetUserID string, fullName *string, password *string, roles []string, isActive *bool) (*entities.User, error) {
+	adminUUID, err := uuid.Parse(adminID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+	admin, err := s.userRepo.GetByID(ctx, adminUUID)
+	if err != nil || admin == nil {
+		return nil, ErrUserNotFound
+	}
+	if !util.HasRole(admin, string(entities.RoleSuperuser)) {
+		return nil, ErrUnauthorized
+	}
+	targetUUID, err := uuid.Parse(targetUserID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+	target, err := s.userRepo.GetByID(ctx, targetUUID)
+	if err != nil || target == nil {
+		return nil, ErrUserNotFound
+	}
+	var hashed *string
+	if password != nil && *password != "" {
+		hp, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		hs := string(hp)
+		hashed = &hs
+	}
+	newRoles := target.Roles
+	if len(roles) > 0 {
+		newRoles = roles
+	}
+	newActive := target.IsActive
+	if isActive != nil {
+		newActive = *isActive
+	}
+	u := &entities.User{
+		ID:             target.ID,
+		FullName:       fullName,
+		HashedPassword: hashed,
+		Roles:          newRoles,
+		IsActive:       newActive,
+	}
+	updated, err := s.userRepo.UpdateUser(ctx, u)
+	if err != nil {
+		return nil, err
+	}
 	return updated, nil
 }
 

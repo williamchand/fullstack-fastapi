@@ -7,7 +7,7 @@ import (
 	salonappv1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/entities"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/domain/services"
-	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/auth"
+	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/util"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,19 +17,17 @@ import (
 
 type userServer struct {
 	salonappv1.UnimplementedUserServiceServer
-	userService   *services.UserService
-	roleValidator *auth.RoleValidator
+	userService *services.UserService
 }
 
-func NewUserServer(userService *services.UserService, roleValidator *auth.RoleValidator) salonappv1.UserServiceServer {
+func NewUserServer(userService *services.UserService) salonappv1.UserServiceServer {
 	return &userServer{
-		userService:   userService,
-		roleValidator: roleValidator,
+		userService: userService,
 	}
 }
 
 func (s *userServer) GetUser(ctx context.Context, req *emptypb.Empty) (*salonappv1.GetUserResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	user, err := s.userService.GetUserByID(ctx, user.ID.String())
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
@@ -45,8 +43,8 @@ func (s *userServer) GetUser(ctx context.Context, req *emptypb.Empty) (*salonapp
 
 func (s *userServer) ListUsers(ctx context.Context, req *salonappv1.ListUsersRequest) (*salonappv1.ListUsersResponse, error) {
 	// Check if user is superuser
-	user := auth.UserFromContext(ctx)
-	if !s.roleValidator.HasRole(user, string(entities.RoleSuperuser)) {
+	user := util.UserFromContext(ctx)
+	if !util.HasRole(user, string(entities.RoleSuperuser)) {
 		return nil, status.Error(codes.PermissionDenied, "insufficient permissions")
 	}
 
@@ -67,8 +65,8 @@ func (s *userServer) ListUsers(ctx context.Context, req *salonappv1.ListUsersReq
 }
 
 func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserRequest) (*salonappv1.CreateUserResponse, error) {
-	user := auth.UserFromContext(ctx)
-	isSuperuser := s.roleValidator.HasRole(user, string(entities.RoleSuperuser))
+	user := util.UserFromContext(ctx)
+	isSuperuser := util.HasRole(user, string(entities.RoleSuperuser))
 
 	roles := []entities.RoleEnum{}
 	if isSuperuser && len(req.Roles) > 0 {
@@ -117,7 +115,7 @@ func (s *userServer) RefreshToken(ctx context.Context, req *salonappv1.RefreshTo
 }
 
 func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserRequest) (*salonappv1.UpdateUserResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 
 	user, err := s.userService.UpdateProfile(ctx, user.ID.String(), req.FullName, req.Password, req.PreviousPassword)
 	if err != nil {
@@ -135,8 +133,25 @@ func (s *userServer) UpdateUser(ctx context.Context, req *salonappv1.UpdateUserR
 	}, nil
 }
 
+func (s *userServer) AdminUpdateUser(ctx context.Context, req *salonappv1.AdminUpdateUserRequest) (*salonappv1.AdminUpdateUserResponse, error) {
+	admin := util.UserFromContext(ctx)
+	user, err := s.userService.AdminUpdateUser(ctx, admin.ID.String(), req.UserId, req.FullName, req.Password, req.Roles, req.IsActive)
+	if err != nil {
+		if errors.Is(err, services.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		if errors.Is(err, services.ErrUnauthorized) {
+			return nil, status.Error(codes.PermissionDenied, "unauthorized")
+		}
+		return nil, status.Error(codes.Internal, "failed to update user")
+	}
+	return &salonappv1.AdminUpdateUserResponse{
+		User: s.userToProto(user),
+	}, nil
+}
+
 func (s *userServer) AddPhoneNumber(ctx context.Context, req *salonappv1.AddPhoneNumberRequest) (*salonappv1.AddPhoneNumberResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	if req.PhoneNumber == "" {
 		return nil, status.Error(codes.InvalidArgument, "phone_number is required")
 	}
@@ -157,7 +172,7 @@ func (s *userServer) AddPhoneNumber(ctx context.Context, req *salonappv1.AddPhon
 }
 
 func (s *userServer) VerifyAddPhoneOTP(ctx context.Context, req *salonappv1.VerifyAddPhoneOTPRequest) (*salonappv1.VerifyAddPhoneOTPResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	if req.OtpCode == "" {
 		return nil, status.Error(codes.InvalidArgument, "otp_code is required")
 	}
@@ -177,7 +192,7 @@ func (s *userServer) VerifyAddPhoneOTP(ctx context.Context, req *salonappv1.Veri
 }
 
 func (s *userServer) AddEmail(ctx context.Context, req *salonappv1.AddEmailRequest) (*salonappv1.AddEmailResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	if req.Email == "" {
 		return nil, status.Error(codes.InvalidArgument, "email is required")
 	}
@@ -195,7 +210,7 @@ func (s *userServer) AddEmail(ctx context.Context, req *salonappv1.AddEmailReque
 }
 
 func (s *userServer) VerifyAddEmailOTP(ctx context.Context, req *salonappv1.VerifyAddEmailOTPRequest) (*salonappv1.VerifyAddEmailOTPResponse, error) {
-	user := auth.UserFromContext(ctx)
+	user := util.UserFromContext(ctx)
 	if req.OtpCode == "" {
 		return nil, status.Error(codes.InvalidArgument, "otp_code is required")
 	}

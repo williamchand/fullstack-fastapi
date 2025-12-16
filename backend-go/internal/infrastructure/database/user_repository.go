@@ -87,6 +87,28 @@ func (r *userRepository) UpdateProfile(ctx context.Context, userID uuid.UUID, fu
 	return r.toEntity(&dbUser, roles), nil
 }
 
+func (r *userRepository) UpdateUser(ctx context.Context, user *entities.User) (*entities.User, error) {
+	params := dbgen.UpdateUserParams{ID: user.ID, FullName: toPgText(user.FullName), HashedPassword: toPgText(user.HashedPassword), IsActive: user.IsActive}
+	dbUser, err := r.queries.UpdateUser(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	// Update roles
+	err = r.queries.DeleteUserRole(ctx, dbUser.ID)
+	if err != nil {
+		return nil, err
+	}
+	for _, role := range user.Roles {
+		roleIDs, err := r.queries.GetRole(ctx, []string{role})
+		if err != nil || len(roleIDs) == 0 {
+			continue
+		}
+		r.queries.AssignRoleToUser(ctx, dbgen.AssignRoleToUserParams{UserID: dbUser.ID, RoleID: roleIDs[0]})
+	}
+	roles, _ := r.queries.GetUserRole(ctx, dbUser.ID)
+	return r.toEntity(&dbUser, roles), nil
+}
+
 func (r *userRepository) UpdateEmail(ctx context.Context, userID uuid.UUID, email string) (*entities.User, error) {
 	dbUser, err := r.queries.UpdateUserEmail(ctx, dbgen.UpdateUserEmailParams{ID: userID, Email: email})
 	if err != nil {

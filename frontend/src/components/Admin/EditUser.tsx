@@ -23,9 +23,9 @@ import { LuChevronDown } from "react-icons/lu"
 import type {
   ApiError,
   v1User as UserPublic,
-  v1UpdateUserRequest as UserUpdate,
+  v1AdminUpdateUserRequest as UserUpdate,
 } from "@/client/user"
-import { userServiceUpdateUser } from "@/client/user"
+import { userServiceAdminUpdateUser } from "@/client/user"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 import { Checkbox } from "../ui/checkbox"
@@ -96,7 +96,7 @@ const EditUser = ({ user }: EditUserProps) => {
 
   const mutation = useMutation({
     mutationFn: (data: UserUpdate) =>
-      userServiceUpdateUser({ requestBody: data }),
+      userServiceAdminUpdateUser({ requestBody: data }),
     onSuccess: () => {
       showSuccessToast("User updated successfully.")
       reset()
@@ -112,8 +112,11 @@ const EditUser = ({ user }: EditUserProps) => {
 
   const onSubmit: SubmitHandler<UserUpdateForm> = async (data) => {
     const updateData: UserUpdate = {
+      userId: user.id,
       fullName: data.fullName,
       password: data.password === "" ? undefined : data.password,
+      roles: data.roles,
+      isActive: data.is_active,
     }
     mutation.mutate(updateData)
   }
@@ -164,7 +167,6 @@ const EditUser = ({ user }: EditUserProps) => {
               </Field>
 
               <Field
-                required
                 invalid={!!errors.password}
                 errorText={errors.password?.message}
                 label="Set Password"
@@ -183,7 +185,6 @@ const EditUser = ({ user }: EditUserProps) => {
               </Field>
 
               <Field
-                required
                 invalid={!!errors.confirm_password}
                 errorText={errors.confirm_password?.message}
                 label="Confirm Password"

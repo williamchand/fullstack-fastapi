@@ -209,12 +209,19 @@ func (s *OAuthService) createUserFromOAuth(
 		FullName:        &userInfo.Name,
 		IsActive:        true,
 		IsEmailVerified: userInfo.VerifiedEmail,
+		Roles:           []string{string(entities.RoleCustomer)},
 	}
 
 	// Create the user in database
 	user, err = userRepo.Create(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	// Set user roles
+	err = userRepo.SetUserRoles(ctx, user.ID, []entities.RoleEnum{entities.RoleCustomer})
+	if err != nil {
+		return nil, fmt.Errorf("failed to set user roles: %w", err)
 	}
 
 	// Create OAuth account

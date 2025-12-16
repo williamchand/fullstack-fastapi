@@ -95,6 +95,21 @@ service UserService {
     };
   }
 
+  rpc AdminUpdateUser(AdminUpdateUserRequest) returns (AdminUpdateUserResponse) {
+    option (google.api.http) = {
+      put: "/v1/admin/user"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: {
+        security_requirement: {
+          key: "BearerAuth"
+          value: {}
+        }
+      }
+    };
+  }
+
   rpc AddPhoneNumber(AddPhoneNumberRequest) returns (AddPhoneNumberResponse) {
     option (google.api.http) = {
       post: "/v1/user/add-phone"
@@ -258,6 +273,18 @@ message UpdateUserRequest {
 }
 
 message UpdateUserResponse {
+  User user = 1;
+}
+
+message AdminUpdateUserRequest {
+  string user_id = 1;
+  optional string full_name = 2;
+  optional string password = 3;
+  repeated string roles = 4;
+  optional bool is_active = 5;
+}
+
+message AdminUpdateUserResponse {
   User user = 1;
 }
 

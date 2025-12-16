@@ -40,7 +40,12 @@ interface UserCreateForm extends UserRegister {
 }
 
 function getRolesQueryOptions() {
-  const staticRoles = [{ name: "user" }, { name: "superuser" }]
+  const staticRoles = [
+    { name: "customer" },
+    { name: "salon_owner" },
+    { name: "employee" },
+    { name: "superuser" },
+  ]
   return {
     queryFn: async () => ({ data: staticRoles }),
     queryKey: ["roles"],
@@ -71,18 +76,20 @@ const AddUser = () => {
       fullName: "",
       password: "",
       confirm_password: "",
-      roles: [],
+      roles: ["customer"],
       is_active: false,
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: UserRegister) =>
+    mutationFn: (data: UserCreateForm) =>
       userServiceCreateUser({
         requestBody: {
           email: data.email,
           fullName: data.fullName,
           password: data.password,
+          roles: data.roles,
+          isActive: data.is_active,
         },
       }),
     onSuccess: () => {

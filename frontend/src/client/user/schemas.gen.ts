@@ -85,6 +85,15 @@ export const v1CreateUserRequestSchema = {
         },
         password: {
             type: 'string'
+        },
+        roles: {
+            type: 'array',
+            items: {
+                type: 'string'
+            }
+        },
+        isActive: {
+            type: 'boolean'
         }
     }
 } as const;
@@ -103,6 +112,22 @@ export const v1GetUserResponseSchema = {
     properties: {
         user: {
             '$ref': '#/components/schemas/v1User'
+        }
+    }
+} as const;
+
+export const v1ListUsersResponseSchema = {
+    type: 'object',
+    properties: {
+        users: {
+            type: 'array',
+            items: {
+                '$ref': '#/components/schemas/v1User'
+            }
+        },
+        total: {
+            type: 'integer',
+            format: 'int32'
         }
     }
 } as const;

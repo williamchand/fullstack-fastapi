@@ -43,6 +43,20 @@ service UserService {
       }
     };
   }
+
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {
+      get: "/v1/users"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      security: {
+        security_requirement: {
+          key: "BearerAuth"
+          value: {}
+        }
+      }
+    };
+  }
   
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
     option (google.api.http) = {
@@ -215,10 +229,22 @@ message GetUserResponse {
   User user = 1;
 }
 
+message ListUsersRequest {
+  int32 offset = 1;
+  int32 limit = 2;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  int32 total = 2;
+}
+
 message CreateUserRequest {
   string email = 1;
   string full_name = 2;
   string password = 3;
+  repeated string roles = 4;
+  bool is_active = 5;
 }
 
 message CreateUserResponse {

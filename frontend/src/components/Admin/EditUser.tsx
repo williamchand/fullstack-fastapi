@@ -53,7 +53,12 @@ interface UserUpdateForm {
 }
 
 function getRolesQueryOptions() {
-  const staticRoles = [{ name: "user" }, { name: "superuser" }]
+  const staticRoles = [
+    { name: "customer" },
+    { name: "salon_owner" },
+    { name: "employee" },
+    { name: "superuser" },
+  ]
   return {
     queryFn: async () => ({ data: staticRoles }),
     queryKey: ["roles"],

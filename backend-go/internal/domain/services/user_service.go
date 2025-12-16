@@ -69,7 +69,11 @@ func (s *UserService) GetUserByID(ctx context.Context, id string) (*entities.Use
 	return s.userRepo.GetByID(ctx, userID)
 }
 
-func (s *UserService) CreateUser(ctx context.Context, email, password, fullName string, roles []entities.RoleEnum, isEmailVerified bool) (*entities.User, error) {
+func (s *UserService) ListUsers(ctx context.Context, offset, limit int32) ([]*entities.User, int, error) {
+	return s.userRepo.ListUsers(ctx, offset, limit)
+}
+
+func (s *UserService) CreateUser(ctx context.Context, email, password, fullName string, roles []entities.RoleEnum, isActive bool) (*entities.User, error) {
 	existing, _ := s.userRepo.GetByEmail(ctx, email)
 	if existing != nil {
 		return nil, ErrUserExists
@@ -85,8 +89,8 @@ func (s *UserService) CreateUser(ctx context.Context, email, password, fullName 
 		Email:           email,
 		HashedPassword:  &hashedPasswordStr,
 		FullName:        &fullName,
-		IsActive:        isEmailVerified,
-		IsEmailVerified: isEmailVerified,
+		IsActive:        isActive,
+		IsEmailVerified: false,
 	}
 
 	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {

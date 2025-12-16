@@ -120,6 +120,26 @@ func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*entitie
 	return r.toEntity(&dbUser, dbRoles), nil
 }
 
+func (r *userRepository) ListUsers(ctx context.Context, offset, limit int32) ([]*entities.User, int, error) {
+	dbUsers, err := r.queries.ListUsers(ctx, dbgen.ListUsersParams{Limit: limit, Offset: offset})
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := r.queries.CountUsers(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	users := make([]*entities.User, len(dbUsers))
+	for i, dbUser := range dbUsers {
+		dbRoles, err := r.queries.GetUserRole(ctx, dbUser.ID)
+		if err != nil {
+			return nil, 0, err
+		}
+		users[i] = r.toEntity(&dbUser, dbRoles)
+	}
+	return users, int(total), nil
+}
+
 func (r *userRepository) SetPhoneVerified(ctx context.Context, userID uuid.UUID) error {
 	_, err := r.queries.SetPhoneVerified(ctx, userID)
 	return err

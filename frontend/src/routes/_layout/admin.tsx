@@ -4,7 +4,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
 
 import type { v1User as UserPublic } from "@/client/user"
-import { userServiceGetUser } from "@/client/user"
+import { userServiceListUsers } from "@/client/user"
 import AddUser from "@/components/Admin/AddUser"
 import { UserActionsMenu } from "@/components/Common/UserActionsMenu"
 import PendingUsers from "@/components/Pending/PendingUsers"
@@ -24,11 +24,11 @@ const PER_PAGE = 5
 function getUsersQueryOptions({ page }: { page: number }) {
   return {
     queryFn: async () => {
-      const res = await userServiceGetUser()
-      const usr = res.user ?? null
+      const offset = (page - 1) * PER_PAGE
+      const res = await userServiceListUsers({ offset, limit: PER_PAGE })
       return {
-        data: usr ? [usr].slice(0, PER_PAGE) : [],
-        meta: { total: usr ? 1 : 0 },
+        data: res.users ?? [],
+        meta: { total: res.total ?? 0 },
       }
     },
     queryKey: ["users", { page }],
@@ -53,10 +53,10 @@ function UsersTable() {
 
   const setPage = (page: number) =>
     navigate({
-      search: (prev: { [key: string]: string }) => ({ ...prev, page }),
+      search: { page },
     })
 
-  const users = data?.data.slice(0, PER_PAGE) ?? []
+  const users = data?.data ?? []
   const count = data?.meta.total ?? 0
   if (isLoading) {
     return <PendingUsers />
@@ -87,7 +87,7 @@ function UsersTable() {
               </Table.Cell>
               <Table.Cell w="25%">{user.email}</Table.Cell>
               <Table.Cell w="15%">
-                {user.roles?.includes("superuser") ? "Superuser" : "User"}
+                {user.roles?.join(", ") || "None"}
               </Table.Cell>
               <Table.Cell w="20%">
                 {user.isActive ? "Active" : "Inactive"}

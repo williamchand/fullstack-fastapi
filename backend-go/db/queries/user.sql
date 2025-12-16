@@ -76,3 +76,11 @@ ON CONFLICT (user_id, role_id) DO NOTHING;
 -- name: DeleteUserRole :exec
 DELETE FROM user_role
 WHERE user_id = $1;
+
+-- name: ListUsers :many
+SELECT * FROM "user"
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: CountUsers :one
+SELECT COUNT(*)::int FROM "user";

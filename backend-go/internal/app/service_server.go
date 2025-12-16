@@ -15,7 +15,7 @@ type ServiceServer struct {
 }
 
 func initServiceServer(appServices *AppServices) *ServiceServer {
-	userServer := grpc.NewUserServer(appServices.UserService)
+	userServer := grpc.NewUserServer(appServices.UserService, appServices.RoleValidator)
 	oauthServer := grpc.NewOAuthServer(appServices.OauthService)
 	dsServer := grpc.NewDataSourceServer(appServices.DataSourceService)
 	billServer := grpc.NewBillingServer(appServices.BillingService)

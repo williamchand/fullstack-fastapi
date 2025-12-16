@@ -34,6 +34,8 @@ export type v1CreateUserRequest = {
     email?: string;
     fullName?: string;
     password?: string;
+    roles?: Array<(string)>;
+    isActive?: boolean;
 };
 
 export type v1CreateUserResponse = {
@@ -42,6 +44,11 @@ export type v1CreateUserResponse = {
 
 export type v1GetUserResponse = {
     user?: v1User;
+};
+
+export type v1ListUsersResponse = {
+    users?: Array<v1User>;
+    total?: number;
 };
 
 export type v1LoginUserRequest = {
@@ -288,3 +295,10 @@ export type UserServiceVerifyPhoneOtpData = {
 };
 
 export type UserServiceVerifyPhoneOtpResponse = (v1VerifyPhoneOTPResponse);
+
+export type UserServiceListUsersData = {
+    limit?: number;
+    offset?: number;
+};
+
+export type UserServiceListUsersResponse = (v1ListUsersResponse);

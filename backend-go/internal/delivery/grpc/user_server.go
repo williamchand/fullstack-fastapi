@@ -17,12 +17,14 @@ import (
 
 type userServer struct {
 	salonappv1.UnimplementedUserServiceServer
-	userService *services.UserService
+	userService   *services.UserService
+	roleValidator *auth.RoleValidator
 }
 
-func NewUserServer(userService *services.UserService) salonappv1.UserServiceServer {
+func NewUserServer(userService *services.UserService, roleValidator *auth.RoleValidator) salonappv1.UserServiceServer {
 	return &userServer{
-		userService: userService,
+		userService:   userService,
+		roleValidator: roleValidator,
 	}
 }
 
@@ -41,8 +43,48 @@ func (s *userServer) GetUser(ctx context.Context, req *emptypb.Empty) (*salonapp
 	}, nil
 }
 
+func (s *userServer) ListUsers(ctx context.Context, req *salonappv1.ListUsersRequest) (*salonappv1.ListUsersResponse, error) {
+	// Check if user is superuser
+	user := auth.UserFromContext(ctx)
+	if !s.roleValidator.HasRole(user, string(entities.RoleSuperuser)) {
+		return nil, status.Error(codes.PermissionDenied, "insufficient permissions")
+	}
+
+	users, total, err := s.userService.ListUsers(ctx, req.Offset, req.Limit)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to list users")
+	}
+
+	protoUsers := make([]*salonappv1.User, len(users))
+	for i, u := range users {
+		protoUsers[i] = s.userToProto(u)
+	}
+
+	return &salonappv1.ListUsersResponse{
+		Users: protoUsers,
+		Total: int32(total),
+	}, nil
+}
+
 func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserRequest) (*salonappv1.CreateUserResponse, error) {
-	user, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, []entities.RoleEnum{entities.RoleCustomer}, false)
+	user := auth.UserFromContext(ctx)
+	isSuperuser := s.roleValidator.HasRole(user, string(entities.RoleSuperuser))
+
+	roles := []entities.RoleEnum{}
+	if isSuperuser && len(req.Roles) > 0 {
+		for _, r := range req.Roles {
+			roles = append(roles, entities.RoleEnum(r))
+		}
+	} else {
+		roles = []entities.RoleEnum{entities.RoleCustomer}
+	}
+
+	isActive := false
+	if isSuperuser {
+		isActive = req.IsActive
+	}
+
+	userEntity, err := s.userService.CreateUser(ctx, req.Email, req.Password, req.FullName, roles, isActive)
 	if err != nil {
 		if errors.Is(err, services.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exist")
@@ -51,7 +93,7 @@ func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserR
 	}
 
 	return &salonappv1.CreateUserResponse{
-		User: s.userToProto(user),
+		User: s.userToProto(userEntity),
 	}, nil
 }
 

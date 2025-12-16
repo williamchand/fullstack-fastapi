@@ -78,7 +78,7 @@ func (s *OAuthService) GetAuthURL(provider string) (string, string, error) {
 		return "", "", err
 	}
 
-	return s.config[provider].configService.AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
+	return s.config[provider].configService.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent")), state, nil
 }
 
 func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code string) (*entities.TokenPair, error) {

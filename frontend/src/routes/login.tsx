@@ -61,6 +61,7 @@ function Login() {
   const otpInputRef = useRef<HTMLInputElement | null>(null)
   const [oauthLoading, setOauthLoading] = useState(false)
   const [oauthPopup, setOauthPopup] = useState<Window | null>(null)
+  const [isProcessingCallback, setIsProcessingCallback] = useState(false)
 
   // Email login form
   const emailForm = useForm<AccessToken>({
@@ -191,7 +192,8 @@ function Login() {
   useEffect(() => {
     const code = search?.code
     const provider = (search?.provider || "google") as string
-    if (!code) return
+    if (!code || isProcessingCallback) return
+    setIsProcessingCallback(true)
     ;(async () => {
       const processedKey = search?.state
         ? `oauth_processed:${search.state}`
@@ -201,6 +203,7 @@ function Login() {
           const { code: _c, state: _s, provider: _p, ...rest } =
             (search || {}) as Record<string, unknown>
           navigate({ to: "/login", search: rest as any, replace: true })
+          setIsProcessingCallback(false)
           return
         }
       } catch {}
@@ -233,9 +236,10 @@ function Login() {
           if (processedKey) sessionStorage.setItem(processedKey, "1")
         } catch {}
         navigate({ to: "/login", search: rest as any, replace: true })
+        setIsProcessingCallback(false)
       }
     })()
-  }, [search?.code, search?.provider])
+  }, [search?.code, search?.provider, isProcessingCallback])
 
   // Watch OTP value for enabling login button
   const otpVal = phoneForm.watch("otp_code")
@@ -320,6 +324,10 @@ function Login() {
               variant="outline"
               size="md"
               onClick={async () => {
+                if (oauthPopup && !oauthPopup.closed) {
+                  oauthPopup.focus()
+                  return
+                }
                 setOauthLoading(true)
                 try {
                   const res = await oauthServiceGetOauthUrl({ provider: "google" })
@@ -357,9 +365,13 @@ function Login() {
                   } catch {}
                   setOauthPopup(popup)
                   const handler = async (e: MessageEvent) => {
-                    if (e.origin !== window.location.origin) return
+                    if (e.origin !== window.location.origin || isProcessingCallback) return
+                    setIsProcessingCallback(true)
                     const data = e.data || {}
-                    if (data.type !== "oauth-callback") return
+                    if (data.type !== "oauth-callback") {
+                      setIsProcessingCallback(false)
+                      return
+                    }
                     const processedKey = data.state
                       ? `oauth_processed:${data.state}`
                       : null
@@ -371,6 +383,7 @@ function Login() {
                           oauthPopup?.close()
                         } catch {}
                         setOauthPopup(null)
+                        setIsProcessingCallback(false)
                         return
                       }
                     } catch {}
@@ -410,15 +423,15 @@ function Login() {
                         oauthPopup?.close()
                       } catch {}
                       setOauthPopup(null)
+                      setIsProcessingCallback(false)
                     }
                   }
-                  window.addEventListener("message", handler)
+                  window.addEventListener("message", handler, { once: true })
                 } catch {
                   showErrorToast("Failed to start Google login.")
                   setOauthLoading(false)
                 }
               }}
-              loading={oauthLoading}
             >
               <FcGoogle /> Login with Google
             </Button>

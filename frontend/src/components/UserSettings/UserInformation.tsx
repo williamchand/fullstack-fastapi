@@ -79,14 +79,17 @@ const UserInformation = () => {
   const updateNameMutation = useMutation({
     mutationFn: (data: UserUpdateMe) =>
       userServiceUpdateUser({ requestBody: { fullName: data.fullName } }),
-    onSuccess: () => {
-      showSuccessToast("Name updated successfully.")
-      setEditMode(false)
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
-    },
-    onError: (err: ApiError) => {
-      handleError(err)
-    },
+  onSuccess: (_, variables) => {
+    showSuccessToast("Name updated successfully.")
+    nameForm.reset({
+      fullName: variables.fullName,
+    })
+    setEditMode(false)
+    queryClient.invalidateQueries({ queryKey: ["currentUser"] })
+  },
+  onError: (err: ApiError) => {
+    handleError(err)
+  },
   })
 
   const addEmailMutation = useMutation({

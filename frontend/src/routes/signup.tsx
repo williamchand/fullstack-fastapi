@@ -56,7 +56,7 @@ function SignUp() {
     redirect?: string
   }
   const { showSuccessToast } = useCustomToast()
-  const { method, setMethod } = useUIStore()
+  const { method, setMethod, setVerifyData } = useUIStore()
 
   // Sync tab with search param and clean URL
   useEffect(() => {
@@ -106,13 +106,8 @@ function SignUp() {
     },
     onSuccess: (_data, variables) => {
       showSuccessToast("Registration successful. Please verify your phone.")
-      navigate({
-        to: "/verify-phone",
-        search: {
-          phone_number: variables.phone_number,
-          region: variables.region,
-        },
-      })
+      setVerifyData(variables.phone_number, variables.region)
+      navigate({ to: "/verify-phone" })
     },
     onError: (err: ApiError) => {
       handleError(err)

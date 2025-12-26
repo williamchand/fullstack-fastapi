@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -27,8 +29,11 @@ func (r *verificationCodeRepository) WithTx(tx pgx.Tx) repositories.Verification
 }
 
 func (r *verificationCodeRepository) Create(ctx context.Context, v *entities.VerificationCode) error {
+	if v.UserID == nil {
+		return fmt.Errorf("userID is required for Create; use CreateNoUser for null user_id")
+	}
 	params := dbgen.CreateVerificationCodeParams{
-		UserID:           v.UserID,
+		UserID:           toPgUUIDPtr(v.UserID),
 		VerificationCode: v.Code,
 		VerificationType: string(v.Type),
 		ExtraMetadata:    toPgJSON(v.ExtraMetadata),
@@ -43,9 +48,23 @@ func (r *verificationCodeRepository) Create(ctx context.Context, v *entities.Ver
 	return nil
 }
 
+func (r *verificationCodeRepository) CreateNoUser(ctx context.Context, code string, vType entities.VerificationType, extraMetadata map[string]any, expiresAt time.Time) (*entities.VerificationCode, error) {
+	params := dbgen.CreateVerificationCodeNoUserParams{
+		VerificationCode: code,
+		VerificationType: string(vType),
+		ExtraMetadata:    toPgJSON(extraMetadata),
+		ExpiresAt:        toPgTimestamptz(&expiresAt),
+	}
+	res, err := r.queries.CreateVerificationCodeNoUser(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return r.toEntity(&res), nil
+}
+
 func (r *verificationCodeRepository) GetLatestUnused(ctx context.Context, userID uuid.UUID, vType entities.VerificationType) (*entities.VerificationCode, error) {
 	res, err := r.queries.GetLatestUnusedVerificationCode(ctx, dbgen.GetLatestUnusedVerificationCodeParams{
-		UserID:           userID,
+		UserID:           toPgUUIDPtr(&userID),
 		VerificationType: string(vType),
 	})
 	if err != nil {
@@ -55,26 +74,26 @@ func (r *verificationCodeRepository) GetLatestUnused(ctx context.Context, userID
 }
 
 func (r *verificationCodeRepository) GetByCode(ctx context.Context, userID uuid.UUID, vType entities.VerificationType, code string) (*entities.VerificationCode, error) {
-    res, err := r.queries.GetVerificationCodeByCode(ctx, dbgen.GetVerificationCodeByCodeParams{
-        UserID:           userID,
-        VerificationType: string(vType),
-        VerificationCode: code,
-    })
-    if err != nil {
-        return nil, err
-    }
-    return r.toEntity(&res), nil
+	res, err := r.queries.GetVerificationCodeByCode(ctx, dbgen.GetVerificationCodeByCodeParams{
+		UserID:           toPgUUIDPtr(&userID),
+		VerificationType: string(vType),
+		VerificationCode: code,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r.toEntity(&res), nil
 }
 
 func (r *verificationCodeRepository) GetByCodeOnly(ctx context.Context, vType entities.VerificationType, code string) (*entities.VerificationCode, error) {
-    res, err := r.queries.GetVerificationCodeByCodeOnly(ctx, dbgen.GetVerificationCodeByCodeOnlyParams{
-        VerificationType: string(vType),
-        VerificationCode: code,
-    })
-    if err != nil {
-        return nil, err
-    }
-    return r.toEntity(&res), nil
+	res, err := r.queries.GetVerificationCodeByCodeOnly(ctx, dbgen.GetVerificationCodeByCodeOnlyParams{
+		VerificationType: string(vType),
+		VerificationCode: code,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r.toEntity(&res), nil
 }
 
 func (r *verificationCodeRepository) MarkUsed(ctx context.Context, id uuid.UUID) error {
@@ -83,9 +102,14 @@ func (r *verificationCodeRepository) MarkUsed(ctx context.Context, id uuid.UUID)
 }
 
 func (r *verificationCodeRepository) toEntity(v *dbgen.VerificationCode) *entities.VerificationCode {
+	var userID *uuid.UUID
+	if v.UserID.Valid {
+		u := uuid.UUID(v.UserID.Bytes)
+		userID = &u
+	}
 	return &entities.VerificationCode{
 		ID:            v.ID,
-		UserID:        v.UserID,
+		UserID:        userID,
 		Code:          v.VerificationCode,
 		Type:          entities.VerificationType(v.VerificationType),
 		ExtraMetadata: fromPgJSON(v.ExtraMetadata),

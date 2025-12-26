@@ -115,7 +115,7 @@ export type v1RegisterPhoneUserRequest = {
 };
 
 export type v1RegisterPhoneUserResponse = {
-    user?: v1User;
+    verificationToken?: string;
 };
 
 export type v1RequestPhoneOTPRequest = {
@@ -208,6 +208,11 @@ export type v1VerifyPhoneOTPRequest = {
 export type v1VerifyPhoneOTPResponse = {
     success?: boolean;
     message?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    expiresAt?: string;
+    refreshExpiresAt?: string;
+    tokenType?: string;
 };
 
 export type UserServiceAdminUpdateUserData = {

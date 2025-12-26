@@ -329,14 +329,18 @@ message RequestPhoneOTPResponse {
 }
 
 message VerifyPhoneOTPRequest {
-  string phone_number = 1;
+  string verification_token = 1;
   string otp_code = 2;
-  string region = 3;
 }
 
 message VerifyPhoneOTPResponse {
   bool success = 1;
   string message = 2;
+  string access_token = 3;
+  string refresh_token = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  google.protobuf.Timestamp refresh_expires_at = 6;
+  string token_type = 7;
 }
 
 message VerifyEmailOTPRequest {
@@ -370,7 +374,7 @@ message RegisterPhoneUserRequest {
 }
 
 message RegisterPhoneUserResponse {
-  User user = 1;
+  string verification_token = 1;
 }
 
 // Password recovery and reset messages

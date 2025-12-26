@@ -300,8 +300,8 @@ export const v1RegisterPhoneUserRequestSchema = {
 export const v1RegisterPhoneUserResponseSchema = {
     type: 'object',
     properties: {
-        user: {
-            '$ref': '#/components/schemas/v1User'
+        verificationToken: {
+            type: 'string'
         }
     }
 } as const;
@@ -531,6 +531,23 @@ export const v1VerifyPhoneOTPResponseSchema = {
             type: 'boolean'
         },
         message: {
+            type: 'string'
+        },
+        accessToken: {
+            type: 'string'
+        },
+        refreshToken: {
+            type: 'string'
+        },
+        expiresAt: {
+            type: 'string',
+            format: 'date-time'
+        },
+        refreshExpiresAt: {
+            type: 'string',
+            format: 'date-time'
+        },
+        tokenType: {
             type: 'string'
         }
     }

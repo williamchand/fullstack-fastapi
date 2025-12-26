@@ -9,6 +9,16 @@ INSERT INTO verification_code (
     $1, $2, $3, $4, $5
 ) RETURNING *;
 
+-- name: CreateVerificationCodeNoUser :one
+INSERT INTO verification_code (
+    verification_code,
+    verification_type,
+    extra_metadata,
+    expires_at
+) VALUES (
+    $1, $2, $3, $4
+) RETURNING *;
+
 -- name: GetLatestUnusedVerificationCode :one
 SELECT * FROM verification_code
 WHERE user_id = $1

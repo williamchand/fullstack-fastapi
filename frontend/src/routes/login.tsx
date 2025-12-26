@@ -55,7 +55,7 @@ function Login() {
     provider?: string
   }
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const { method, setMethod } = useUIStore()
+  const { method, setMethod, setVerifyData } = useUIStore()
 
   // Sync tab with search param and clean URL
   useEffect(() => {
@@ -76,7 +76,6 @@ function Login() {
   const [otpRequested, setOtpRequested] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const otpInputRef = useRef<HTMLInputElement | null>(null)
-  const [oauthLoading, setOauthLoading] = useState(false)
   const [oauthPopup, setOauthPopup] = useState<Window | null>(null)
   const [isProcessingCallback, setIsProcessingCallback] = useState(false)
 
@@ -332,12 +331,10 @@ function Login() {
                   oauthPopup.focus()
                   return
                 }
-                setOauthLoading(true)
                 try {
                   const res = await oauthServiceGetOauthUrl({ provider: "google" })
                   if (!res.url) {
                     showErrorToast("Failed to get Google login URL.")
-                    setOauthLoading(false)
                     return
                   }
                   const dest = search?.redirect || "/"
@@ -358,7 +355,6 @@ function Login() {
                       sessionStorage.setItem(key, dest)
                     } catch {}
                     window.location.href = res.url
-                    setOauthLoading(false)
                     return
                   }
                   try {
@@ -382,7 +378,6 @@ function Login() {
                     try {
                       if (processedKey && sessionStorage.getItem(processedKey)) {
                         window.removeEventListener("message", handler)
-                        setOauthLoading(false)
                         try {
                           oauthPopup?.close()
                         } catch {}
@@ -422,7 +417,6 @@ function Login() {
                       showErrorToast("OAuth login failed. Please try again.")
                     } finally {
                       window.removeEventListener("message", handler)
-                      setOauthLoading(false)
                       try {
                         oauthPopup?.close()
                       } catch {}
@@ -433,7 +427,6 @@ function Login() {
                   window.addEventListener("message", handler, { once: true })
                 } catch {
                   showErrorToast("Failed to start Google login.")
-                  setOauthLoading(false)
                 }
               }}
             >
@@ -649,10 +642,7 @@ function Login() {
                 </Text>
                 <RouterLink
                   to="/verify-phone"
-                  search={{
-                    phone_number: phoneForm.getValues("phone_number"),
-                    region: phoneForm.getValues("region"),
-                  }}
+                  onClick={() => setVerifyData(phoneForm.getValues("phone_number"), phoneForm.getValues("region"))}
                   className="main-link"
                 >
                   Verify Phone

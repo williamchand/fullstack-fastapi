@@ -15,6 +15,7 @@ import useCustomToast from "@/hooks/useCustomToast"
 import type { PhoneVerifyForm } from "@/types/phone"
 import { handleError } from "@/utils"
 import Logo from "/assets/images/fastapi-logo.svg"
+import { useUIStore } from "@/stores/uiStore"
 
 export const Route = createFileRoute("/verify-phone")({
   component: VerifyPhone,
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/verify-phone")({
 function VerifyPhone() {
   const navigate = useNavigate()
   const { showSuccessToast } = useCustomToast()
+  const { verifyPhoneNumber, verifyRegion } = useUIStore()
   const {
     register,
     handleSubmit,
@@ -37,26 +39,35 @@ function VerifyPhone() {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      phone_number:
-        new URLSearchParams(window.location.search).get("phone_number") || "",
-      region: new URLSearchParams(window.location.search).get("region") || "ID",
+      phone_number: verifyPhoneNumber,
+      region: verifyRegion,
       otp_code: "",
     },
   })
 
   const mutation = useMutation({
     mutationFn: async (data: PhoneVerifyForm) => {
-      await userServiceVerifyPhoneOtp({
+      const res = await userServiceVerifyPhoneOtp({
         requestBody: {
           phoneNumber: data.phone_number,
           otpCode: data.otp_code,
           region: data.region,
         },
       })
+      if (res.accessToken) {
+        localStorage.setItem("access_token", res.accessToken)
+      }
+      if (res.refreshToken) {
+        localStorage.setItem("refresh_token", res.refreshToken)
+      }
+      if (res.refreshExpiresAt) {
+        localStorage.setItem("refresh_expires_at", res.refreshExpiresAt)
+      }
+      return res
     },
     onSuccess: () => {
       showSuccessToast("Phone verified successfully.")
-      navigate({ to: "/login" })
+      navigate({ to: "/" })
     },
     onError: (err: ApiError) => {
       handleError(err)

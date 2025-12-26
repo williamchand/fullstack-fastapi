@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"math/big"
@@ -240,7 +239,7 @@ func (s *UserService) AddPhoneNumber(ctx context.Context, id string, phone strin
 		return err
 	}
 	v := &entities.VerificationCode{
-		UserID:        user.ID,
+		UserID:        &user.ID,
 		Code:          code,
 		Type:          entities.VerificationTypePhone,
 		ExpiresAt:     time.Now().Add(10 * time.Minute),
@@ -319,7 +318,7 @@ func (s *UserService) AddEmail(ctx context.Context, id string, email string) err
 		return err
 	}
 	v := &entities.VerificationCode{
-		UserID:        user.ID,
+		UserID:        &user.ID,
 		Code:          code,
 		Type:          entities.VerificationTypeEmail,
 		ExpiresAt:     time.Now().Add(15 * time.Minute),
@@ -461,7 +460,7 @@ func (s *UserService) SendEmailVerification(ctx context.Context, email string) e
 
 	expires := time.Now().Add(15 * time.Minute)
 	v := &entities.VerificationCode{
-		UserID:        user.ID,
+		UserID:        &user.ID,
 		Code:          code,
 		Type:          entities.VerificationTypeEmail,
 		ExpiresAt:     expires,
@@ -498,16 +497,12 @@ func (s *UserService) RequestPasswordReset(ctx context.Context, email string) er
 		return ErrUserNotFound
 	}
 
-	// Generate URL-safe token
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return fmt.Errorf("failed to generate token: %w", err)
-	}
-	token := base64.RawURLEncoding.EncodeToString(b)
+	// Generate hash token
+	token := util.GenerateSecureToken(32)
 
 	expires := time.Now().Add(60 * time.Minute)
 	v := &entities.VerificationCode{
-		UserID:        user.ID,
+		UserID:        &user.ID,
 		Code:          token,
 		Type:          entities.VerificationTypePasswordReset,
 		ExpiresAt:     expires,
@@ -547,7 +542,7 @@ func (s *UserService) ResetPassword(ctx context.Context, token, newPassword stri
 	if v.UsedAt != nil || time.Now().After(v.ExpiresAt) {
 		return ErrInvalidOrExpiredCode
 	}
-	user, err := s.userRepo.GetByID(ctx, v.UserID)
+	user, err := s.userRepo.GetByID(ctx, *v.UserID)
 	if err != nil || user == nil {
 		return ErrUserNotFound
 	}
@@ -581,7 +576,7 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string, region 
 	}
 	expires := time.Now().Add(10 * time.Minute)
 	v := &entities.VerificationCode{
-		UserID:        user.ID,
+		UserID:        &user.ID,
 		Code:          code,
 		Type:          entities.VerificationTypePhone,
 		ExpiresAt:     expires,
@@ -606,32 +601,6 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string, region 
 }
 
 var ErrInvalidOrExpiredCode = fmt.Errorf("invalid or expired code")
-
-// VerifyPhoneOTP verifies the OTP and marks phone as verified
-func (s *UserService) VerifyPhoneOTP(ctx context.Context, phone, code string, region string) error {
-	normalized, ok := util.NormalizeE164(phone, region)
-	if !ok {
-		return ErrInvalidState
-	}
-	user, err := s.userRepo.GetByPhone(ctx, normalized)
-	if err != nil || user == nil {
-		return ErrUserNotFound
-	}
-	v, err := s.verificationRepo.GetByCode(ctx, user.ID, entities.VerificationTypePhone, code)
-	if err != nil || v == nil {
-		return ErrInvalidOrExpiredCode
-	}
-	if v.UsedAt != nil || time.Now().After(v.ExpiresAt) {
-		return ErrInvalidOrExpiredCode
-	}
-	if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
-		return fmt.Errorf("failed to mark code used: %w", err)
-	}
-	if err := s.userRepo.SetPhoneVerified(ctx, user.ID); err != nil {
-		return fmt.Errorf("failed to set phone verified: %w", err)
-	}
-	return nil
-}
 
 // VerifyEmailOTP verifies the OTP and marks email as verified
 func (s *UserService) VerifyEmailOTP(ctx context.Context, email, code string) error {
@@ -675,6 +644,10 @@ func (s *UserService) LoginWithPhone(ctx context.Context, phone, code string, re
 	if err := s.verificationRepo.MarkUsed(ctx, v.ID); err != nil {
 		return nil, fmt.Errorf("failed to mark code used: %w", err)
 	}
+	// Mark phone as verified after successful OTP validation
+	if err := s.userRepo.SetPhoneVerified(ctx, user.ID); err != nil {
+		return nil, fmt.Errorf("failed to set phone verified: %w", err)
+	}
 	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, user.Roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
@@ -693,28 +666,88 @@ func (s *UserService) LoginWithPhone(ctx context.Context, phone, code string, re
 	}, nil
 }
 
-// RegisterPhoneUser creates a user by phone and requests OTP
-func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName, region string) (*entities.User, error) {
+// RegisterPhoneUser creates a verification code for phone registration
+func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName, region string) (string, error) {
 	normalized, ok := util.NormalizeE164(phone, region)
+	if !ok {
+		return "", ErrInvalidState
+	}
+	existing, err := s.userRepo.GetByPhone(ctx, normalized)
+	if err == nil && existing != nil {
+		return "", ErrUserExists
+	}
+
+	// Generate hash token
+	token := util.GenerateSecureToken(32)
+
+	extraMetadata := map[string]any{
+		"phone":    normalized,
+		"fullName": fullName,
+		"region":   region,
+	}
+
+	_, err = s.verificationRepo.CreateNoUser(ctx, token, entities.VerificationTypePhoneRegistration, extraMetadata, time.Now().Add(24*time.Hour))
+	if err != nil {
+		return "", err
+	}
+
+	// Send OTP for verification
+	_ = s.RequestPhoneOTP(ctx, normalized, region)
+
+	return token, nil
+}
+
+// VerifyRegisterPhoneUser verifies the token and OTP, then creates the user
+func (s *UserService) VerifyRegisterPhoneUser(ctx context.Context, token, otpCode string) (*entities.TokenPair, error) {
+	vc, err := s.verificationRepo.GetByCodeOnly(ctx, entities.VerificationTypePhoneRegistration, token)
+	if err != nil {
+		return nil, ErrInvalidOrExpiredCode
+	}
+	if vc.UsedAt != nil || time.Now().After(vc.ExpiresAt) {
+		return nil, ErrInvalidOrExpiredCode
+	}
+
+	phone, ok := vc.ExtraMetadata["phone"].(string)
 	if !ok {
 		return nil, ErrInvalidState
 	}
-	existing, err := s.userRepo.GetByPhone(ctx, normalized)
+
+	// Validate OTP
+	vcOTP, err := s.verificationRepo.GetByCodeOnly(ctx, entities.VerificationTypePhone, otpCode)
+	if err != nil {
+		return nil, ErrInvalidOrExpiredCode
+	}
+	if vcOTP.UsedAt != nil || time.Now().After(vcOTP.ExpiresAt) {
+		return nil, ErrInvalidOrExpiredCode
+	}
+	phoneFromOTP, ok := vcOTP.ExtraMetadata["phone"].(string)
+	if !ok || phoneFromOTP != phone {
+		return nil, ErrInvalidOrExpiredCode
+	}
+
+	fullName, ok := vc.ExtraMetadata["fullName"].(string)
+	if !ok {
+		return nil, ErrInvalidState
+	}
+
+	// Check if phone already exists
+	existing, err := s.userRepo.GetByPhone(ctx, phone)
 	if err == nil && existing != nil {
 		return nil, ErrUserExists
 	}
 
 	user := &entities.User{
 		Email:           "",
-		PhoneNumber:     &normalized,
+		PhoneNumber:     &phone,
 		FullName:        &fullName,
 		IsActive:        true,
 		IsEmailVerified: false,
-		IsPhoneVerified: true,
+		IsPhoneVerified: true, // Since verified via OTP
 	}
 
 	err = s.txManager.ExecuteInTransaction(ctx, func(tx pgx.Tx) error {
 		userRepoTx := s.userRepo.WithTx(tx)
+		verificationRepoTx := s.verificationRepo.WithTx(tx)
 		var errTx error
 		user, errTx = userRepoTx.Create(ctx, user)
 		if errTx != nil {
@@ -724,12 +757,31 @@ func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName, re
 		if errTx != nil {
 			return errTx
 		}
+		errTx = verificationRepoTx.MarkUsed(ctx, vc.ID)
+		if errTx != nil {
+			return errTx
+		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	// Immediately issue OTP for phone verification
-	_ = s.RequestPhoneOTP(ctx, normalized, region)
-	return user, nil
+
+	accessToken, err := s.jwtRepo.GenerateToken(user.ID, user.Email, user.Roles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.jwtRepo.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+	return &entities.TokenPair{
+		User:             user,
+		AccessToken:      accessToken.Token,
+		RefreshToken:     refreshToken.Token,
+		ExpiresAt:        accessToken.ExpiresAt,
+		RefreshExpiresAt: refreshToken.ExpiresAt,
+		IsNewUser:        false,
+	}, nil
 }

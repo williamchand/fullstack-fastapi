@@ -325,23 +325,32 @@ func (s *userServer) RequestPhoneOTP(ctx context.Context, req *salonappv1.Reques
 }
 
 func (s *userServer) VerifyPhoneOTP(ctx context.Context, req *salonappv1.VerifyPhoneOTPRequest) (*salonappv1.VerifyPhoneOTPResponse, error) {
-	if req.PhoneNumber == "" || req.OtpCode == "" {
-		return nil, status.Error(codes.InvalidArgument, "phone_number and otp_code are required")
+	if req.VerificationToken == "" {
+		return nil, status.Error(codes.InvalidArgument, "verification_token is required")
 	}
-	if req.Region == "" {
-		return nil, status.Error(codes.InvalidArgument, "region is required")
+	if req.OtpCode == "" {
+		return nil, status.Error(codes.InvalidArgument, "otp_code is required")
 	}
-	if err := s.userService.VerifyPhoneOTP(ctx, req.PhoneNumber, req.OtpCode, req.Region); err != nil {
+	pair, err := s.userService.VerifyRegisterPhoneUser(ctx, req.VerificationToken, req.OtpCode)
+	if err != nil {
 		switch {
-		case errors.Is(err, services.ErrUserNotFound):
-			return nil, status.Error(codes.NotFound, "user not found")
 		case errors.Is(err, services.ErrInvalidOrExpiredCode):
-			return nil, status.Error(codes.InvalidArgument, "invalid or expired code")
+			return nil, status.Error(codes.InvalidArgument, "invalid or expired token or otp")
+		case errors.Is(err, services.ErrUserExists):
+			return nil, status.Error(codes.AlreadyExists, "user already exists")
 		default:
-			return nil, status.Error(codes.Internal, "failed to verify phone")
+			return nil, status.Error(codes.Internal, "failed to verify registration")
 		}
 	}
-	return &salonappv1.VerifyPhoneOTPResponse{Success: true, Message: "phone verified"}, nil
+	return &salonappv1.VerifyPhoneOTPResponse{
+		Success:          true,
+		Message:          "phone number verified",
+		AccessToken:      pair.AccessToken,
+		RefreshToken:     pair.RefreshToken,
+		ExpiresAt:        timestamppb.New(pair.ExpiresAt),
+		RefreshExpiresAt: timestamppb.New(pair.RefreshExpiresAt),
+		TokenType:        "bearer",
+	}, nil
 }
 
 func (s *userServer) VerifyEmailOTP(ctx context.Context, req *salonappv1.VerifyEmailOTPRequest) (*salonappv1.VerifyEmailOTPResponse, error) {
@@ -394,14 +403,14 @@ func (s *userServer) RegisterPhoneUser(ctx context.Context, req *salonappv1.Regi
 	if req.Region == "" {
 		return nil, status.Error(codes.InvalidArgument, "region is required")
 	}
-	user, err := s.userService.RegisterPhoneUser(ctx, req.PhoneNumber, req.FullName, req.Region)
+	token, err := s.userService.RegisterPhoneUser(ctx, req.PhoneNumber, req.FullName, req.Region)
 	if err != nil {
 		if errors.Is(err, services.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
 		}
 		return nil, status.Error(codes.Internal, "failed to register user")
 	}
-	return &salonappv1.RegisterPhoneUserResponse{User: s.userToProto(user)}, nil
+	return &salonappv1.RegisterPhoneUserResponse{VerificationToken: token}, nil
 }
 
 func (s *userServer) userToProto(user *entities.User) *salonappv1.User {

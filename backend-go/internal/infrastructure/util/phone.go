@@ -1,10 +1,22 @@
 package util
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"strings"
 
 	"github.com/nyaruka/phonenumbers"
 )
+
+// GenerateSecureToken generates a secure random token of the specified byte length, base64 encoded.
+func GenerateSecureToken(length int) string {
+	bytes := make([]byte, length)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		panic(err) // Should not happen
+	}
+	return base64.URLEncoding.EncodeToString(bytes)
+}
 
 // NormalizeE164 converts input phone to E.164 format using the given defaultRegion (e.g., "ID").
 // Returns normalized "+<country><national>" string and ok=false if invalid.

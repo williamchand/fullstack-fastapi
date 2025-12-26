@@ -26,7 +26,6 @@ func (a *App) runGRPC(ctx context.Context) error {
 	genprotov1.RegisterDataSourceServiceServer(server, a.serviceServer.dataSourceServer)
 	genprotov1.RegisterBillingServiceServer(server, a.serviceServer.billingServer)
 	genprotov1.RegisterWeddingServiceServer(server, a.serviceServer.weddingServer)
-	genprotov1.RegisterPublicServiceServer(server, a.serviceServer.publicServer)
 
 	go func() {
 		<-ctx.Done()

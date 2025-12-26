@@ -32,7 +32,7 @@ var (
 
 	// Public URL prefixes allowed without auth
 	publicPrefixes = []string{
-		"/v1/public/",
+		// "/v1/public/",
 		"/v1/oauth/",
 	}
 	publicGRPCExact = map[string]bool{
@@ -50,7 +50,7 @@ var (
 		"/salonapp.v1.OAuthService/GetOAuthURL":            true,
 	}
 	publicGRPCPrefixes = []string{
-		"/salonapp.v1.PublicService/",
+		// "/salonapp.v1.PublicService/",
 		"/salonapp.v1.OAuthService/",
 	}
 	grpcRoleRules = map[string][]string{

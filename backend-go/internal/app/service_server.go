@@ -11,7 +11,6 @@ type ServiceServer struct {
 	dataSourceServer genprotov1.DataSourceServiceServer
 	billingServer    genprotov1.BillingServiceServer
 	weddingServer    genprotov1.WeddingServiceServer
-	publicServer     genprotov1.PublicServiceServer
 }
 
 func initServiceServer(appServices *AppServices) *ServiceServer {

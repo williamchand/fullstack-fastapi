@@ -16,7 +16,6 @@ type AppServices struct {
 	DataSourceService *services.DataSourceService
 	BillingService    *services.BillingService
 	WeddingService    *services.WeddingService
-	PublicService     *services.PublicService
 }
 
 func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) {
@@ -34,6 +33,5 @@ func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) 
 		DataSourceService: services.NewDataSourceService(cfg, repo.DataSourceRepo, repo.AICredRepo, repo.TransactionManager),
 		BillingService:    services.NewBillingService(cfg, repo.SubscriptionRepo, repo.PaymentRepo, stripeClient, dokuClient),
 		WeddingService:    services.NewWeddingService(repo.WeddingRepo, repo.GuestRepo, repo.TemplateRepo, repo.PaymentRepo, repo.SubscriptionRepo),
-		PublicService:     services.NewPublicService(),
 	}, nil
 }

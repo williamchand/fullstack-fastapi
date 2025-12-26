@@ -20,13 +20,11 @@ func initServiceServer(appServices *AppServices) *ServiceServer {
 	dsServer := grpc.NewDataSourceServer(appServices.DataSourceService)
 	billServer := grpc.NewBillingServer(appServices.BillingService)
 	wedServer := grpc.NewWeddingServer(appServices.WeddingService)
-	pubServer := grpc.NewPublicServer(appServices.PublicService)
 	return &ServiceServer{
 		userServer:       userServer,
 		oauthServer:      oauthServer,
 		dataSourceServer: dsServer,
 		billingServer:    billServer,
 		weddingServer:    wedServer,
-		publicServer:     pubServer,
 	}
 }

@@ -32,6 +32,7 @@ import {
   oauthServiceGetOauthUrl,
   oauthServiceHandleOauthCallback,
 } from "@/client/oauth"
+import { useUIStore } from "@/stores/uiStore"
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -54,7 +55,23 @@ function Login() {
     provider?: string
   }
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email")
+  const { method, setMethod } = useUIStore()
+
+  // Sync tab with search param and clean URL
+  useEffect(() => {
+    const m = search?.method
+    const { method: _method, ...rest } = (search || {}) as Record<string, unknown>
+    if (m === "phone") {
+      setMethod("phone")
+      navigate({ to: "/login", search: rest as any, replace: true })
+    } else if (m === "email") {
+      setMethod("email")
+      navigate({ to: "/login", search: rest as any, replace: true })
+    } else if (_method !== undefined) {
+      // Invalid method, clean URL
+      navigate({ to: "/login", search: rest as any, replace: true })
+    }
+  }, [search?.method, navigate, setMethod])
   const { loginMutation, error, resetError, authErrorInfo } = useAuth()
   const [otpRequested, setOtpRequested] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
@@ -158,19 +175,6 @@ function Login() {
   const [emailResendRequested, setEmailResendRequested] = useState(false)
   const [emailResendSecondsLeft, setEmailResendSecondsLeft] = useState(0)
 
-  // Sync tab with search param (e.g., /login?method=phone). Clear only the `method` param, keep current tab
-  useEffect(() => {
-    const m = search?.method
-    const { method: _method, ...rest } = (search || {}) as Record<string, unknown>
-    if (m === "phone") {
-      setLoginMethod("phone")
-      navigate({ to: "/login", search: rest as any, replace: true })
-    } else if (m === "email") {
-      setLoginMethod("email")
-      navigate({ to: "/login", search: rest as any, replace: true })
-    } // if no method param, do nothing so current tab stays
-  }, [search?.method, navigate])
-
   // Countdown timer for resend OTP availability
   useEffect(() => {
     if (!otpRequested || secondsLeft <= 0) return
@@ -262,9 +266,9 @@ function Login() {
         mb={4}
       />
       <Tabs.Root
-        value={loginMethod}
+        value={method}
         onValueChange={(e) => {
-          setLoginMethod(e.value as "email" | "phone")
+          setMethod(e.value as "email" | "phone")
           resetError()
         }}
         w="100%"
@@ -660,7 +664,7 @@ function Login() {
       </Tabs.Root>
       <Text>
         Don't have an account?{" "}
-        <RouterLink to="/signup" className="main-link">
+        <RouterLink to="/signup" search={{ redirect: search?.redirect }} className="main-link">
           Sign Up
         </RouterLink>
       </Text>

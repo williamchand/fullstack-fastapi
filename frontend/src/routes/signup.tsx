@@ -5,8 +5,9 @@ import {
   createFileRoute,
   redirect,
   useNavigate,
+  useSearch,
 } from "@tanstack/react-router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { FiLock, FiPhone, FiUser } from "react-icons/fi"
 
@@ -31,6 +32,7 @@ import {
   passwordRules,
 } from "@/utils"
 import Logo from "/assets/images/fastapi-logo.svg"
+import { useUIStore } from "@/stores/uiStore"
 
 export const Route = createFileRoute("/signup")({
   component: SignUp,
@@ -49,8 +51,28 @@ interface UserRegisterForm extends UserRegister {
 
 function SignUp() {
   const navigate = useNavigate()
+  const search = useSearch({ from: "/signup" }) as {
+    method?: "email" | "phone"
+    redirect?: string
+  }
   const { showSuccessToast } = useCustomToast()
-  const [signupMethod, setSignupMethod] = useState<"email" | "phone">("email")
+  const { method, setMethod } = useUIStore()
+
+  // Sync tab with search param and clean URL
+  useEffect(() => {
+    const m = search?.method
+    const { method: _method, ...rest } = (search || {}) as Record<string, unknown>
+    if (m === "phone") {
+      setMethod("phone")
+      navigate({ to: "/signup", search: rest as any, replace: true })
+    } else if (m === "email") {
+      setMethod("email")
+      navigate({ to: "/signup", search: rest as any, replace: true })
+    } else if (_method !== undefined) {
+      // Invalid method, clean URL
+      navigate({ to: "/signup", search: rest as any, replace: true })
+    }
+  }, [search?.method, navigate, setMethod])
   const { signUpMutation } = useAuth()
 
   // Email signup form
@@ -123,8 +145,8 @@ function SignUp() {
         mb={4}
       />
       <Tabs.Root
-        defaultValue={signupMethod}
-        onValueChange={(e) => setSignupMethod(e.value as "email" | "phone")}
+        value={method}
+        onValueChange={(e) => setMethod(e.value as "email" | "phone")}
         w="100%"
       >
         <Tabs.List>

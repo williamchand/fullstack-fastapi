@@ -72,16 +72,6 @@ func (a *App) runHTTP(ctx context.Context) error {
 		return err
 	}
 
-	err = genprotov1.RegisterPublicServiceHandlerFromEndpoint(
-		ctx,
-		mux,
-		fmt.Sprintf(":%s", a.cfg.GRPCPort),
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
-	)
-	if err != nil {
-		return err
-	}
-
 	handler := a.middleware.Auth.HTTPMiddleware(mux)
 
 	// Root mux to serve OpenAPI specs without auth and gRPC-Gateway with auth

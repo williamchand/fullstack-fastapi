@@ -74,6 +74,39 @@ export const v1AddPhoneNumberResponseSchema = {
     }
 } as const;
 
+export const v1AdminUpdateUserRequestSchema = {
+    type: 'object',
+    properties: {
+        userId: {
+            type: 'string'
+        },
+        fullName: {
+            type: 'string'
+        },
+        password: {
+            type: 'string'
+        },
+        roles: {
+            type: 'array',
+            items: {
+                type: 'string'
+            }
+        },
+        isActive: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const v1AdminUpdateUserResponseSchema = {
+    type: 'object',
+    properties: {
+        user: {
+            '$ref': '#/components/schemas/v1User'
+        }
+    }
+} as const;
+
 export const v1CreateUserRequestSchema = {
     type: 'object',
     properties: {
@@ -85,6 +118,15 @@ export const v1CreateUserRequestSchema = {
         },
         password: {
             type: 'string'
+        },
+        roles: {
+            type: 'array',
+            items: {
+                type: 'string'
+            }
+        },
+        isActive: {
+            type: 'boolean'
         }
     }
 } as const;
@@ -103,6 +145,22 @@ export const v1GetUserResponseSchema = {
     properties: {
         user: {
             '$ref': '#/components/schemas/v1User'
+        }
+    }
+} as const;
+
+export const v1ListUsersResponseSchema = {
+    type: 'object',
+    properties: {
+        users: {
+            type: 'array',
+            items: {
+                '$ref': '#/components/schemas/v1User'
+            }
+        },
+        total: {
+            type: 'integer',
+            format: 'int32'
         }
     }
 } as const;
@@ -242,8 +300,8 @@ export const v1RegisterPhoneUserRequestSchema = {
 export const v1RegisterPhoneUserResponseSchema = {
     type: 'object',
     properties: {
-        user: {
-            '$ref': '#/components/schemas/v1User'
+        verificationToken: {
+            type: 'string'
         }
     }
 } as const;
@@ -454,13 +512,10 @@ export const v1VerifyEmailOTPResponseSchema = {
 export const v1VerifyPhoneOTPRequestSchema = {
     type: 'object',
     properties: {
-        phoneNumber: {
+        verificationToken: {
             type: 'string'
         },
         otpCode: {
-            type: 'string'
-        },
-        region: {
             type: 'string'
         }
     }
@@ -473,6 +528,23 @@ export const v1VerifyPhoneOTPResponseSchema = {
             type: 'boolean'
         },
         message: {
+            type: 'string'
+        },
+        accessToken: {
+            type: 'string'
+        },
+        refreshToken: {
+            type: 'string'
+        },
+        expiresAt: {
+            type: 'string',
+            format: 'date-time'
+        },
+        refreshExpiresAt: {
+            type: 'string',
+            format: 'date-time'
+        },
+        tokenType: {
             type: 'string'
         }
     }

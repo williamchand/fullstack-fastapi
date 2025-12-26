@@ -30,10 +30,24 @@ export type v1AddPhoneNumberResponse = {
     message?: string;
 };
 
+export type v1AdminUpdateUserRequest = {
+    userId?: string;
+    fullName?: string;
+    password?: string;
+    roles?: Array<(string)>;
+    isActive?: boolean;
+};
+
+export type v1AdminUpdateUserResponse = {
+    user?: v1User;
+};
+
 export type v1CreateUserRequest = {
     email?: string;
     fullName?: string;
     password?: string;
+    roles?: Array<(string)>;
+    isActive?: boolean;
 };
 
 export type v1CreateUserResponse = {
@@ -42,6 +56,11 @@ export type v1CreateUserResponse = {
 
 export type v1GetUserResponse = {
     user?: v1User;
+};
+
+export type v1ListUsersResponse = {
+    users?: Array<v1User>;
+    total?: number;
 };
 
 export type v1LoginUserRequest = {
@@ -96,7 +115,7 @@ export type v1RegisterPhoneUserRequest = {
 };
 
 export type v1RegisterPhoneUserResponse = {
-    user?: v1User;
+    verificationToken?: string;
 };
 
 export type v1RequestPhoneOTPRequest = {
@@ -181,15 +200,25 @@ export type v1VerifyEmailOTPResponse = {
 };
 
 export type v1VerifyPhoneOTPRequest = {
-    phoneNumber?: string;
+    verificationToken?: string;
     otpCode?: string;
-    region?: string;
 };
 
 export type v1VerifyPhoneOTPResponse = {
     success?: boolean;
     message?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    expiresAt?: string;
+    refreshExpiresAt?: string;
+    tokenType?: string;
 };
+
+export type UserServiceAdminUpdateUserData = {
+    requestBody: v1AdminUpdateUserRequest;
+};
+
+export type UserServiceAdminUpdateUserResponse = (v1AdminUpdateUserResponse);
 
 export type UserServiceLoginUserData = {
     requestBody: v1LoginUserRequest;
@@ -288,3 +317,10 @@ export type UserServiceVerifyPhoneOtpData = {
 };
 
 export type UserServiceVerifyPhoneOtpResponse = (v1VerifyPhoneOTPResponse);
+
+export type UserServiceListUsersData = {
+    limit?: number;
+    offset?: number;
+};
+
+export type UserServiceListUsersResponse = (v1ListUsersResponse);

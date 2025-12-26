@@ -3,25 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { UserServiceAdminUpdateUserData, UserServiceAdminUpdateUserResponse, UserServiceLoginUserData, UserServiceLoginUserResponse, UserServiceLoginWithPhoneData, UserServiceLoginWithPhoneResponse, UserServiceRefreshTokenData, UserServiceRefreshTokenResponse, UserServiceRecoverPasswordData, UserServiceRecoverPasswordResponse, UserServiceResetPasswordData, UserServiceResetPasswordResponse, UserServiceGetUserResponse, UserServiceCreateUserData, UserServiceCreateUserResponse, UserServiceUpdateUserData, UserServiceUpdateUserResponse, UserServiceAddEmailData, UserServiceAddEmailResponse, UserServiceAddPhoneNumberData, UserServiceAddPhoneNumberResponse, UserServiceRegisterPhoneUserData, UserServiceRegisterPhoneUserResponse, UserServiceRequestPhoneOtpData, UserServiceRequestPhoneOtpResponse, UserServiceResendEmailVerificationData, UserServiceResendEmailVerificationResponse, UserServiceVerifyAddEmailOtpData, UserServiceVerifyAddEmailOtpResponse, UserServiceVerifyAddPhoneOtpData, UserServiceVerifyAddPhoneOtpResponse, UserServiceVerifyEmailOtpData, UserServiceVerifyEmailOtpResponse, UserServiceVerifyPhoneOtpData, UserServiceVerifyPhoneOtpResponse, UserServiceListUsersData, UserServiceListUsersResponse } from './types.gen';
-
-/**
- * @param data The data for the request.
- * @param data.requestBody
- * @returns v1AdminUpdateUserResponse A successful response.
- * @throws ApiError
- */
-export const userServiceAdminUpdateUser = (data: UserServiceAdminUpdateUserData): CancelablePromise<UserServiceAdminUpdateUserResponse> => {
-    return __request(OpenAPI, {
-        method: 'PUT',
-        url: '/v1/admin/user',
-        body: data.requestBody,
-        mediaType: 'application/json',
-        errors: {
-            default: 'An unexpected error response.'
-        }
-    });
-};
+import type { UserServiceLoginUserData, UserServiceLoginUserResponse, UserServiceLoginWithPhoneData, UserServiceLoginWithPhoneResponse, UserServiceRefreshTokenData, UserServiceRefreshTokenResponse, UserServiceRecoverPasswordData, UserServiceRecoverPasswordResponse, UserServiceResetPasswordData, UserServiceResetPasswordResponse, UserServiceGetUserResponse, UserServiceCreateUserData, UserServiceCreateUserResponse, UserServiceUpdateUserData, UserServiceUpdateUserResponse, UserServiceAddEmailData, UserServiceAddEmailResponse, UserServiceAddPhoneNumberData, UserServiceAddPhoneNumberResponse, UserServiceRegisterPhoneUserData, UserServiceRegisterPhoneUserResponse, UserServiceRequestPhoneOtpData, UserServiceRequestPhoneOtpResponse, UserServiceResendEmailVerificationData, UserServiceResendEmailVerificationResponse, UserServiceVerifyAddEmailOtpData, UserServiceVerifyAddEmailOtpResponse, UserServiceVerifyAddPhoneOtpData, UserServiceVerifyAddPhoneOtpResponse, UserServiceVerifyEmailOtpData, UserServiceVerifyEmailOtpResponse, UserServiceVerifyPhoneOtpData, UserServiceVerifyPhoneOtpResponse } from './types.gen';
 
 /**
  * @param data The data for the request.
@@ -323,27 +305,6 @@ export const userServiceVerifyPhoneOtp = (data: UserServiceVerifyPhoneOtpData): 
         url: '/v1/user/verify-phone-otp',
         body: data.requestBody,
         mediaType: 'application/json',
-        errors: {
-            default: 'An unexpected error response.'
-        }
-    });
-};
-
-/**
- * @param data The data for the request.
- * @param data.offset
- * @param data.limit
- * @returns v1ListUsersResponse A successful response.
- * @throws ApiError
- */
-export const userServiceListUsers = (data: UserServiceListUsersData = {}): CancelablePromise<UserServiceListUsersResponse> => {
-    return __request(OpenAPI, {
-        method: 'GET',
-        url: '/v1/users',
-        query: {
-            offset: data.offset,
-            limit: data.limit
-        },
         errors: {
             default: 'An unexpected error response.'
         }

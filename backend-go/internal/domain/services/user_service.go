@@ -761,6 +761,10 @@ func (s *UserService) VerifyRegisterPhoneUser(ctx context.Context, token, otpCod
 		if errTx != nil {
 			return errTx
 		}
+		errTx = verificationRepoTx.MarkUsed(ctx, vcOTP.ID)
+		if errTx != nil {
+			return errTx
+		}
 		return nil
 	})
 	if err != nil {

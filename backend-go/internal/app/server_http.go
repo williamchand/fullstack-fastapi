@@ -11,9 +11,9 @@ import (
 	genprotov1 "github.com/williamchand/fullstack-fastapi/backend-go/gen/proto/v1"
 	"github.com/williamchand/fullstack-fastapi/backend-go/internal/infrastructure/cors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/codes"
 )
 
 func (a *App) runHTTP(ctx context.Context) error {
@@ -106,6 +106,7 @@ func (a *App) runHTTP(ctx context.Context) error {
 	// Serve
 	go func() {
 		<-ctx.Done()
+		// Graceful shutdown
 		srv.Shutdown(context.Background())
 	}()
 
@@ -115,27 +116,27 @@ func (a *App) runHTTP(ctx context.Context) error {
 // gatewayErrorHandler ensures gRPC-Gateway sends JSON errors with a consistent shape.
 // It includes at least a "message" field so the frontend can display backend-provided messages.
 func gatewayErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
-    st := status.Convert(err)
-    httpStatus := runtime.HTTPStatusFromCode(st.Code())
+	st := status.Convert(err)
+	httpStatus := runtime.HTTPStatusFromCode(st.Code())
 
-    // Build a simple JSON error payload recognized by the frontend
-    type errorResponse struct {
-        Code    int         `json:"code,omitempty"`
-        Message string      `json:"message"`
-        Details interface{} `json:"details,omitempty"`
-    }
+	// Build a simple JSON error payload recognized by the frontend
+	type errorResponse struct {
+		Code    int         `json:"code,omitempty"`
+		Message string      `json:"message"`
+		Details interface{} `json:"details,omitempty"`
+	}
 
-    resp := errorResponse{
-        Message: st.Message(),
-    }
-    if st.Code() != codes.OK {
-        resp.Code = int(st.Code())
-    }
-    if len(st.Details()) > 0 {
-        resp.Details = st.Details()
-    }
+	resp := errorResponse{
+		Message: st.Message(),
+	}
+	if st.Code() != codes.OK {
+		resp.Code = int(st.Code())
+	}
+	if len(st.Details()) > 0 {
+		resp.Details = st.Details()
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(httpStatus)
-    _ = json.NewEncoder(w).Encode(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(httpStatus)
+	_ = json.NewEncoder(w).Encode(resp)
 }

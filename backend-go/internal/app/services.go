@@ -11,11 +11,9 @@ import (
 )
 
 type AppServices struct {
-	UserService       *services.UserService
-	OauthService      *services.OAuthService
-	DataSourceService *services.DataSourceService
-	BillingService    *services.BillingService
-	WeddingService    *services.WeddingService
+	UserService    *services.UserService
+	OauthService   *services.OAuthService
+	BillingService *services.BillingService
 }
 
 func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) {
@@ -28,10 +26,8 @@ func initServices(cfg *config.Config, repo *Repositories) (*AppServices, error) 
 	stripeClient := stripeinfra.New(cfg.Stripe.SecretKey)
 	dokuClient := dokunfra.New(cfg.Doku.BaseURL, cfg.Doku.ClientID, cfg.Doku.SecretKey)
 	return &AppServices{
-		UserService:       services.NewUserService(cfg, repo.UserRepo, repo.OAuthRepo, repo.TransactionManager, jwtService, repo.EmailTemplateRepo, repo.VerificationRepo, smtpSender, wahaClient),
-		OauthService:      services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager, jwtService),
-		DataSourceService: services.NewDataSourceService(cfg, repo.DataSourceRepo, repo.AICredRepo, repo.TransactionManager),
-		BillingService:    services.NewBillingService(cfg, repo.SubscriptionRepo, repo.PaymentRepo, stripeClient, dokuClient),
-		WeddingService:    services.NewWeddingService(repo.WeddingRepo, repo.GuestRepo, repo.TemplateRepo, repo.PaymentRepo, repo.SubscriptionRepo),
+		UserService:    services.NewUserService(cfg, repo.UserRepo, repo.OAuthRepo, repo.TransactionManager, jwtService, repo.EmailTemplateRepo, repo.VerificationRepo, smtpSender, wahaClient),
+		OauthService:   services.NewOAuthService(cfg.GetOauthConfig(), repo.OAuthRepo, repo.UserRepo, repo.TransactionManager, jwtService),
+		BillingService: services.NewBillingService(cfg, repo.SubscriptionRepo, repo.PaymentRepo, stripeClient, dokuClient),
 	}, nil
 }

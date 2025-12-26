@@ -42,27 +42,7 @@ func (a *App) runHTTP(ctx context.Context) error {
 		return err
 	}
 
-	err = genprotov1.RegisterDataSourceServiceHandlerFromEndpoint(
-		ctx,
-		mux,
-		fmt.Sprintf(":%s", a.cfg.GRPCPort),
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
-	)
-	if err != nil {
-		return err
-	}
-
 	err = genprotov1.RegisterBillingServiceHandlerFromEndpoint(
-		ctx,
-		mux,
-		fmt.Sprintf(":%s", a.cfg.GRPCPort),
-		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
-	)
-	if err != nil {
-		return err
-	}
-
-	err = genprotov1.RegisterWeddingServiceHandlerFromEndpoint(
 		ctx,
 		mux,
 		fmt.Sprintf(":%s", a.cfg.GRPCPort),

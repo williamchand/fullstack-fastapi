@@ -55,7 +55,7 @@ function SignUp() {
     method?: "email" | "phone"
     redirect?: string
   }
-  const { showSuccessToast } = useCustomToast()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
   const { method, setMethod, setVerifyData } = useUIStore()
 
   // Sync tab with search param and clean URL

@@ -76,7 +76,7 @@ export const getAuthErrorInfo = (
   }
 
   const normalized = (message || "").toLowerCase()
-
+  console.log("Normalized error message:", message)
   if (normalized.includes("incorrect email or password")) {
     return { code: "INVALID_CREDENTIALS", message }
   }

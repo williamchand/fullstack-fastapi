@@ -112,6 +112,12 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider string, code
 
 			// Get the user
 			user, err = userRepoTx.GetByID(ctx, oauthAccount.UserID)
+			if err != nil {
+				return err
+			}
+			if user.IsEmailVerified == false {
+				err = userRepoTx.SetEmailVerified(ctx, user.ID)
+			}
 			return err
 		}
 

@@ -100,13 +100,6 @@ export const getAuthErrorInfo = (
   ) {
     return { code: "EMAIL_NOT_VERIFIED", message }
   }
-  if (
-    normalized.includes("phone not verified") ||
-    (normalized.includes("not verified") && normalized.includes("phone")) ||
-    normalized.includes("verify phone")
-  ) {
-    return { code: "PHONE_NOT_VERIFIED", message }
-  }
 
   return { code: "GENERIC_ERROR", message }
 }

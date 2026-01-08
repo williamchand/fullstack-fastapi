@@ -56,7 +56,7 @@ function SignUp() {
     redirect?: string
   }
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const { method, setMethod, setVerifyData } = useUIStore()
+  const { method, setMethod, setVerifyPhone } = useUIStore()
 
   // Sync tab with search param and clean URL
   useEffect(() => {
@@ -93,26 +93,29 @@ function SignUp() {
     criteriaMode: "all",
     defaultValues: { phone_number: "", fullName: "", region: "ID" },
   })
-
   const phoneRegisterMutation = useMutation({
-    mutationFn: async (data: PhoneRegisterForm) => {
-      await userServiceRegisterPhoneUser({
+    mutationFn: (data: PhoneRegisterForm) =>
+      userServiceRegisterPhoneUser({
         requestBody: {
           phoneNumber: data.phone_number,
           fullName: data.fullName,
           region: data.region,
         },
-      })
-    },
-    onSuccess: (_data, variables) => {
+      }),
+    onSuccess: (response, variables) => {
       showSuccessToast("Registration successful. Please verify your phone.")
-      setVerifyData(variables.phone_number, variables.region)
+      setVerifyPhone({
+        number: variables.phone_number,
+        region: variables.region,
+        token: response.verificationToken,
+      })
       navigate({ to: "/verify-phone" })
     },
     onError: (err: ApiError) => {
       handleError(err)
     },
   })
+
 
   const onEmailSubmit: SubmitHandler<UserRegisterForm> = (data) => {
     signUpMutation.mutate(data)

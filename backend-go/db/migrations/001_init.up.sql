@@ -58,7 +58,7 @@ CREATE TABLE public.verification_code (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NULL,
     verification_code varchar(64) NOT NULL,
-    verification_type varchar(16) NOT NULL,
+    verification_type varchar(32) NOT NULL,
     extra_metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at timestamptz DEFAULT now() NULL,
     expires_at timestamptz NOT NULL,

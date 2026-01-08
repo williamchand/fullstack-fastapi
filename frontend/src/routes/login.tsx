@@ -55,7 +55,7 @@ function Login() {
     provider?: string
   }
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const { method, setMethod, setVerifyData } = useUIStore()
+  const { method, setMethod, setVerifyPhone } = useUIStore()
 
   // Sync tab with search param and clean URL
   useEffect(() => {
@@ -93,7 +93,7 @@ function Login() {
   const phoneForm = useForm<PhoneLoginForm>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: { phone_number: "", region: "ID", otp_code: "" },
+    defaultValues: { phone_number: "", region: "ID", otp_code: "", token: "" },
   })
 
   const requestOtp = useMutation({
@@ -632,22 +632,6 @@ function Login() {
               >
                 Login
               </Button>
-            )}
-            {(authErrorInfo?.code === "PHONE_NOT_VERIFIED" ||
-              authErrorInfo?.code === "USER_INACTIVE") && (
-              <Flex direction="column" gap={2}>
-                <Text color="red.500" fontSize="sm">
-                  {authErrorInfo.message ||
-                    "You need to verify your phone before logging in."}
-                </Text>
-                <RouterLink
-                  to="/verify-phone"
-                  onClick={() => setVerifyData(phoneForm.getValues("phone_number"), phoneForm.getValues("region"))}
-                  className="main-link"
-                >
-                  Verify Phone
-                </RouterLink>
-              </Flex>
             )}
           </Container>
         </Tabs.Content>

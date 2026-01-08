@@ -29,7 +29,7 @@ export const Route = createFileRoute("/verify-phone")({
 function VerifyPhone() {
   const navigate = useNavigate()
   const { showSuccessToast } = useCustomToast()
-  const { verifyPhoneNumber, verifyRegion } = useUIStore()
+  const { verifyPhone } = useUIStore()
   const {
     register,
     handleSubmit,
@@ -39,8 +39,9 @@ function VerifyPhone() {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      phone_number: verifyPhoneNumber,
-      region: verifyRegion,
+      phone_number: verifyPhone.number,
+      region: verifyPhone.region,
+      verification_token: verifyPhone.token,
       otp_code: "",
     },
   })
@@ -49,9 +50,8 @@ function VerifyPhone() {
     mutationFn: async (data: PhoneVerifyForm) => {
       const res = await userServiceVerifyPhoneOtp({
         requestBody: {
-          phoneNumber: data.phone_number,
+          verificationToken: data.verification_token,
           otpCode: data.otp_code,
-          region: data.region,
         },
       })
       if (res.accessToken) {

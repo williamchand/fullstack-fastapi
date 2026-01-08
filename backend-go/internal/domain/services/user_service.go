@@ -55,6 +55,7 @@ func NewUserService(
 }
 
 var ErrInvalidState = fmt.Errorf("invalid state")
+var ErrInvalidCode = fmt.Errorf("invalid code")
 var ErrInvalidToken = fmt.Errorf("invalid token")
 var ErrWeakPassword = fmt.Errorf("weak password")
 var ErrInvalidPreviousPassword = fmt.Errorf("invalid previous password")
@@ -248,18 +249,7 @@ func (s *UserService) AddPhoneNumber(ctx context.Context, id string, phone strin
 	if err := s.verificationRepo.Create(ctx, v); err != nil {
 		return err
 	}
-	if s.wahaClient != nil {
-		tpl, tplErr := s.emailTplRepo.GetByName(ctx, entities.EmailTemplateVerificationPhone)
-		if tplErr == nil {
-			body, _ := util.FillTextTemplate(tpl.Body, map[string]string{"code": code})
-			go func() {
-				if err := s.wahaClient.SendText(context.Background(), normalized, body); err != nil {
-					log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
-				}
-			}()
-		}
-	}
-	return nil
+	return s.SendPhoneOTPViaWAHA(ctx, normalized, code, entities.EmailTemplateVerificationPhone)
 }
 
 func (s *UserService) VerifyAddPhone(ctx context.Context, id string, code string) error {
@@ -585,19 +575,7 @@ func (s *UserService) RequestPhoneOTP(ctx context.Context, phone string, region 
 	if err := s.verificationRepo.Create(ctx, v); err != nil {
 		return fmt.Errorf("failed to save verification code: %w", err)
 	}
-	// Send OTP via WhatsApp using WAHA client
-	if s.wahaClient != nil {
-		tpl, tplErr := s.emailTplRepo.GetByName(ctx, entities.EmailTemplateVerificationPhone)
-		if tplErr == nil {
-			body, _ := util.FillTextTemplate(tpl.Body, map[string]string{"code": code})
-			go func() {
-				if err := s.wahaClient.SendText(context.Background(), normalized, body); err != nil {
-					log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
-				}
-			}()
-		}
-	}
-	return nil
+	return s.SendPhoneOTPViaWAHA(ctx, normalized, code, entities.EmailTemplateVerificationPhone)
 }
 
 var ErrInvalidOrExpiredCode = fmt.Errorf("invalid or expired code")
@@ -680,10 +658,15 @@ func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName, re
 	// Generate hash token
 	token := util.GenerateSecureToken(32)
 
+	code, err := generateOTP(6)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate code: %w", err)
+	}
 	extraMetadata := map[string]any{
 		"phone":    normalized,
 		"fullName": fullName,
 		"region":   region,
+		"code":     code,
 	}
 
 	_, err = s.verificationRepo.CreateNoUser(ctx, token, entities.VerificationTypePhoneRegistration, extraMetadata, time.Now().Add(24*time.Hour))
@@ -691,8 +674,10 @@ func (s *UserService) RegisterPhoneUser(ctx context.Context, phone, fullName, re
 		return "", err
 	}
 
-	// Send OTP for verification
-	_ = s.RequestPhoneOTP(ctx, normalized, region)
+	err = s.SendPhoneOTPViaWAHA(ctx, normalized, code, entities.EmailTemplateVerificationPhone)
+	if err != nil {
+		return "", err
+	}
 
 	return token, nil
 }
@@ -711,24 +696,10 @@ func (s *UserService) VerifyRegisterPhoneUser(ctx context.Context, token, otpCod
 	if !ok {
 		return nil, ErrInvalidState
 	}
-
-	// Validate OTP
-	vcOTP, err := s.verificationRepo.GetByCodeOnly(ctx, entities.VerificationTypePhone, otpCode)
-	if err != nil {
-		return nil, ErrInvalidOrExpiredCode
+	if vc.ExtraMetadata["code"] != otpCode {
+		return nil, ErrInvalidCode
 	}
-	if vcOTP.UsedAt != nil || time.Now().After(vcOTP.ExpiresAt) {
-		return nil, ErrInvalidOrExpiredCode
-	}
-	phoneFromOTP, ok := vcOTP.ExtraMetadata["phone"].(string)
-	if !ok || phoneFromOTP != phone {
-		return nil, ErrInvalidOrExpiredCode
-	}
-
-	fullName, ok := vc.ExtraMetadata["fullName"].(string)
-	if !ok {
-		return nil, ErrInvalidState
-	}
+	fullName, _ := vc.ExtraMetadata["fullName"].(string)
 
 	// Check if phone already exists
 	existing, err := s.userRepo.GetByPhone(ctx, phone)
@@ -761,10 +732,6 @@ func (s *UserService) VerifyRegisterPhoneUser(ctx context.Context, token, otpCod
 		if errTx != nil {
 			return errTx
 		}
-		errTx = verificationRepoTx.MarkUsed(ctx, vcOTP.ID)
-		if errTx != nil {
-			return errTx
-		}
 		return nil
 	})
 	if err != nil {
@@ -788,4 +755,35 @@ func (s *UserService) VerifyRegisterPhoneUser(ctx context.Context, token, otpCod
 		RefreshExpiresAt: refreshToken.ExpiresAt,
 		IsNewUser:        false,
 	}, nil
+}
+
+func (s *UserService) SendPhoneOTPViaWAHA(
+	ctx context.Context,
+	phone string,
+	code string,
+	templateName entities.EmailTemplateEnum,
+) error {
+	if s.wahaClient == nil {
+		return nil
+	}
+
+	tpl, err := s.emailTplRepo.GetByName(ctx, templateName)
+	if err != nil {
+		return fmt.Errorf("failed to get template: %w", err)
+	}
+
+	body, err := util.FillTextTemplate(tpl.Body, map[string]string{
+		"code": code,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to fill template: %w", err)
+	}
+
+	go func() {
+		if err := s.wahaClient.SendText(context.Background(), phone, body); err != nil {
+			log.Println(fmt.Errorf("failed to send WhatsApp OTP: %w", err))
+		}
+	}()
+
+	return nil
 }

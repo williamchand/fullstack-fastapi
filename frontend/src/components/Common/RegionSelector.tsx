@@ -90,11 +90,7 @@ export const RegionSelector = ({
             justifyContent="space-between"
             disabled={disabled}
           >
-            <span>
-              {selectedRegion
-                ? shortLabel
-                : placeholder}
-            </span>
+            <span>{selectedRegion ? shortLabel : placeholder}</span>
             <LuChevronDown />
           </Button>
         </Popover.Trigger>

@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as WebistreamImport } from './routes/webistream'
 import { Route as VerifyPhoneImport } from './routes/verify-phone'
 import { Route as VerifyEmailImport } from './routes/verify-email'
 import { Route as SignupImport } from './routes/signup'
@@ -18,12 +19,22 @@ import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RecoverPasswordImport } from './routes/recover-password'
 import { Route as OauthCallbackImport } from './routes/oauth-callback'
 import { Route as LoginImport } from './routes/login'
+import { Route as ChooseRoleImport } from './routes/choose-role'
 import { Route as LayoutImport } from './routes/_layout'
+import { Route as IndexImport } from './routes/index'
+import { Route as WebinarsIndexImport } from './routes/webinars/index'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as WebinarsManageImport } from './routes/webinars/manage'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
+import { Route as WebistreamPagePageKeyImport } from './routes/webistream/page/$pageKey'
 
 // Create/Update Routes
+
+const WebistreamRoute = WebistreamImport.update({
+  path: '/webistream',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const VerifyPhoneRoute = VerifyPhoneImport.update({
   path: '/verify-phone',
@@ -60,14 +71,34 @@ const LoginRoute = LoginImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ChooseRoleRoute = ChooseRoleImport.update({
+  path: '/choose-role',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const LayoutRoute = LayoutImport.update({
   id: '/_layout',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const IndexRoute = IndexImport.update({
+  path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const WebinarsIndexRoute = WebinarsIndexImport.update({
+  path: '/webinars/',
   getParentRoute: () => rootRoute,
 } as any)
 
 const LayoutIndexRoute = LayoutIndexImport.update({
   path: '/',
   getParentRoute: () => LayoutRoute,
+} as any)
+
+const WebinarsManageRoute = WebinarsManageImport.update({
+  path: '/webinars/manage',
+  getParentRoute: () => rootRoute,
 } as any)
 
 const LayoutSettingsRoute = LayoutSettingsImport.update({
@@ -80,12 +111,25 @@ const LayoutAdminRoute = LayoutAdminImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const WebistreamPagePageKeyRoute = WebistreamPagePageKeyImport.update({
+  path: '/page/$pageKey',
+  getParentRoute: () => WebistreamRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
     '/_layout': {
       preLoaderRoute: typeof LayoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/choose-role': {
+      preLoaderRoute: typeof ChooseRoleImport
       parentRoute: typeof rootRoute
     }
     '/login': {
@@ -116,6 +160,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyPhoneImport
       parentRoute: typeof rootRoute
     }
+    '/webistream': {
+      preLoaderRoute: typeof WebistreamImport
+      parentRoute: typeof rootRoute
+    }
     '/_layout/admin': {
       preLoaderRoute: typeof LayoutAdminImport
       parentRoute: typeof LayoutImport
@@ -124,9 +172,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsImport
       parentRoute: typeof LayoutImport
     }
+    '/webinars/manage': {
+      preLoaderRoute: typeof WebinarsManageImport
+      parentRoute: typeof rootRoute
+    }
     '/_layout/': {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
+    }
+    '/webinars/': {
+      preLoaderRoute: typeof WebinarsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/webistream/page/$pageKey': {
+      preLoaderRoute: typeof WebistreamPagePageKeyImport
+      parentRoute: typeof WebistreamImport
     }
   }
 }
@@ -134,11 +194,13 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export const routeTree = rootRoute.addChildren([
+  IndexRoute,
   LayoutRoute.addChildren([
     LayoutAdminRoute,
     LayoutSettingsRoute,
     LayoutIndexRoute,
   ]),
+  ChooseRoleRoute,
   LoginRoute,
   OauthCallbackRoute,
   RecoverPasswordRoute,
@@ -146,6 +208,9 @@ export const routeTree = rootRoute.addChildren([
   SignupRoute,
   VerifyEmailRoute,
   VerifyPhoneRoute,
+  WebistreamRoute.addChildren([WebistreamPagePageKeyRoute]),
+  WebinarsManageRoute,
+  WebinarsIndexRoute,
 ])
 
 /* prettier-ignore-end */

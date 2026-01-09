@@ -4,10 +4,10 @@ import {
   Button,
   Container,
   Flex,
+  HStack,
   Heading,
   Input,
   Text,
-  HStack,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
@@ -79,17 +79,17 @@ const UserInformation = () => {
   const updateNameMutation = useMutation({
     mutationFn: (data: UserUpdateMe) =>
       userServiceUpdateUser({ requestBody: { fullName: data.fullName } }),
-  onSuccess: (_, variables) => {
-    showSuccessToast("Name updated successfully.")
-    nameForm.reset({
-      fullName: variables.fullName,
-    })
-    setEditMode(false)
-    queryClient.invalidateQueries({ queryKey: ["currentUser"] })
-  },
-  onError: (err: ApiError) => {
-    handleError(err)
-  },
+    onSuccess: (_, variables) => {
+      showSuccessToast("Name updated successfully.")
+      nameForm.reset({
+        fullName: variables.fullName,
+      })
+      setEditMode(false)
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
+    },
+    onError: (err: ApiError) => {
+      handleError(err)
+    },
   })
 
   const addEmailMutation = useMutation({

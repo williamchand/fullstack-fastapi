@@ -1,3 +1,4 @@
+import "@/styles/tailwind.css"
 import {
   MutationCache,
   QueryCache,
@@ -10,8 +11,8 @@ import ReactDOM from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
 
 import axios from "axios"
-import { ApiError, OpenAPI } from "./client/user"
 import { OpenAPI as OAuthOpenAPI } from "./client/oauth"
+import { ApiError, OpenAPI } from "./client/user"
 import { CustomProvider } from "./components/ui/provider"
 import { getAuthErrorInfo } from "./utils"
 

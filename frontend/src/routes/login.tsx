@@ -9,9 +9,13 @@ import {
 } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { Controller, type SubmitHandler, useForm } from "react-hook-form"
-import { FiLock, FiMail, FiPhone } from "react-icons/fi"
 import { FcGoogle } from "react-icons/fc"
+import { FiLock, FiMail, FiPhone } from "react-icons/fi"
 
+import {
+  oauthServiceGetOauthUrl,
+  oauthServiceHandleOauthCallback,
+} from "@/client/oauth"
 import type { v1LoginUserRequest as AccessToken, ApiError } from "@/client/user"
 import {
   userServiceLoginWithPhone,
@@ -25,14 +29,10 @@ import { InputGroup } from "@/components/ui/input-group"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useUIStore } from "@/stores/uiStore"
 import type { PhoneLoginForm } from "@/types/phone"
 import Logo from "/assets/images/fastapi-logo.svg"
 import { emailPattern, handleError, passwordRules } from "../utils"
-import {
-  oauthServiceGetOauthUrl,
-  oauthServiceHandleOauthCallback,
-} from "@/client/oauth"
-import { useUIStore } from "@/stores/uiStore"
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -60,7 +60,10 @@ function Login() {
   // Sync tab with search param and clean URL
   useEffect(() => {
     const m = search?.method
-    const { method: _method, ...rest } = (search || {}) as Record<string, unknown>
+    const { method: _method, ...rest } = (search || {}) as Record<
+      string,
+      unknown
+    >
     if (m === "phone") {
       setMethod("phone")
       navigate({ to: "/login", search: rest as any, replace: true })
@@ -78,6 +81,9 @@ function Login() {
   const otpInputRef = useRef<HTMLInputElement | null>(null)
   const [oauthPopup, setOauthPopup] = useState<Window | null>(null)
   const [isProcessingCallback, setIsProcessingCallback] = useState(false)
+  const [loginRole, setLoginRole] = useState<"customer" | "salon_owner">(
+    "customer",
+  )
 
   // Email login form
   const emailForm = useForm<AccessToken>({
@@ -154,7 +160,10 @@ function Login() {
     console.debug("onEmailSubmit called with:", data)
     try {
       await loginMutation.mutateAsync(data)
-      const dest = search?.redirect || "/"
+      const dest =
+        loginRole === "salon_owner"
+          ? "/webinars/manage"
+          : search?.redirect || "/"
       navigate({ to: dest })
     } catch {
       // error is handled by useAuth hook
@@ -203,8 +212,12 @@ function Login() {
         : null
       try {
         if (processedKey && sessionStorage.getItem(processedKey)) {
-          const { code: _c, state: _s, provider: _p, ...rest } =
-            (search || {}) as Record<string, unknown>
+          const {
+            code: _c,
+            state: _s,
+            provider: _p,
+            ...rest
+          } = (search || {}) as Record<string, unknown>
           navigate({ to: "/login", search: rest as any, replace: true })
           setIsProcessingCallback(false)
           return
@@ -222,10 +235,7 @@ function Login() {
           localStorage.setItem("refresh_token", res.refreshToken)
         }
         if (res.refreshExpiresAt) {
-          localStorage.setItem(
-            "refresh_expires_at",
-            res.refreshExpiresAt,
-          )
+          localStorage.setItem("refresh_expires_at", res.refreshExpiresAt)
         }
         const dest = search?.redirect || "/"
         navigate({ to: dest })
@@ -233,8 +243,12 @@ function Login() {
         showErrorToast("OAuth login failed. Please try again.")
       } finally {
         // Clean up query params to avoid re-processing
-        const { code: _c, state: _s, provider: _p, ...rest } =
-          (search || {}) as Record<string, unknown>
+        const {
+          code: _c,
+          state: _s,
+          provider: _p,
+          ...rest
+        } = (search || {}) as Record<string, unknown>
         try {
           if (processedKey) sessionStorage.setItem(processedKey, "1")
         } catch {}
@@ -285,6 +299,22 @@ function Login() {
             display="flex"
             flexDirection="column"
           >
+            <Flex gap={2}>
+              <Button
+                variant={loginRole === "customer" ? "solid" : "outline"}
+                onClick={() => setLoginRole("customer")}
+                size="sm"
+              >
+                Customer
+              </Button>
+              <Button
+                variant={loginRole === "salon_owner" ? "solid" : "outline"}
+                onClick={() => setLoginRole("salon_owner")}
+                size="sm"
+              >
+                Business
+              </Button>
+            </Flex>
             <Field
               invalid={!!emailForm.formState.errors.username}
               errorText={
@@ -332,7 +362,9 @@ function Login() {
                   return
                 }
                 try {
-                  const res = await oauthServiceGetOauthUrl({ provider: "google" })
+                  const res = await oauthServiceGetOauthUrl({
+                    provider: "google",
+                  })
                   if (!res.url) {
                     showErrorToast("Failed to get Google login URL.")
                     return
@@ -365,7 +397,11 @@ function Login() {
                   } catch {}
                   setOauthPopup(popup)
                   const handler = async (e: MessageEvent) => {
-                    if (e.origin !== window.location.origin || isProcessingCallback) return
+                    if (
+                      e.origin !== window.location.origin ||
+                      isProcessingCallback
+                    )
+                      return
                     setIsProcessingCallback(true)
                     const data = e.data || {}
                     if (data.type !== "oauth-callback") {
@@ -376,7 +412,10 @@ function Login() {
                       ? `oauth_processed:${data.state}`
                       : null
                     try {
-                      if (processedKey && sessionStorage.getItem(processedKey)) {
+                      if (
+                        processedKey &&
+                        sessionStorage.getItem(processedKey)
+                      ) {
                         window.removeEventListener("message", handler)
                         try {
                           oauthPopup?.close()
@@ -410,7 +449,8 @@ function Login() {
                           : "oauth_redirect_popup"
                         finalDest = sessionStorage.getItem(k) || finalDest
                         sessionStorage.removeItem(k)
-                        if (processedKey) sessionStorage.setItem(processedKey, "1")
+                        if (processedKey)
+                          sessionStorage.setItem(processedKey, "1")
                       } catch {}
                       navigate({ to: finalDest })
                     } catch {
@@ -638,7 +678,11 @@ function Login() {
       </Tabs.Root>
       <Text>
         Don't have an account?{" "}
-        <RouterLink to="/signup" search={{ redirect: search?.redirect }} className="main-link">
+        <RouterLink
+          to="/signup"
+          search={{ redirect: search?.redirect }}
+          className="main-link"
+        >
           Sign Up
         </RouterLink>
       </Text>

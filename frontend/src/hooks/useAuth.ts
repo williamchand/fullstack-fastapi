@@ -41,6 +41,8 @@ const useAuth = () => {
           email: data.email,
           fullName: data.fullName,
           password: data.password,
+          roles: data.roles,
+          isActive: data.is_active,
         },
       }),
 

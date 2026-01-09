@@ -23,6 +23,7 @@ import { InputGroup } from "@/components/ui/input-group"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useUIStore } from "@/stores/uiStore"
 import type { PhoneRegisterForm } from "@/types/phone"
 import type { UserRegister } from "@/types/user"
 import {
@@ -32,7 +33,6 @@ import {
   passwordRules,
 } from "@/utils"
 import Logo from "/assets/images/fastapi-logo.svg"
-import { useUIStore } from "@/stores/uiStore"
 
 export const Route = createFileRoute("/signup")({
   component: SignUp,
@@ -61,7 +61,10 @@ function SignUp() {
   // Sync tab with search param and clean URL
   useEffect(() => {
     const m = search?.method
-    const { method: _method, ...rest } = (search || {}) as Record<string, unknown>
+    const { method: _method, ...rest } = (search || {}) as Record<
+      string,
+      unknown
+    >
     if (m === "phone") {
       setMethod("phone")
       navigate({ to: "/signup", search: rest as any, replace: true })
@@ -84,6 +87,8 @@ function SignUp() {
       fullName: "",
       password: "",
       confirm_password: "",
+      roles: [],
+      is_active: false,
     },
   })
 
@@ -116,9 +121,12 @@ function SignUp() {
     },
   })
 
-
+  const [roleChoice, setRoleChoice] = useState<"customer" | "salon_owner">(
+    "customer",
+  )
   const onEmailSubmit: SubmitHandler<UserRegisterForm> = (data) => {
-    signUpMutation.mutate(data)
+    const roles = roleChoice === "salon_owner" ? ["salon_owner"] : ["customer"]
+    signUpMutation.mutate({ ...data, roles })
   }
 
   const onPhoneSubmit: SubmitHandler<PhoneRegisterForm> = async (data) => {
@@ -160,6 +168,22 @@ function SignUp() {
             display="flex"
             flexDirection="column"
           >
+            <Flex gap={2}>
+              <Button
+                variant={roleChoice === "customer" ? "solid" : "outline"}
+                onClick={() => setRoleChoice("customer")}
+                size="sm"
+              >
+                Customer
+              </Button>
+              <Button
+                variant={roleChoice === "salon_owner" ? "solid" : "outline"}
+                onClick={() => setRoleChoice("salon_owner")}
+                size="sm"
+              >
+                Business
+              </Button>
+            </Flex>
             <Field
               invalid={!!emailForm.formState.errors.fullName}
               errorText={emailForm.formState.errors.fullName?.message}

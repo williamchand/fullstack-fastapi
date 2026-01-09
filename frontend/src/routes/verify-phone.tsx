@@ -12,10 +12,10 @@ import { Field } from "@/components/ui/field"
 import { InputGroup } from "@/components/ui/input-group"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useUIStore } from "@/stores/uiStore"
 import type { PhoneVerifyForm } from "@/types/phone"
 import { handleError } from "@/utils"
 import Logo from "/assets/images/fastapi-logo.svg"
-import { useUIStore } from "@/stores/uiStore"
 
 export const Route = createFileRoute("/verify-phone")({
   component: VerifyPhone,

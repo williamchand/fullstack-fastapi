@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
 
 type VerifyPhone = {
   number: string
@@ -8,21 +8,24 @@ type VerifyPhone = {
 }
 
 interface UIState {
-  method: 'email' | 'phone'
+  method: "email" | "phone"
   verifyPhone: VerifyPhone
-  setMethod: (method: 'email' | 'phone') => void
+  selectedRole: "customer" | "salon_owner" | null
+  setMethod: (method: "email" | "phone") => void
   setVerifyPhone: (data: Partial<VerifyPhone>) => void
+  setSelectedRole: (role: "customer" | "salon_owner" | null) => void
 }
 
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
-      method: 'email',
+      method: "email",
       verifyPhone: {
-        number: '',
-        region: 'ID',
-        token: '',
+        number: "",
+        region: "ID",
+        token: "",
       },
+      selectedRole: null,
 
       setMethod: (method) => set({ method }),
 
@@ -31,18 +34,18 @@ export const useUIStore = create<UIState>()(
           verifyPhone: {
             ...state.verifyPhone,
             ...data,
-            ...(data.number
-              ? { number: data.number.replace(/\D/g, '') }
-              : {}),
+            ...(data.number ? { number: data.number.replace(/\D/g, "") } : {}),
           },
         })),
+      setSelectedRole: (role) => set({ selectedRole: role }),
     }),
     {
-      name: 'ui-storage',
+      name: "ui-storage",
       partialize: (state) => ({
         method: state.method,
         verifyPhone: state.verifyPhone,
+        selectedRole: state.selectedRole,
       }),
-    }
-  )
+    },
+  ),
 )

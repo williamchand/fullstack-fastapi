@@ -1,10 +1,11 @@
 import { Box, Flex, Icon, Text } from "@chakra-ui/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Link as RouterLink } from "@tanstack/react-router"
-import { FiBriefcase, FiHome, FiSettings, FiUsers } from "react-icons/fi"
+import { FiHome, FiSettings, FiUsers, FiVideo } from "react-icons/fi"
 import type { IconType } from "react-icons/lib"
 
 import type { v1User as UserPublic } from "@/client/user"
+import { useUIStore } from "@/stores/uiStore"
 
 const items = [
   { icon: FiHome, title: "Dashboard", path: "/" },
@@ -24,10 +25,33 @@ interface Item {
 const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const queryClient = useQueryClient()
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
+  const { selectedRole } = useUIStore()
 
-  const finalItems: Item[] = currentUser?.roles?.includes("superuser")
-    ? [...items, { icon: FiUsers, title: "Admin", path: "/admin" }]
-    : items
+  let finalItems: Item[] = [...items]
+
+  finalItems = [
+    ...finalItems,
+    { icon: FiVideo, title: "Webinars", path: "/webinars" },
+  ]
+
+  const canManage =
+    currentUser?.roles?.includes("salon_owner") ||
+    currentUser?.roles?.includes("superuser") ||
+    selectedRole === "salon_owner"
+
+  if (canManage) {
+    finalItems = [
+      ...finalItems,
+      { icon: FiVideo, title: "Manage Webinars", path: "/webinars/manage" },
+    ]
+  }
+
+  if (currentUser?.roles?.includes("superuser")) {
+    finalItems = [
+      ...finalItems,
+      { icon: FiUsers, title: "Admin", path: "/admin" },
+    ]
+  }
 
   const listItems = finalItems.map(({ icon, title, path }) => (
     <RouterLink key={title} to={path} onClick={onClose}>

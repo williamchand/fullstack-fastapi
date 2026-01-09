@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { oauthServiceHandleOauthCallback } from "@/client/oauth"
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/oauth-callback")({
   component: OAuthCallback,

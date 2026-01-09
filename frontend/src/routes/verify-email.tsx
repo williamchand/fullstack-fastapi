@@ -1,8 +1,8 @@
 import { Container, Flex, Heading, Input, Text } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { type SubmitHandler, useForm } from "react-hook-form"
 import { useEffect, useState } from "react"
+import { type SubmitHandler, useForm } from "react-hook-form"
 import { FiMail } from "react-icons/fi"
 
 import type { ApiError } from "@/client/user"
@@ -168,12 +168,18 @@ function VerifyEmail() {
         Verify Email
       </Button>
       <Flex direction="column" align="stretch" gap={2} width="100%">
-        <Text color="gray.600" textAlign="left">Didn't receive the code?</Text>
+        <Text color="gray.600" textAlign="left">
+          Didn't receive the code?
+        </Text>
         <Button
           variant="outline"
           onClick={onResend}
           loading={resendMutation.isPending}
-          disabled={!email || resendMutation.isPending || (resendRequested && secondsLeft > 0)}
+          disabled={
+            !email ||
+            resendMutation.isPending ||
+            (resendRequested && secondsLeft > 0)
+          }
           size="sm"
           width="100%"
         >

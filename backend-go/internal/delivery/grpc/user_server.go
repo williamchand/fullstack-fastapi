@@ -69,11 +69,19 @@ func (s *userServer) CreateUser(ctx context.Context, req *salonappv1.CreateUserR
 	isSuperuser := util.HasRole(user, string(entities.RoleSuperuser))
 
 	roles := []entities.RoleEnum{}
-	if isSuperuser && len(req.Roles) > 0 {
+	if len(req.Roles) > 0 {
 		for _, r := range req.Roles {
-			roles = append(roles, entities.RoleEnum(r))
+			switch entities.RoleEnum(r) {
+			case entities.RoleCustomer, entities.RoleSalonOwner:
+				roles = append(roles, entities.RoleEnum(r))
+			case entities.RoleEmployee, entities.RoleSuperuser:
+				if isSuperuser {
+					roles = append(roles, entities.RoleEnum(r))
+				}
+			}
 		}
-	} else {
+	}
+	if len(roles) == 0 {
 		roles = []entities.RoleEnum{entities.RoleCustomer}
 	}
 

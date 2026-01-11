@@ -1,4 +1,4 @@
-import type { User } from "@/webistream/types"
+import type { User } from "@/types/webistream"
 import {
   BellRing,
   Bot,

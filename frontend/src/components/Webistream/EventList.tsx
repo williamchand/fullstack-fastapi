@@ -2,7 +2,7 @@ import {
   EventStatus,
   PlatformType,
   type WebinarEvent,
-} from "@/webistream/types"
+} from "@/types/webistream"
 import {
   Box,
   Button,

@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogRoot,
 } from "@/components/ui/dialog"
-import { UserRole, type User as UserType } from "@/webistream/types"
+import { UserRole, type User as UserType } from "@/types/webistream"
 import {
   Box,
   Button,

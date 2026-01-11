@@ -1,4 +1,4 @@
-import { EventStatus, type WebinarEvent } from "@/webistream/types"
+import { EventStatus, type WebinarEvent } from "@/types/webistream"
 import {
   Activity,
   Cloud,

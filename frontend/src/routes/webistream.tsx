@@ -1,12 +1,12 @@
 import useAuth from "@/hooks/useAuth"
-import SubPage from "@/webistream/components/SubPage"
+import SubPage from "@/components/Webistream/SubPage"
 import {
   EventStatus,
   PlatformType,
   type User,
   UserRole,
   type WebinarEvent,
-} from "@/webistream/types"
+} from "@/types/webistream"
 import { Container } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 

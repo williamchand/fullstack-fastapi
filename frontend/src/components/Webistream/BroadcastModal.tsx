@@ -1,4 +1,4 @@
-import type { WebinarEvent } from "@/webistream/types"
+import type { WebinarEvent } from "@/types/webistream"
 import { CheckCircle, Info, Loader2, Send, X } from "lucide-react"
 import type React from "react"
 import { useState } from "react"

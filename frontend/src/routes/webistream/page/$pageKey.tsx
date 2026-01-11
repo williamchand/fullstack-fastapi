@@ -1,4 +1,4 @@
-import SubPage from "@/webistream/components/SubPage"
+import SubPage from "@/components/Webistream/SubPage"
 import { Container } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 

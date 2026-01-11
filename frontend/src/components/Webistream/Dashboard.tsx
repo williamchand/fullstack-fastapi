@@ -1,4 +1,4 @@
-import type { DashboardStats, WebinarEvent } from "@/webistream/types"
+import type { DashboardStats, WebinarEvent } from "@/types/webistream"
 import {
   Activity,
   Calendar as CalendarIcon,

@@ -18,7 +18,7 @@ import {
   Zap,
 } from "lucide-react"
 import type React from "react"
-import { EventStatus, type User, UserRole, type WebinarEvent } from "../types"
+import { EventStatus, type User, UserRole, type WebinarEvent } from "../../types/webistream"
 
 interface LandingPageProps {
   events: WebinarEvent[]

@@ -1,4 +1,4 @@
-import type { User, WebinarEvent } from "@/webistream/types"
+import type { User, WebinarEvent } from "@/types/webistream"
 import { BookOpen, Calendar, Clock, PlayCircle, Video } from "lucide-react"
 import type React from "react"
 

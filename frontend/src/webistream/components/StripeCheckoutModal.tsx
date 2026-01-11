@@ -1,11 +1,12 @@
 import {
-  ArrowRight,
-  CheckCircle2,
-  CreditCard,
-  Loader2,
-  ShieldCheck,
-  X,
-} from "lucide-react"
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogRoot,
+} from "@/components/ui/dialog"
+import { Box, Button, Flex, Input, Text } from "@chakra-ui/react"
+import { ArrowRight, CheckCircle2, CreditCard, ShieldCheck } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
 
@@ -40,145 +41,193 @@ const StripeCheckoutModal: React.FC<StripeCheckoutModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-md animate-in fade-in">
-      <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col">
-        <div className="p-8 border-b border-gray-50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-[#635BFF] p-2 rounded-lg">
-              <CreditCard className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-black text-xl text-[#635BFF]">Stripe</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="w-6 h-6 text-gray-400" />
-          </button>
-        </div>
-
-        <div className="p-10">
+    <DialogRoot open onOpenChange={(e) => !e.open && onClose()}>
+      <DialogContent borderRadius="2xl" maxW="lg">
+        <DialogHeader>
+          <Flex align="center" justify="space-between">
+            <Flex align="center" gap={3}>
+              <Flex bg="#635BFF" p={2} borderRadius="lg">
+                <CreditCard color="white" size={20} />
+              </Flex>
+              <Text fontWeight="black" fontSize="xl" color="#635BFF">
+                Stripe
+              </Text>
+            </Flex>
+          </Flex>
+        </DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody>
           {step === "details" && (
-            <form onSubmit={handlePay} className="space-y-8">
-              <div className="text-center space-y-2 mb-8">
-                <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">
+            <Box
+              as="form"
+              onSubmit={handlePay}
+              display="flex"
+              flexDirection="column"
+              gap={6}
+            >
+              <Box textAlign="center" mb={6}>
+                <Text
+                  color="gray.500"
+                  fontWeight="bold"
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  letterSpacing="widest"
+                >
                   {purpose === "REGISTRATION"
                     ? "Ticket Purchase"
                     : "Platform Fee"}
-                </p>
-                <h3 className="text-3xl font-black text-gray-900 leading-tight">
+                </Text>
+                <Text fontSize="3xl" fontWeight="black" color="gray.900">
                   Pay ${amount.toFixed(2)}
-                </h3>
-                <p className="text-gray-400 text-sm font-medium">{title}</p>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                </Text>
+                <Text color="gray.400" fontSize="sm" fontWeight="medium">
+                  {title}
+                </Text>
+              </Box>
+              <Box display="flex" flexDirection="column" gap={4}>
+                <Box>
+                  <Text
+                    fontSize="xs"
+                    fontWeight="black"
+                    color="gray.400"
+                    letterSpacing="widest"
+                    textTransform="uppercase"
+                    pl={1}
+                  >
                     Card Information
-                  </label>
-                  <div className="relative">
-                    <input
-                      required
-                      type="text"
-                      placeholder="4242 4242 4242 4242"
-                      className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#635BFF] focus:ring-4 focus:ring-[#635BFF]/10 outline-none transition-all font-mono font-bold"
-                    />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
+                  </Text>
+                  <Flex position="relative" align="center">
+                    <Input required placeholder="4242 4242 4242 4242" />
+                    <Flex
+                      position="absolute"
+                      right={4}
+                      top="50%"
+                      transform="translateY(-50%)"
+                      gap={2}
+                    >
                       <img
                         src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg"
-                        className="h-4"
+                        height={16}
                         alt="Visa"
                       />
                       <img
                         src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg"
-                        className="h-4"
+                        height={16}
                         alt="Mastercard"
                       />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                    </Flex>
+                  </Flex>
+                </Box>
+                <Flex gap={4}>
+                  <Box flex="1">
+                    <Text
+                      fontSize="xs"
+                      fontWeight="black"
+                      color="gray.400"
+                      letterSpacing="widest"
+                      textTransform="uppercase"
+                      pl={1}
+                    >
                       Expiry
-                    </label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="MM / YY"
-                      className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#635BFF] focus:ring-4 focus:ring-[#635BFF]/10 outline-none transition-all font-bold"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                    </Text>
+                    <Input required placeholder="MM / YY" />
+                  </Box>
+                  <Box flex="1">
+                    <Text
+                      fontSize="xs"
+                      fontWeight="black"
+                      color="gray.400"
+                      letterSpacing="widest"
+                      textTransform="uppercase"
+                      pl={1}
+                    >
                       CVC
-                    </label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="123"
-                      className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#635BFF] focus:ring-4 focus:ring-[#635BFF]/10 outline-none transition-all font-bold"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <button
+                    </Text>
+                    <Input required placeholder="123" />
+                  </Box>
+                </Flex>
+              </Box>
+              <Box pt={4}>
+                <Button
                   type="submit"
-                  className="w-full py-5 bg-[#635BFF] text-white font-black rounded-2xl hover:bg-[#5249db] shadow-xl shadow-[#635BFF]/20 transition-all transform active:scale-95 flex items-center justify-center gap-2"
+                  w="full"
+                  py={5}
+                  variant="solid"
+                  colorPalette="blue"
+                  borderRadius="2xl"
+                  fontWeight="black"
+                  gap={2}
                 >
-                  Pay Now <ArrowRight className="w-5 h-5" />
-                </button>
-                <div className="flex items-center justify-center gap-2 mt-6 text-gray-400">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
+                  Pay Now <ArrowRight size={20} />
+                </Button>
+                <Flex
+                  align="center"
+                  justify="center"
+                  gap={2}
+                  mt={6}
+                  color="gray.400"
+                >
+                  <ShieldCheck size={16} color="#10b981" />
+                  <Text
+                    fontSize="xs"
+                    fontWeight="black"
+                    textTransform="uppercase"
+                    letterSpacing="widest"
+                  >
                     Secure 256-bit Encrypted Payment
-                  </span>
-                </div>
-              </div>
-            </form>
+                  </Text>
+                </Flex>
+              </Box>
+            </Box>
           )}
 
           {step === "processing" && (
-            <div className="py-20 text-center space-y-6 animate-in zoom-in-95">
-              <div className="relative w-24 h-24 mx-auto">
-                <div className="absolute inset-0 border-4 border-[#635BFF]/10 rounded-full" />
-                <Loader2 className="w-full h-full text-[#635BFF] animate-spin" />
-              </div>
-              <div>
-                <h4 className="text-xl font-black text-gray-900">
-                  Processing Payment...
-                </h4>
-                <p className="text-gray-400 font-medium mt-1">
-                  Please do not close your browser
-                </p>
-              </div>
-            </div>
+            <Box py={20} textAlign="center">
+              <Text fontSize="xl" fontWeight="black" color="gray.900">
+                Processing Payment...
+              </Text>
+              <Text color="gray.400" fontWeight="medium" mt={1}>
+                Please do not close your browser
+              </Text>
+            </Box>
           )}
 
           {step === "success" && (
-            <div className="py-20 text-center space-y-6 animate-in bounce-in">
-              <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-100">
-                <CheckCircle2 className="w-12 h-12" />
-              </div>
-              <div>
-                <h4 className="text-3xl font-black text-gray-900">
+            <Box
+              py={16}
+              textAlign="center"
+              display="flex"
+              flexDirection="column"
+              gap={6}
+              alignItems="center"
+            >
+              <Flex
+                w={24}
+                h={24}
+                bg="emerald.100"
+                color="emerald.600"
+                borderRadius="full"
+                align="center"
+                justify="center"
+                boxShadow="lg"
+              >
+                <CheckCircle2 size={48} />
+              </Flex>
+              <Box>
+                <Text fontSize="3xl" fontWeight="black" color="gray.900">
                   Payment Successful
-                </h4>
-                <p className="text-gray-500 font-medium mt-1">
+                </Text>
+                <Text color="gray.500" fontWeight="medium" mt={1}>
                   {purpose === "REGISTRATION"
                     ? "You're all set! Check your learning shelf."
                     : "Webinar published successfully."}
-                </p>
-              </div>
-            </div>
+                </Text>
+              </Box>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+        </DialogBody>
+      </DialogContent>
+    </DialogRoot>
   )
 }
 

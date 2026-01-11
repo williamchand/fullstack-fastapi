@@ -4,6 +4,15 @@ import {
   type WebinarEvent,
 } from "@/webistream/types"
 import {
+  Box,
+  Button,
+  Flex,
+  Grid,
+  Heading,
+  IconButton,
+  Text,
+} from "@chakra-ui/react"
+import {
   Calendar as CalendarIcon,
   Globe,
   Layers,
@@ -29,7 +38,14 @@ const EventList: React.FC<EventListProps> = ({
   onOpenControlPanel,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+    <Grid
+      gridTemplateColumns={{
+        base: "1fr",
+        md: "repeat(2, 1fr)",
+        xl: "repeat(3, 1fr)",
+      }}
+      gap={8}
+    >
       {events.map((event) => (
         <EventCard
           key={event.id}
@@ -39,7 +55,7 @@ const EventList: React.FC<EventListProps> = ({
           onControlPanel={() => onOpenControlPanel(event)}
         />
       ))}
-    </div>
+    </Grid>
   )
 }
 
@@ -50,112 +66,218 @@ const EventCard: React.FC<{
   onControlPanel: () => void
 }> = ({ event, onManageParticipants, onPublish, onControlPanel }) => {
   const isDraft = event.status === EventStatus.DRAFT
+  const headerBg = isDraft
+    ? "amber.500"
+    : event.platform === PlatformType.ZOOM
+      ? "indigo.600"
+      : "emerald.600"
+  const statusColor = isDraft ? "amber.600" : "indigo.600"
 
   return (
-    <div
-      className={`bg-white rounded-[2rem] border transition-all duration-500 overflow-hidden flex flex-col group ${
-        isDraft
-          ? "border-amber-100 hover:border-amber-300"
-          : "border-gray-100 hover:border-indigo-300 shadow-sm hover:shadow-2xl hover:-translate-y-1"
-      }`}
+    <Box
+      bg="white"
+      borderRadius="2rem"
+      border="1px solid"
+      borderColor={isDraft ? "amber.100" : "gray.100"}
+      transition="all 0.3s ease"
+      overflow="hidden"
+      display="flex"
+      flexDirection="column"
+      _hover={{
+        borderColor: isDraft ? "amber.300" : "indigo.300",
+        boxShadow: isDraft ? "sm" : "2xl",
+        transform: isDraft ? undefined : "translateY(-4px)",
+      }}
     >
-      <div
-        className={`relative h-40 flex flex-col p-6 justify-between ${
-          isDraft
-            ? "bg-amber-500"
-            : event.platform === PlatformType.ZOOM
-              ? "bg-indigo-600"
-              : "bg-emerald-600"
-        }`}
+      <Box
+        position="relative"
+        h={40}
+        display="flex"
+        flexDirection="column"
+        p={6}
+        justifyContent="space-between"
+        bg={headerBg}
       >
-        <div className="flex justify-between items-start">
-          <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-2xl text-white">
-            <Video className="w-6 h-6" />
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className="px-3 py-1 bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-full">
+        <Flex justify="space-between" align="flex-start">
+          <Box
+            bg="whiteAlpha.200"
+            backdropFilter="blur(8px)"
+            p={2.5}
+            borderRadius="2xl"
+            color="white"
+          >
+            <Video size={24} />
+          </Box>
+          <Flex direction="column" align="flex-end" gap={2}>
+            <Text
+              px={3}
+              py={1}
+              bg="whiteAlpha.200"
+              backdropFilter="blur(8px)"
+              color="white"
+              fontSize="10px"
+              fontWeight="black"
+              textTransform="uppercase"
+              letterSpacing="widest"
+              borderRadius="full"
+            >
               {event.platform}
-            </span>
-            <span
-              className={`px-3 py-1 bg-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm ${
-                isDraft ? "text-amber-600" : "text-indigo-600"
-              }`}
+            </Text>
+            <Text
+              px={3}
+              py={1}
+              bg="white"
+              fontSize="10px"
+              fontWeight="black"
+              textTransform="uppercase"
+              letterSpacing="widest"
+              borderRadius="full"
+              boxShadow="sm"
+              color={statusColor}
             >
               {event.status}
-            </span>
-          </div>
-        </div>
+            </Text>
+          </Flex>
+        </Flex>
 
-        <div className="flex items-center gap-2">
+        <Flex align="center" gap={2}>
           {event.meetingLink ? (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md text-white rounded-full text-xs font-medium">
-              <Globe className="w-3 h-3" /> Link Ready
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-black/20 backdrop-blur-md text-white/70 rounded-full text-xs font-medium">
-              <Lock className="w-3 h-3" /> Setup Needed
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="p-8 flex-1 flex flex-col">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="font-bold text-gray-900 text-xl line-clamp-1">
-            {event.title}
-          </h3>
-          <button className="text-gray-300 hover:text-gray-600 p-1 transition-colors">
-            <MoreVertical className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-1 leading-relaxed">
-          {event.description}
-        </p>
-
-        <div className="grid grid-cols-2 gap-4 mb-8 text-xs font-bold text-gray-400 uppercase tracking-widest">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4 text-indigo-400" />
-            <span className="text-gray-600">
-              {new Date(event.date).toLocaleDateString()}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-indigo-400" />
-            <span className="text-gray-600">
-              {event.attendees.length} Users
-            </span>
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-gray-100 flex items-center justify-between gap-4">
-          {isDraft ? (
-            <button
-              onClick={onPublish}
-              className="flex-1 bg-amber-600 text-white px-6 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2 hover:bg-amber-700 transition-all shadow-lg shadow-amber-100"
+            <Flex
+              align="center"
+              gap={1.5}
+              px={3}
+              py={1}
+              bg="whiteAlpha.200"
+              backdropFilter="blur(8px)"
+              color="white"
+              borderRadius="full"
+              fontSize="xs"
+              fontWeight="medium"
             >
-              <Zap className="w-4 h-4" /> Publish Now ($10)
-            </button>
+              <Globe size={12} /> Link Ready
+            </Flex>
+          ) : (
+            <Flex
+              align="center"
+              gap={1.5}
+              px={3}
+              py={1}
+              bg="blackAlpha.300"
+              backdropFilter="blur(8px)"
+              color="whiteAlpha.700"
+              borderRadius="full"
+              fontSize="xs"
+              fontWeight="medium"
+            >
+              <Lock size={12} /> Setup Needed
+            </Flex>
+          )}
+        </Flex>
+      </Box>
+
+      <Box p={8} flex="1" display="flex" flexDirection="column">
+        <Flex justify="space-between" align="flex-start" mb={4}>
+          <Heading size="md" color="gray.900">
+            {event.title}
+          </Heading>
+          <IconButton
+            aria-label="Options"
+            variant="ghost"
+            size="sm"
+            color="gray.400"
+            _hover={{ color: "gray.600" }}
+          >
+            <MoreVertical size={20} />
+          </IconButton>
+        </Flex>
+
+        <Text color="gray.500" fontSize="sm" mb={6}>
+          {event.description}
+        </Text>
+
+        <Grid
+          gridTemplateColumns="repeat(2, 1fr)"
+          gap={4}
+          mb={8}
+          fontSize="xs"
+          fontWeight="bold"
+          color="gray.400"
+          textTransform="uppercase"
+          letterSpacing="widest"
+        >
+          <Flex align="center" gap={2}>
+            <CalendarIcon size={16} color="#818cf8" />
+            <Text color="gray.600">
+              {new Date(event.date).toLocaleDateString()}
+            </Text>
+          </Flex>
+          <Flex align="center" gap={2}>
+            <Users size={16} color="#818cf8" />
+            <Text color="gray.600">{event.attendees.length} Users</Text>
+          </Flex>
+        </Grid>
+
+        <Flex
+          pt={6}
+          borderTop="1px solid"
+          borderColor="gray.100"
+          align="center"
+          justify="space-between"
+          gap={4}
+        >
+          {isDraft ? (
+            <Button
+              onClick={onPublish}
+              flex="1"
+              px={6}
+              py={3}
+              borderRadius="2xl"
+              fontSize="sm"
+              fontWeight="black"
+              colorPalette="amber"
+              variant="solid"
+              boxShadow="lg"
+              display="inline-flex"
+              alignItems="center"
+              gap={2}
+              justifyContent="center"
+            >
+              <Zap size={16} /> Publish Now ($10)
+            </Button>
           ) : (
             <>
-              <button
+              <Button
                 onClick={onManageParticipants}
-                className="flex-1 bg-gray-50 text-gray-900 px-4 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2 hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-100"
+                flex="1"
+                px={4}
+                py={3}
+                borderRadius="2xl"
+                fontSize="sm"
+                fontWeight="black"
+                variant="subtle"
+                colorPalette="gray"
+                display="inline-flex"
+                alignItems="center"
+                gap={2}
+                justifyContent="center"
               >
-                <Users className="w-4 h-4" /> Manage
-              </button>
-              <button
+                <Users size={16} /> Manage
+              </Button>
+              <IconButton
+                aria-label="Open Control Panel"
                 onClick={onControlPanel}
-                className="bg-indigo-600 text-white p-3 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                borderRadius="2xl"
+                colorPalette="indigo"
+                variant="solid"
                 title="Open Control Panel"
               >
-                <Layers className="w-5 h-5" />
-              </button>
+                <Layers size={20} />
+              </IconButton>
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </Flex>
+      </Box>
+    </Box>
   )
 }
 
